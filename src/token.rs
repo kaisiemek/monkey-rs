@@ -12,6 +12,13 @@ pub enum TokenType {
     // operators
     ASSIGN,
     PLUS,
+    MINUS,
+    BANG,
+    ASTERISK,
+    SLASH,
+
+    LT,
+    GT,
 
     // delimiters
     COMMA,
@@ -25,6 +32,11 @@ pub enum TokenType {
     // keywords
     FUNCTION,
     LET,
+    TRUE,
+    FALSE,
+    IF,
+    ELSE,
+    RETURN,
 }
 
 pub struct Token {
@@ -48,6 +60,11 @@ impl Token {
         return match literal.as_str() {
             "fn" => TokenType::FUNCTION,
             "let" => TokenType::LET,
+            "true" => TokenType::TRUE,
+            "false" => TokenType::FALSE,
+            "if" => TokenType::IF,
+            "else" => TokenType::ELSE,
+            "return" => TokenType::RETURN,
             _ => TokenType::IDENT,
         };
     }
@@ -62,6 +79,12 @@ impl fmt::Display for TokenType {
             TokenType::INT => write!(f, "INT"),
             TokenType::ASSIGN => write!(f, "="),
             TokenType::PLUS => write!(f, "+"),
+            TokenType::MINUS => write!(f, "-"),
+            TokenType::BANG => write!(f, "!"),
+            TokenType::ASTERISK => write!(f, "*"),
+            TokenType::SLASH => write!(f, "/"),
+            TokenType::LT => write!(f, "<"),
+            TokenType::GT => write!(f, ">"),
             TokenType::COMMA => write!(f, ","),
             TokenType::SEMICOLON => write!(f, ";"),
             TokenType::LPAREN => write!(f, "("),
@@ -70,6 +93,11 @@ impl fmt::Display for TokenType {
             TokenType::RBRACE => write!(f, "}}"),
             TokenType::FUNCTION => write!(f, "FUNCTION"),
             TokenType::LET => write!(f, "LET"),
+            TokenType::TRUE => write!(f, "TRUE"),
+            TokenType::FALSE => write!(f, "FALSE"),
+            TokenType::IF => write!(f, "IF"),
+            TokenType::ELSE => write!(f, "ELSE"),
+            TokenType::RETURN => write!(f, "RETURN"),
         }
     }
 }

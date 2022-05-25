@@ -225,6 +225,303 @@ mod tests {
     }
 
     #[test]
+    fn test_next_token_3() {
+        let input = concat!(
+            "let five = 5;\n",
+            "let ten = 10;\n",
+            "\n",
+            "let add = fn(x, y) {\n",
+            "  x + y;\n",
+            "};\n",
+            "\n",
+            "let result = add(five, ten);\n",
+            "!-/*5;\n",
+            "5 < 10 > 5;\n",
+            "\n",
+            "if (5 < 10) {\n",
+            "  return true;\n",
+            "} else {\n",
+            "  return false;\n",
+            "}\n",
+        );
+
+        let mut expected: VecDeque<Token> = VecDeque::from_iter([
+            Token {
+                literal: "let".to_string(),
+                tok_type: TokenType::LET,
+            },
+            Token {
+                literal: "five".to_string(),
+                tok_type: TokenType::IDENT,
+            },
+            Token {
+                literal: "=".to_string(),
+                tok_type: TokenType::ASSIGN,
+            },
+            Token {
+                literal: "5".to_string(),
+                tok_type: TokenType::INT,
+            },
+            Token {
+                literal: ";".to_string(),
+                tok_type: TokenType::SEMICOLON,
+            },
+            Token {
+                literal: "let".to_string(),
+                tok_type: TokenType::LET,
+            },
+            Token {
+                literal: "ten".to_string(),
+                tok_type: TokenType::IDENT,
+            },
+            Token {
+                literal: "=".to_string(),
+                tok_type: TokenType::ASSIGN,
+            },
+            Token {
+                literal: "10".to_string(),
+                tok_type: TokenType::INT,
+            },
+            Token {
+                literal: ";".to_string(),
+                tok_type: TokenType::SEMICOLON,
+            },
+            Token {
+                literal: "let".to_string(),
+                tok_type: TokenType::LET,
+            },
+            Token {
+                literal: "add".to_string(),
+                tok_type: TokenType::IDENT,
+            },
+            Token {
+                literal: "=".to_string(),
+                tok_type: TokenType::ASSIGN,
+            },
+            Token {
+                literal: "fn".to_string(),
+                tok_type: TokenType::FUNCTION,
+            },
+            Token {
+                literal: "(".to_string(),
+                tok_type: TokenType::LPAREN,
+            },
+            Token {
+                literal: "x".to_string(),
+                tok_type: TokenType::IDENT,
+            },
+            Token {
+                literal: ",".to_string(),
+                tok_type: TokenType::COMMA,
+            },
+            Token {
+                literal: "y".to_string(),
+                tok_type: TokenType::IDENT,
+            },
+            Token {
+                literal: ")".to_string(),
+                tok_type: TokenType::RPAREN,
+            },
+            Token {
+                literal: "{".to_string(),
+                tok_type: TokenType::LBRACE,
+            },
+            Token {
+                literal: "x".to_string(),
+                tok_type: TokenType::IDENT,
+            },
+            Token {
+                literal: "+".to_string(),
+                tok_type: TokenType::PLUS,
+            },
+            Token {
+                literal: "y".to_string(),
+                tok_type: TokenType::IDENT,
+            },
+            Token {
+                literal: ";".to_string(),
+                tok_type: TokenType::SEMICOLON,
+            },
+            Token {
+                literal: "}".to_string(),
+                tok_type: TokenType::RBRACE,
+            },
+            Token {
+                literal: ";".to_string(),
+                tok_type: TokenType::SEMICOLON,
+            },
+            Token {
+                literal: "let".to_string(),
+                tok_type: TokenType::LET,
+            },
+            Token {
+                literal: "result".to_string(),
+                tok_type: TokenType::IDENT,
+            },
+            Token {
+                literal: "=".to_string(),
+                tok_type: TokenType::ASSIGN,
+            },
+            Token {
+                literal: "add".to_string(),
+                tok_type: TokenType::IDENT,
+            },
+            Token {
+                literal: "(".to_string(),
+                tok_type: TokenType::LPAREN,
+            },
+            Token {
+                literal: "five".to_string(),
+                tok_type: TokenType::IDENT,
+            },
+            Token {
+                literal: ",".to_string(),
+                tok_type: TokenType::COMMA,
+            },
+            Token {
+                literal: "ten".to_string(),
+                tok_type: TokenType::IDENT,
+            },
+            Token {
+                literal: ")".to_string(),
+                tok_type: TokenType::RPAREN,
+            },
+            Token {
+                literal: ";".to_string(),
+                tok_type: TokenType::SEMICOLON,
+            },
+            Token {
+                literal: "!".to_string(),
+                tok_type: TokenType::BANG,
+            },
+            Token {
+                literal: "-".to_string(),
+                tok_type: TokenType::MINUS,
+            },
+            Token {
+                literal: "/".to_string(),
+                tok_type: TokenType::SLASH,
+            },
+            Token {
+                literal: "*".to_string(),
+                tok_type: TokenType::ASTERISK,
+            },
+            Token {
+                literal: "5".to_string(),
+                tok_type: TokenType::INT,
+            },
+            Token {
+                literal: ";".to_string(),
+                tok_type: TokenType::SEMICOLON,
+            },
+            Token {
+                literal: "5".to_string(),
+                tok_type: TokenType::INT,
+            },
+            Token {
+                literal: "<".to_string(),
+                tok_type: TokenType::LT,
+            },
+            Token {
+                literal: "10".to_string(),
+                tok_type: TokenType::INT,
+            },
+            Token {
+                literal: ">".to_string(),
+                tok_type: TokenType::GT,
+            },
+            Token {
+                literal: "5".to_string(),
+                tok_type: TokenType::INT,
+            },
+            Token {
+                literal: ";".to_string(),
+                tok_type: TokenType::SEMICOLON,
+            },
+            Token {
+                literal: "if".to_string(),
+                tok_type: TokenType::IF,
+            },
+            Token {
+                literal: "(".to_string(),
+                tok_type: TokenType::LPAREN,
+            },
+            Token {
+                literal: "5".to_string(),
+                tok_type: TokenType::INT,
+            },
+            Token {
+                literal: "<".to_string(),
+                tok_type: TokenType::LT,
+            },
+            Token {
+                literal: "10".to_string(),
+                tok_type: TokenType::INT,
+            },
+            Token {
+                literal: ")".to_string(),
+                tok_type: TokenType::RPAREN,
+            },
+            Token {
+                literal: "{".to_string(),
+                tok_type: TokenType::LBRACE,
+            },
+            Token {
+                literal: "return".to_string(),
+                tok_type: TokenType::RETURN,
+            },
+            Token {
+                literal: "true".to_string(),
+                tok_type: TokenType::TRUE,
+            },
+            Token {
+                literal: ";".to_string(),
+                tok_type: TokenType::SEMICOLON,
+            },
+            Token {
+                literal: "}".to_string(),
+                tok_type: TokenType::RBRACE,
+            },
+            Token {
+                literal: "else".to_string(),
+                tok_type: TokenType::ELSE,
+            },
+            Token {
+                literal: "{".to_string(),
+                tok_type: TokenType::LBRACE,
+            },
+            Token {
+                literal: "return".to_string(),
+                tok_type: TokenType::RETURN,
+            },
+            Token {
+                literal: "false".to_string(),
+                tok_type: TokenType::FALSE,
+            },
+            Token {
+                literal: ";".to_string(),
+                tok_type: TokenType::SEMICOLON,
+            },
+            Token {
+                literal: "}".to_string(),
+                tok_type: TokenType::RBRACE,
+            },
+            Token {
+                literal: "".to_string(),
+                tok_type: TokenType::EOF,
+            },
+        ]);
+
+        let mut l = Lexer::new(input.to_string());
+        while !expected.is_empty() {
+            let token = l.next_token();
+            let cur_expected = expected.pop_front().unwrap();
+            assert_eq!(cur_expected.tok_type, token.tok_type);
+            assert_eq!(cur_expected.literal, token.literal);
+        }
+    }
+
+    #[test]
     fn test_string_splicing() {
         let input = "./--342TEST_IDENT//32".to_string();
         let mut cur_pos = 1;
