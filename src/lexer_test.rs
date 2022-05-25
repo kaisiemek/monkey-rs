@@ -2,52 +2,34 @@
 mod tests {
     use std::collections::VecDeque;
 
-    use crate::{lexer::Lexer, token::Token, token::TokenType};
+    use crate::{lexer::Lexer, token::TokenType};
 
     #[test]
     fn test_next_token() {
         let input = "=+(){},;".to_string();
-        let mut expected: VecDeque<Token> = VecDeque::from_iter([
-            Token {
-                literal: "=".to_string(),
-                tok_type: TokenType::ASSIGN,
-            },
-            Token {
-                literal: "+".to_string(),
-                tok_type: TokenType::PLUS,
-            },
-            Token {
-                literal: "(".to_string(),
-                tok_type: TokenType::LPAREN,
-            },
-            Token {
-                literal: ")".to_string(),
-                tok_type: TokenType::RPAREN,
-            },
-            Token {
-                literal: "{".to_string(),
-                tok_type: TokenType::LBRACE,
-            },
-            Token {
-                literal: "}".to_string(),
-                tok_type: TokenType::RBRACE,
-            },
-            Token {
-                literal: ",".to_string(),
-                tok_type: TokenType::COMMA,
-            },
-            Token {
-                literal: ";".to_string(),
-                tok_type: TokenType::SEMICOLON,
-            },
+
+        let mut expected_strings: VecDeque<&str> =
+            VecDeque::from_iter(["=", "+", "(", ")", "{", "}", ",", ";", ""]);
+
+        let mut expected_types: VecDeque<TokenType> = VecDeque::from_iter([
+            TokenType::ASSIGN,
+            TokenType::PLUS,
+            TokenType::LPAREN,
+            TokenType::RPAREN,
+            TokenType::LBRACE,
+            TokenType::RBRACE,
+            TokenType::COMMA,
+            TokenType::SEMICOLON,
+            TokenType::EOF,
         ]);
 
-        let mut l = Lexer::new(input);
-        while !expected.is_empty() {
+        let mut l = Lexer::new(input.to_string());
+        while !expected_strings.is_empty() {
             let token = l.next_token();
-            let cur_expected = expected.pop_front().unwrap();
-            assert_eq!(cur_expected.literal, token.literal);
-            assert_eq!(cur_expected.tok_type, token.tok_type);
+            let expected_str = expected_strings.pop_front().unwrap().to_string();
+            let expected_type = expected_types.pop_front().unwrap();
+            assert_eq!(expected_type, token.tok_type);
+            assert_eq!(expected_str, token.literal);
         }
     }
 
@@ -64,163 +46,59 @@ mod tests {
             "let result = add(five, ten);\n"
         );
 
-        let mut expected: VecDeque<Token> = VecDeque::from_iter([
-            Token {
-                literal: "let".to_string(),
-                tok_type: TokenType::LET,
-            },
-            Token {
-                literal: "five".to_string(),
-                tok_type: TokenType::IDENT,
-            },
-            Token {
-                literal: "=".to_string(),
-                tok_type: TokenType::ASSIGN,
-            },
-            Token {
-                literal: "5".to_string(),
-                tok_type: TokenType::INT,
-            },
-            Token {
-                literal: ";".to_string(),
-                tok_type: TokenType::SEMICOLON,
-            },
-            Token {
-                literal: "let".to_string(),
-                tok_type: TokenType::LET,
-            },
-            Token {
-                literal: "ten".to_string(),
-                tok_type: TokenType::IDENT,
-            },
-            Token {
-                literal: "=".to_string(),
-                tok_type: TokenType::ASSIGN,
-            },
-            Token {
-                literal: "10".to_string(),
-                tok_type: TokenType::INT,
-            },
-            Token {
-                literal: ";".to_string(),
-                tok_type: TokenType::SEMICOLON,
-            },
-            Token {
-                literal: "let".to_string(),
-                tok_type: TokenType::LET,
-            },
-            Token {
-                literal: "add".to_string(),
-                tok_type: TokenType::IDENT,
-            },
-            Token {
-                literal: "=".to_string(),
-                tok_type: TokenType::ASSIGN,
-            },
-            Token {
-                literal: "fn".to_string(),
-                tok_type: TokenType::FUNCTION,
-            },
-            Token {
-                literal: "(".to_string(),
-                tok_type: TokenType::LPAREN,
-            },
-            Token {
-                literal: "x".to_string(),
-                tok_type: TokenType::IDENT,
-            },
-            Token {
-                literal: ",".to_string(),
-                tok_type: TokenType::COMMA,
-            },
-            Token {
-                literal: "y".to_string(),
-                tok_type: TokenType::IDENT,
-            },
-            Token {
-                literal: ")".to_string(),
-                tok_type: TokenType::RPAREN,
-            },
-            Token {
-                literal: "{".to_string(),
-                tok_type: TokenType::LBRACE,
-            },
-            Token {
-                literal: "x".to_string(),
-                tok_type: TokenType::IDENT,
-            },
-            Token {
-                literal: "+".to_string(),
-                tok_type: TokenType::PLUS,
-            },
-            Token {
-                literal: "y".to_string(),
-                tok_type: TokenType::IDENT,
-            },
-            Token {
-                literal: ";".to_string(),
-                tok_type: TokenType::SEMICOLON,
-            },
-            Token {
-                literal: "}".to_string(),
-                tok_type: TokenType::RBRACE,
-            },
-            Token {
-                literal: ";".to_string(),
-                tok_type: TokenType::SEMICOLON,
-            },
-            Token {
-                literal: "let".to_string(),
-                tok_type: TokenType::LET,
-            },
-            Token {
-                literal: "result".to_string(),
-                tok_type: TokenType::IDENT,
-            },
-            Token {
-                literal: "=".to_string(),
-                tok_type: TokenType::ASSIGN,
-            },
-            Token {
-                literal: "add".to_string(),
-                tok_type: TokenType::IDENT,
-            },
-            Token {
-                literal: "(".to_string(),
-                tok_type: TokenType::LPAREN,
-            },
-            Token {
-                literal: "five".to_string(),
-                tok_type: TokenType::IDENT,
-            },
-            Token {
-                literal: ",".to_string(),
-                tok_type: TokenType::COMMA,
-            },
-            Token {
-                literal: "ten".to_string(),
-                tok_type: TokenType::IDENT,
-            },
-            Token {
-                literal: ")".to_string(),
-                tok_type: TokenType::RPAREN,
-            },
-            Token {
-                literal: ";".to_string(),
-                tok_type: TokenType::SEMICOLON,
-            },
-            Token {
-                literal: "".to_string(),
-                tok_type: TokenType::EOF,
-            },
+        let mut expected_strings: VecDeque<&str> = VecDeque::from_iter([
+            "let", "five", "=", "5", ";", "let", "ten", "=", "10", ";", "let", "add", "=", "fn",
+            "(", "x", ",", "y", ")", "{", "x", "+", "y", ";", "}", ";", "let", "result", "=",
+            "add", "(", "five", ",", "ten", ")", ";", "",
+        ]);
+
+        let mut expected_types: VecDeque<TokenType> = VecDeque::from_iter([
+            TokenType::LET,
+            TokenType::IDENT,
+            TokenType::ASSIGN,
+            TokenType::INT,
+            TokenType::SEMICOLON,
+            TokenType::LET,
+            TokenType::IDENT,
+            TokenType::ASSIGN,
+            TokenType::INT,
+            TokenType::SEMICOLON,
+            TokenType::LET,
+            TokenType::IDENT,
+            TokenType::ASSIGN,
+            TokenType::FUNCTION,
+            TokenType::LPAREN,
+            TokenType::IDENT,
+            TokenType::COMMA,
+            TokenType::IDENT,
+            TokenType::RPAREN,
+            TokenType::LBRACE,
+            TokenType::IDENT,
+            TokenType::PLUS,
+            TokenType::IDENT,
+            TokenType::SEMICOLON,
+            TokenType::RBRACE,
+            TokenType::SEMICOLON,
+            TokenType::LET,
+            TokenType::IDENT,
+            TokenType::ASSIGN,
+            TokenType::IDENT,
+            TokenType::LPAREN,
+            TokenType::IDENT,
+            TokenType::COMMA,
+            TokenType::IDENT,
+            TokenType::RPAREN,
+            TokenType::SEMICOLON,
+            TokenType::EOF,
         ]);
 
         let mut l = Lexer::new(input.to_string());
-        while !expected.is_empty() {
+        while !expected_strings.is_empty() {
             let token = l.next_token();
-            let cur_expected = expected.pop_front().unwrap();
-            assert_eq!(cur_expected.tok_type, token.tok_type);
-            assert_eq!(cur_expected.literal, token.literal);
+            let expected_str = expected_strings.pop_front().unwrap().to_string();
+            let expected_type = expected_types.pop_front().unwrap();
+            assert_eq!(expected_type, token.tok_type);
+            assert_eq!(expected_str, token.literal);
         }
     }
 
@@ -245,279 +123,90 @@ mod tests {
             "}\n",
         );
 
-        let mut expected: VecDeque<Token> = VecDeque::from_iter([
-            Token {
-                literal: "let".to_string(),
-                tok_type: TokenType::LET,
-            },
-            Token {
-                literal: "five".to_string(),
-                tok_type: TokenType::IDENT,
-            },
-            Token {
-                literal: "=".to_string(),
-                tok_type: TokenType::ASSIGN,
-            },
-            Token {
-                literal: "5".to_string(),
-                tok_type: TokenType::INT,
-            },
-            Token {
-                literal: ";".to_string(),
-                tok_type: TokenType::SEMICOLON,
-            },
-            Token {
-                literal: "let".to_string(),
-                tok_type: TokenType::LET,
-            },
-            Token {
-                literal: "ten".to_string(),
-                tok_type: TokenType::IDENT,
-            },
-            Token {
-                literal: "=".to_string(),
-                tok_type: TokenType::ASSIGN,
-            },
-            Token {
-                literal: "10".to_string(),
-                tok_type: TokenType::INT,
-            },
-            Token {
-                literal: ";".to_string(),
-                tok_type: TokenType::SEMICOLON,
-            },
-            Token {
-                literal: "let".to_string(),
-                tok_type: TokenType::LET,
-            },
-            Token {
-                literal: "add".to_string(),
-                tok_type: TokenType::IDENT,
-            },
-            Token {
-                literal: "=".to_string(),
-                tok_type: TokenType::ASSIGN,
-            },
-            Token {
-                literal: "fn".to_string(),
-                tok_type: TokenType::FUNCTION,
-            },
-            Token {
-                literal: "(".to_string(),
-                tok_type: TokenType::LPAREN,
-            },
-            Token {
-                literal: "x".to_string(),
-                tok_type: TokenType::IDENT,
-            },
-            Token {
-                literal: ",".to_string(),
-                tok_type: TokenType::COMMA,
-            },
-            Token {
-                literal: "y".to_string(),
-                tok_type: TokenType::IDENT,
-            },
-            Token {
-                literal: ")".to_string(),
-                tok_type: TokenType::RPAREN,
-            },
-            Token {
-                literal: "{".to_string(),
-                tok_type: TokenType::LBRACE,
-            },
-            Token {
-                literal: "x".to_string(),
-                tok_type: TokenType::IDENT,
-            },
-            Token {
-                literal: "+".to_string(),
-                tok_type: TokenType::PLUS,
-            },
-            Token {
-                literal: "y".to_string(),
-                tok_type: TokenType::IDENT,
-            },
-            Token {
-                literal: ";".to_string(),
-                tok_type: TokenType::SEMICOLON,
-            },
-            Token {
-                literal: "}".to_string(),
-                tok_type: TokenType::RBRACE,
-            },
-            Token {
-                literal: ";".to_string(),
-                tok_type: TokenType::SEMICOLON,
-            },
-            Token {
-                literal: "let".to_string(),
-                tok_type: TokenType::LET,
-            },
-            Token {
-                literal: "result".to_string(),
-                tok_type: TokenType::IDENT,
-            },
-            Token {
-                literal: "=".to_string(),
-                tok_type: TokenType::ASSIGN,
-            },
-            Token {
-                literal: "add".to_string(),
-                tok_type: TokenType::IDENT,
-            },
-            Token {
-                literal: "(".to_string(),
-                tok_type: TokenType::LPAREN,
-            },
-            Token {
-                literal: "five".to_string(),
-                tok_type: TokenType::IDENT,
-            },
-            Token {
-                literal: ",".to_string(),
-                tok_type: TokenType::COMMA,
-            },
-            Token {
-                literal: "ten".to_string(),
-                tok_type: TokenType::IDENT,
-            },
-            Token {
-                literal: ")".to_string(),
-                tok_type: TokenType::RPAREN,
-            },
-            Token {
-                literal: ";".to_string(),
-                tok_type: TokenType::SEMICOLON,
-            },
-            Token {
-                literal: "!".to_string(),
-                tok_type: TokenType::BANG,
-            },
-            Token {
-                literal: "-".to_string(),
-                tok_type: TokenType::MINUS,
-            },
-            Token {
-                literal: "/".to_string(),
-                tok_type: TokenType::SLASH,
-            },
-            Token {
-                literal: "*".to_string(),
-                tok_type: TokenType::ASTERISK,
-            },
-            Token {
-                literal: "5".to_string(),
-                tok_type: TokenType::INT,
-            },
-            Token {
-                literal: ";".to_string(),
-                tok_type: TokenType::SEMICOLON,
-            },
-            Token {
-                literal: "5".to_string(),
-                tok_type: TokenType::INT,
-            },
-            Token {
-                literal: "<".to_string(),
-                tok_type: TokenType::LT,
-            },
-            Token {
-                literal: "10".to_string(),
-                tok_type: TokenType::INT,
-            },
-            Token {
-                literal: ">".to_string(),
-                tok_type: TokenType::GT,
-            },
-            Token {
-                literal: "5".to_string(),
-                tok_type: TokenType::INT,
-            },
-            Token {
-                literal: ";".to_string(),
-                tok_type: TokenType::SEMICOLON,
-            },
-            Token {
-                literal: "if".to_string(),
-                tok_type: TokenType::IF,
-            },
-            Token {
-                literal: "(".to_string(),
-                tok_type: TokenType::LPAREN,
-            },
-            Token {
-                literal: "5".to_string(),
-                tok_type: TokenType::INT,
-            },
-            Token {
-                literal: "<".to_string(),
-                tok_type: TokenType::LT,
-            },
-            Token {
-                literal: "10".to_string(),
-                tok_type: TokenType::INT,
-            },
-            Token {
-                literal: ")".to_string(),
-                tok_type: TokenType::RPAREN,
-            },
-            Token {
-                literal: "{".to_string(),
-                tok_type: TokenType::LBRACE,
-            },
-            Token {
-                literal: "return".to_string(),
-                tok_type: TokenType::RETURN,
-            },
-            Token {
-                literal: "true".to_string(),
-                tok_type: TokenType::TRUE,
-            },
-            Token {
-                literal: ";".to_string(),
-                tok_type: TokenType::SEMICOLON,
-            },
-            Token {
-                literal: "}".to_string(),
-                tok_type: TokenType::RBRACE,
-            },
-            Token {
-                literal: "else".to_string(),
-                tok_type: TokenType::ELSE,
-            },
-            Token {
-                literal: "{".to_string(),
-                tok_type: TokenType::LBRACE,
-            },
-            Token {
-                literal: "return".to_string(),
-                tok_type: TokenType::RETURN,
-            },
-            Token {
-                literal: "false".to_string(),
-                tok_type: TokenType::FALSE,
-            },
-            Token {
-                literal: ";".to_string(),
-                tok_type: TokenType::SEMICOLON,
-            },
-            Token {
-                literal: "}".to_string(),
-                tok_type: TokenType::RBRACE,
-            },
-            Token {
-                literal: "".to_string(),
-                tok_type: TokenType::EOF,
-            },
+        let mut expected_strings: VecDeque<&str> = VecDeque::from_iter([
+            "let", "five", "=", "5", ";", "let", "ten", "=", "10", ";", "let", "add", "=", "fn",
+            "(", "x", ",", "y", ")", "{", "x", "+", "y", ";", "}", ";", "let", "result", "=",
+            "add", "(", "five", ",", "ten", ")", ";", "!", "-", "/", "*", "5", ";", "5", "<", "10",
+            ">", "5", ";", "if", "(", "5", "<", "10", ")", "{", "return", "true", ";", "}", "else",
+            "{", "return", "false", ";", "}", "",
+        ]);
+
+        let mut expected_types: VecDeque<TokenType> = VecDeque::from_iter([
+            TokenType::LET,
+            TokenType::IDENT,
+            TokenType::ASSIGN,
+            TokenType::INT,
+            TokenType::SEMICOLON,
+            TokenType::LET,
+            TokenType::IDENT,
+            TokenType::ASSIGN,
+            TokenType::INT,
+            TokenType::SEMICOLON,
+            TokenType::LET,
+            TokenType::IDENT,
+            TokenType::ASSIGN,
+            TokenType::FUNCTION,
+            TokenType::LPAREN,
+            TokenType::IDENT,
+            TokenType::COMMA,
+            TokenType::IDENT,
+            TokenType::RPAREN,
+            TokenType::LBRACE,
+            TokenType::IDENT,
+            TokenType::PLUS,
+            TokenType::IDENT,
+            TokenType::SEMICOLON,
+            TokenType::RBRACE,
+            TokenType::SEMICOLON,
+            TokenType::LET,
+            TokenType::IDENT,
+            TokenType::ASSIGN,
+            TokenType::IDENT,
+            TokenType::LPAREN,
+            TokenType::IDENT,
+            TokenType::COMMA,
+            TokenType::IDENT,
+            TokenType::RPAREN,
+            TokenType::SEMICOLON,
+            TokenType::BANG,
+            TokenType::MINUS,
+            TokenType::SLASH,
+            TokenType::ASTERISK,
+            TokenType::INT,
+            TokenType::SEMICOLON,
+            TokenType::INT,
+            TokenType::LT,
+            TokenType::INT,
+            TokenType::GT,
+            TokenType::INT,
+            TokenType::SEMICOLON,
+            TokenType::IF,
+            TokenType::LPAREN,
+            TokenType::INT,
+            TokenType::LT,
+            TokenType::INT,
+            TokenType::RPAREN,
+            TokenType::LBRACE,
+            TokenType::RETURN,
+            TokenType::TRUE,
+            TokenType::SEMICOLON,
+            TokenType::RBRACE,
+            TokenType::ELSE,
+            TokenType::LBRACE,
+            TokenType::RETURN,
+            TokenType::FALSE,
+            TokenType::SEMICOLON,
+            TokenType::RBRACE,
+            TokenType::EOF,
         ]);
 
         let mut l = Lexer::new(input.to_string());
-        while !expected.is_empty() {
+        while !expected_strings.is_empty() {
             let token = l.next_token();
-            let cur_expected = expected.pop_front().unwrap();
-            assert_eq!(cur_expected.tok_type, token.tok_type);
-            assert_eq!(cur_expected.literal, token.literal);
+            let expected_str = expected_strings.pop_front().unwrap().to_string();
+            let expected_type = expected_types.pop_front().unwrap();
+            assert_eq!(expected_type, token.tok_type);
+            assert_eq!(expected_str, token.literal);
         }
     }
 
