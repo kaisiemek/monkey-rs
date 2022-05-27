@@ -1,16 +1,16 @@
 use crate::token::{Token, TokenType};
 
 pub struct Lexer {
-    pub input: String,
+    input: String,
     position: i64,
     read_pos: i64,
     cur_char: char,
 }
 
 impl Lexer {
-    pub fn new(input: String) -> Self {
+    pub fn new(input: &str) -> Self {
         let mut new_lexer: Self = Self {
-            input,
+            input: String::from(input),
             position: 0,
             read_pos: 0,
             cur_char: '\0',
@@ -25,10 +25,8 @@ impl Lexer {
         let mut skip_next_read = false;
 
         let tok: Token = match self.cur_char {
-            '=' => Token::new_from_char(TokenType::ASSIGN, self.cur_char),
             '+' => Token::new_from_char(TokenType::PLUS, self.cur_char),
             '-' => Token::new_from_char(TokenType::MINUS, self.cur_char),
-            '!' => Token::new_from_char(TokenType::BANG, self.cur_char),
             '/' => Token::new_from_char(TokenType::SLASH, self.cur_char),
             '*' => Token::new_from_char(TokenType::ASTERISK, self.cur_char),
             '<' => Token::new_from_char(TokenType::LT, self.cur_char),
@@ -39,16 +37,32 @@ impl Lexer {
             ')' => Token::new_from_char(TokenType::RPAREN, self.cur_char),
             '{' => Token::new_from_char(TokenType::LBRACE, self.cur_char),
             '}' => Token::new_from_char(TokenType::RBRACE, self.cur_char),
-            '\0' => Token::new(TokenType::EOF, "".to_string()),
+            '\0' => Token::new(TokenType::EOF, ""),
+            '=' => {
+                if self.peek() == '=' {
+                    self.read_char();
+                    Token::new(TokenType::EQ, "==")
+                } else {
+                    Token::new_from_char(TokenType::ASSIGN, self.cur_char)
+                }
+            }
+            '!' => {
+                if self.peek() == '=' {
+                    self.read_char();
+                    Token::new(TokenType::NOTEQ, "!=")
+                } else {
+                    Token::new_from_char(TokenType::BANG, self.cur_char)
+                }
+            }
             _ => {
                 if self.cur_char.is_ascii_alphabetic() || self.cur_char == '_' {
                     let literal = self.read_identifier();
                     let tok_type = Token::lookup_ident_type(&literal);
                     skip_next_read = true;
-                    Token::new(tok_type, literal)
+                    Token::new(tok_type, &literal)
                 } else if self.cur_char.is_ascii_digit() {
                     skip_next_read = true;
-                    Token::new(TokenType::INT, self.read_number())
+                    Token::new(TokenType::INT, &self.read_number())
                 } else {
                     Token::new_from_char(TokenType::ILLEGAL, self.cur_char)
                 }
@@ -72,6 +86,14 @@ impl Lexer {
 
         self.position = self.read_pos;
         self.read_pos += 1;
+    }
+
+    fn peek(&mut self) -> char {
+        if self.read_pos as usize >= self.input.len() {
+            return '\0';
+        }
+
+        return self.input.as_bytes()[(self.read_pos) as usize] as char;
     }
 
     fn skip_whitespace(&mut self) {
@@ -113,4 +135,12 @@ impl Lexer {
             .take((self.position - pos) as usize)
             .collect();
     }
+}
+
+#[test]
+fn test_peek() {
+    let input = "123";
+    let mut l = Lexer::new(input);
+
+    assert_eq!(l.peek(), '2');
 }

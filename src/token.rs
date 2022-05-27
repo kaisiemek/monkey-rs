@@ -17,6 +17,8 @@ pub enum TokenType {
     ASTERISK,
     SLASH,
 
+    EQ,
+    NOTEQ,
     LT,
     GT,
 
@@ -45,8 +47,11 @@ pub struct Token {
 }
 
 impl Token {
-    pub fn new(tok_type: TokenType, literal: String) -> Self {
-        Self { tok_type, literal }
+    pub fn new(tok_type: TokenType, literal: &str) -> Self {
+        Self {
+            tok_type,
+            literal: String::from(literal),
+        }
     }
 
     pub fn new_from_char(tok_type: TokenType, literal: char) -> Self {
@@ -56,8 +61,8 @@ impl Token {
         }
     }
 
-    pub fn lookup_ident_type(literal: &String) -> TokenType {
-        return match literal.as_str() {
+    pub fn lookup_ident_type(literal: &str) -> TokenType {
+        return match literal {
             "fn" => TokenType::FUNCTION,
             "let" => TokenType::LET,
             "true" => TokenType::TRUE,
@@ -83,6 +88,8 @@ impl fmt::Display for TokenType {
             TokenType::BANG => write!(f, "!"),
             TokenType::ASTERISK => write!(f, "*"),
             TokenType::SLASH => write!(f, "/"),
+            TokenType::EQ => write!(f, "=="),
+            TokenType::NOTEQ => write!(f, "!="),
             TokenType::LT => write!(f, "<"),
             TokenType::GT => write!(f, ">"),
             TokenType::COMMA => write!(f, ","),

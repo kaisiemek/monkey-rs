@@ -6,7 +6,7 @@ mod tests {
 
     #[test]
     fn test_next_token() {
-        let input = "=+(){},;".to_string();
+        let input = "=+(){},;";
 
         let mut expected_strings: VecDeque<&str> =
             VecDeque::from_iter(["=", "+", "(", ")", "{", "}", ",", ";", ""]);
@@ -23,10 +23,10 @@ mod tests {
             TokenType::EOF,
         ]);
 
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input);
         while !expected_strings.is_empty() {
             let token = l.next_token();
-            let expected_str = expected_strings.pop_front().unwrap().to_string();
+            let expected_str = expected_strings.pop_front().unwrap();
             let expected_type = expected_types.pop_front().unwrap();
             assert_eq!(expected_type, token.tok_type);
             assert_eq!(expected_str, token.literal);
@@ -92,10 +92,10 @@ mod tests {
             TokenType::EOF,
         ]);
 
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input);
         while !expected_strings.is_empty() {
             let token = l.next_token();
-            let expected_str = expected_strings.pop_front().unwrap().to_string();
+            let expected_str = expected_strings.pop_front().unwrap();
             let expected_type = expected_types.pop_front().unwrap();
             assert_eq!(expected_type, token.tok_type);
             assert_eq!(expected_str, token.literal);
@@ -121,6 +121,9 @@ mod tests {
             "} else {\n",
             "  return false;\n",
             "}\n",
+            "\n",
+            "10 == 10;\n",
+            "10 != 9;\n",
         );
 
         let mut expected_strings: VecDeque<&str> = VecDeque::from_iter([
@@ -128,7 +131,7 @@ mod tests {
             "(", "x", ",", "y", ")", "{", "x", "+", "y", ";", "}", ";", "let", "result", "=",
             "add", "(", "five", ",", "ten", ")", ";", "!", "-", "/", "*", "5", ";", "5", "<", "10",
             ">", "5", ";", "if", "(", "5", "<", "10", ")", "{", "return", "true", ";", "}", "else",
-            "{", "return", "false", ";", "}", "",
+            "{", "return", "false", ";", "}", "10", "==", "10", ";", "10", "!=", "9", ";", "",
         ]);
 
         let mut expected_types: VecDeque<TokenType> = VecDeque::from_iter([
@@ -197,13 +200,21 @@ mod tests {
             TokenType::FALSE,
             TokenType::SEMICOLON,
             TokenType::RBRACE,
+            TokenType::INT,
+            TokenType::EQ,
+            TokenType::INT,
+            TokenType::SEMICOLON,
+            TokenType::INT,
+            TokenType::NOTEQ,
+            TokenType::INT,
+            TokenType::SEMICOLON,
             TokenType::EOF,
         ]);
 
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input);
         while !expected_strings.is_empty() {
             let token = l.next_token();
-            let expected_str = expected_strings.pop_front().unwrap().to_string();
+            let expected_str = expected_strings.pop_front().unwrap();
             let expected_type = expected_types.pop_front().unwrap();
             assert_eq!(expected_type, token.tok_type);
             assert_eq!(expected_str, token.literal);
