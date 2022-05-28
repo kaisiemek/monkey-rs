@@ -1,9 +1,9 @@
-mod token;
-mod lexer_test;
 mod lexer;
+mod lexer_test;
+mod repl;
+mod token;
 
 fn main() {
-    let tok = token::Token { literal: "lol".to_string(), tok_type: token::TokenType::SEMICOLON };
-    println!("{}", tok.tok_type);
-    println!("Hello, world!");
+    println!("Hello, this is the Monkey programming language");
+    repl::start();
 }
