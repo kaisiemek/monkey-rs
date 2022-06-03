@@ -7,18 +7,18 @@ pub fn start() {
     let mut line_str = String::new();
     let in_stream = io::stdin();
 
-    println!("Welcome {}! This is the monkey-rs programming language.", whoami::username());
+    println!(
+        "Welcome {}! This is the monkey-rs programming language.",
+        whoami::username()
+    );
 
     loop {
         print!("> ");
-        io::stdout().flush().unwrap();
+        io::stdout().flush().expect("Error flushing stdout");
 
-        let read_res = in_stream.read_line(&mut line_str);
-        match read_res {
-            Err(_) => return,
-            Ok(0) => return,
-            Ok(_) => {}
-        }
+        in_stream
+            .read_line(&mut line_str)
+            .expect("Error reading from stdin");
 
         if line_str.trim() == "exit" {
             return;

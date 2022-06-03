@@ -1,6 +1,6 @@
 use std::fmt;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum TokenType {
     ILLEGAL,
     EOF,
@@ -41,7 +41,7 @@ pub enum TokenType {
     RETURN,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Token {
     pub tok_type: TokenType,
     pub literal: String,
