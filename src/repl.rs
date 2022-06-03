@@ -6,6 +6,9 @@ use crate::token::TokenType;
 pub fn start() {
     let mut line_str = String::new();
     let in_stream = io::stdin();
+
+    println!("Welcome {}! This is the monkey-rs programming language.", whoami::username());
+
     loop {
         print!("> ");
         io::stdout().flush().unwrap();
@@ -15,6 +18,10 @@ pub fn start() {
             Err(_) => return,
             Ok(0) => return,
             Ok(_) => {}
+        }
+
+        if line_str.trim() == "exit" {
+            return;
         }
 
         let mut lexer = Lexer::new(&line_str);
