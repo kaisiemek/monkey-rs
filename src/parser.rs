@@ -54,6 +54,7 @@ impl Parser {
     fn parse_statement(&mut self) -> Result<Statement, ()> {
         match self.cur_token.tok_type {
             TokenType::LET => self.parse_let_statement(),
+            TokenType::RETURN => self.parse_return_statement(),
             _ => Err(()),
         }
     }
@@ -84,6 +85,22 @@ impl Parser {
             identifier,
             value,
         })
+    }
+
+    fn parse_return_statement(&mut self) -> Result<Statement, ()> {
+        let token = self.cur_token.clone();
+        let value = Expression::IdentifierExpr;
+
+        self.next_token();
+
+        // TODO: Parse expression
+        while !self.cur_token_is(TokenType::SEMICOLON) {
+            if self.cur_token_is(TokenType::EOF) {
+                return Err(());
+            }
+            self.next_token();
+        }
+        Ok(Statement::ReturnStmt { token, value })
     }
 
     fn next_token(&mut self) {
