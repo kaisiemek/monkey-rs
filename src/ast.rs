@@ -13,9 +13,38 @@ pub enum Statement {
         token: Token,
         value: Expression,
     },
+    ExpressionStmt {
+        token: Token,
+        expression: Expression,
+    },
+}
+
+impl ToString for Statement {
+    fn to_string(&self) -> String {
+        match self {
+            Statement::LetStmt {
+                token,
+                identifier,
+                value,
+            } => format!("{} {} = {};", token.literal, identifier, value.to_string()),
+            Statement::ReturnStmt { token, value } => {
+                format!("{} {};", token.literal, value.to_string())
+            }
+            Statement::ExpressionStmt {
+                token: _,
+                expression,
+            } => format!("{};", expression.to_string()),
+        }
+    }
 }
 
 #[derive(Debug)]
 pub enum Expression {
     IdentifierExpr,
+}
+
+impl ToString for Expression {
+    fn to_string(&self) -> String {
+        todo!();
+    }
 }
