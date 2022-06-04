@@ -85,6 +85,39 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_identifier_expression() {
+        let input = "foobar;";
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+
+        let stmt = parse_program(&mut parser, 1).pop().unwrap();
+        if let Statement::ExpressionStmt { token, expression } = stmt {
+            assert_eq!(
+                token.literal, "foobar",
+                "Expected statement token literal to be 'foobar' but got '{}'",
+                token.literal
+            );
+
+            if let Expression::IdentifierExpr { token, value } = expression {
+                assert_eq!(
+                    token.literal, "foobar",
+                    "Expected expression token literal to be 'foobar' but got '{}'",
+                    token.literal
+                );
+                assert_eq!(
+                    value, "foobar",
+                    "Expected expression value to be 'foobar' but got '{}'",
+                    token.literal
+                );
+            } else {
+                assert!(false, "Expected IdentifierExpr, got {:?}", expression);
+            }
+        } else {
+            assert!(false, "Expected ExpressionStatement, got {:?}", stmt);
+        }
+    }
+
     fn parse_program(parser: &mut Parser, expected_statements: usize) -> Program {
         match parser.parse_program() {
             Ok(prog) => {

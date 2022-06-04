@@ -1,9 +1,22 @@
+#![allow(dead_code)]
+
 use crate::{
     ast::{Expression, Program, Statement},
     lexer::Lexer,
     token::Token,
     token::TokenType,
 };
+
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+enum Precedence {
+    Lowest,
+    Equals,
+    LessGreater,
+    Sum,
+    Product,
+    Prefix,
+    Call,
+}
 
 pub struct Parser {
     lexer: Lexer,
@@ -55,7 +68,7 @@ impl Parser {
         match self.cur_token.tok_type {
             TokenType::LET => self.parse_let_statement(),
             TokenType::RETURN => self.parse_return_statement(),
-            _ => Err(()),
+            _ => self.parse_expression_statement(),
         }
     }
 
@@ -66,7 +79,7 @@ impl Parser {
         }
 
         let identifier = self.cur_token.literal.clone();
-        let value = Expression::IdentifierExpr;
+        let value = Expression::DevExpr;
 
         if self.expect_peek(TokenType::ASSIGN).is_err() {
             return Err(());
@@ -89,7 +102,7 @@ impl Parser {
 
     fn parse_return_statement(&mut self) -> Result<Statement, ()> {
         let token = self.cur_token.clone();
-        let value = Expression::IdentifierExpr;
+        let value = Expression::DevExpr;
 
         self.next_token();
 
@@ -101,6 +114,44 @@ impl Parser {
             self.next_token();
         }
         Ok(Statement::ReturnStmt { token, value })
+    }
+
+    fn parse_expression_statement(&mut self) -> Result<Statement, ()> {
+        let token = self.cur_token.clone();
+        let expression = self.parse_expression()?;
+
+        if self.peek_token_is(TokenType::SEMICOLON) {
+            self.next_token();
+        }
+
+        Ok(Statement::ExpressionStmt { token, expression })
+    }
+
+    fn parse_expression(&mut self) -> Result<Expression, ()> {
+        let prefix = self.parse_prefix_expression();
+        if prefix.is_err() {
+            return Err(());
+        }
+        let left_expression = prefix.unwrap();
+        return Ok(left_expression);
+    }
+
+    fn parse_infix_expression(&mut self, left_expr: Expression) -> Result<Expression, ()> {
+        todo!();
+    }
+
+    fn parse_prefix_expression(&mut self) -> Result<Expression, ()> {
+        match self.cur_token.tok_type {
+            TokenType::IDENT => Ok(self.parse_identifier()),
+            _ => todo!(),
+        }
+    }
+
+    fn parse_identifier(&mut self) -> Expression {
+        Expression::IdentifierExpr {
+            token: self.cur_token.clone(),
+            value: self.cur_token.literal.clone(),
+        }
     }
 
     fn next_token(&mut self) {

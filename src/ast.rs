@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::token::Token;
 
 pub type Program = Vec<Statement>;
@@ -40,11 +41,12 @@ impl ToString for Statement {
 
 #[derive(Debug)]
 pub enum Expression {
-    IdentifierExpr,
+    DevExpr,
+    IdentifierExpr { token: Token, value: String },
 }
 
 impl ToString for Expression {
     fn to_string(&self) -> String {
-        todo!();
+        String::from("<IMPLEMENT EXPRESSION ToString TRAIT>")
     }
 }
