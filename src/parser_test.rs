@@ -2,14 +2,16 @@
 mod tests {
     use std::collections::VecDeque;
 
-    use crate::{ast::Program, lexer::Lexer, parser::Parser};
+    use crate::{
+        ast::{Expression, Program, Statement},
+        lexer::Lexer,
+        parser::Parser,
+        token::Token,
+    };
 
     #[test]
-    fn test_next_token() {
+    fn test_let_statements() {
         let input = concat!("let x = 5;\n", "let y = 10;\n", "let foobar = 838383;\n",);
-
-        let mut expected_strings: VecDeque<&str> =
-            VecDeque::from_iter(["=", "+", "(", ")", "{", "}", ",", ";", ""]);
 
         let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
@@ -22,15 +24,60 @@ mod tests {
         let program = program_result.unwrap();
 
         assert_eq!(
-            program.statements.len(),
+            program.len(),
             3,
             "Expected parser to parse 3 statements, parsed {} instead",
-            program.statements.len()
+            program.len()
         );
 
-        // while !expected_strings.is_empty() {
-        // let expected_str = expected_strings.pop_front().unwrap();
-        // assert_eq!(expected_str, token./literal);
-        // }
+        let mut expected_identifiers: VecDeque<&str> = VecDeque::from_iter(["x", "y", "foobar"]);
+        let mut statements = VecDeque::from_iter(program);
+
+        while !expected_identifiers.is_empty() {
+            let expected_identifier = expected_identifiers.pop_front().unwrap();
+            let current_stmt = statements.pop_front().unwrap();
+
+            let result = test_let_statement(current_stmt, expected_identifier);
+            assert!(matches!(result, Ok(())));
+        }
+    }
+
+    fn test_let_statement(stmt: Statement, expected_name: &str) -> Result<(), String> {
+        let stmt_token: Token;
+        let stmt_identifier: String;
+        let stmt_value: Expression;
+
+        match stmt {
+            Statement::LetStmt {
+                token,
+                identifier,
+                value,
+            } => {
+                stmt_token = token;
+                stmt_identifier = identifier;
+                stmt_value = value;
+            }
+            _ => {
+                return Err(String::from(
+                    "Statement was not an instance of a let statement",
+                ));
+            }
+        };
+
+        if stmt_token.literal != "let" {
+            return Err(format!(
+                "The token literal was not 'let', got {} instead",
+                stmt_token.literal
+            ));
+        }
+
+        if stmt_identifier != expected_name {
+            return Err(format!(
+                "Expected identifier value {} but got {}",
+                expected_name, stmt_identifier
+            ));
+        }
+
+        Ok(())
     }
 }
