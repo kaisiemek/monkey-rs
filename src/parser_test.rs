@@ -16,12 +16,20 @@ mod tests {
         let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
 
-        let program_result = parser.parse_program();
-        assert!(
-            matches!(program_result, Ok(Program { .. })),
-            "Parser did not return a valid program"
-        );
-        let program = program_result.unwrap();
+        let program: Program;
+        match parser.parse_program() {
+            Ok(prog) => program = prog,
+            Err(err_vec) => {
+                let errs = err_vec.join("\n");
+                assert!(
+                    false,
+                    "The parser encountered {} errors:\n{}",
+                    err_vec.len(),
+                    errs
+                );
+                return;
+            }
+        }
 
         assert_eq!(
             program.len(),

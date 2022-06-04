@@ -9,6 +9,7 @@ pub struct Parser {
     lexer: Lexer,
     cur_token: Token,
     peek_token: Token,
+    errors: Vec<String>,
 }
 
 impl Parser {
@@ -23,6 +24,7 @@ impl Parser {
                 tok_type: TokenType::EOF,
                 literal: String::from(""),
             },
+            errors: Vec::new(),
         };
 
         // Initialise parser by setting the cur_ and peek_token
@@ -32,17 +34,21 @@ impl Parser {
         parser
     }
 
-    pub fn parse_program(&mut self) -> Result<Program, String> {
+    pub fn parse_program(&mut self) -> Result<Program, &Vec<String>> {
         let mut program: Program = Vec::new();
-        while self.cur_token_is(TokenType::EOF).is_err() {
+        while !self.cur_token_is(TokenType::EOF) {
             let stmt = self.parse_statement();
             if stmt.is_ok() {
                 program.push(stmt.unwrap());
             }
             self.next_token();
         }
-        Ok(program)
-        // Err(String::from("Could not parse a valid program!"))
+
+        if !self.errors.is_empty() {
+            Err(&self.errors)
+        } else {
+            Ok(program)
+        }
     }
 
     fn parse_statement(&mut self) -> Result<Statement, ()> {
@@ -66,8 +72,8 @@ impl Parser {
         }
 
         // TODO: Parse expression
-        while self.cur_token_is(TokenType::SEMICOLON).is_err() {
-            if self.cur_token_is(TokenType::EOF).is_ok() {
+        while !self.cur_token_is(TokenType::SEMICOLON) {
+            if self.cur_token_is(TokenType::EOF) {
                 return Err(());
             }
             self.next_token();
@@ -85,25 +91,28 @@ impl Parser {
         self.peek_token = self.lexer.next_token();
     }
 
-    fn cur_token_is(&self, of_type: TokenType) -> Result<(), ()> {
-        if self.cur_token.tok_type == of_type {
-            Ok(())
-        } else {
-            Err(())
-        }
+    fn cur_token_is(&self, of_type: TokenType) -> bool {
+        return self.cur_token.tok_type == of_type;
     }
 
-    fn peek_token_is(&self, of_type: TokenType) -> Result<(), ()> {
-        if self.peek_token.tok_type == of_type {
-            Ok(())
-        } else {
-            Err(())
-        }
+    fn peek_token_is(&self, of_type: TokenType) -> bool {
+        return self.peek_token.tok_type == of_type;
     }
 
     fn expect_peek(&mut self, expected_type: TokenType) -> Result<(), ()> {
-        self.peek_token_is(expected_type)?;
+        if !self.peek_token_is(expected_type) {
+            self.add_error(format!(
+                "Expected a token of type {}, but got {} instead",
+                expected_type, self.peek_token.tok_type
+            ));
+            return Err(());
+        }
+
         self.next_token();
         Ok(())
+    }
+
+    fn add_error(&mut self, error: String) {
+        self.errors.push(error);
     }
 }
