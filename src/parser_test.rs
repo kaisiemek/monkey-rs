@@ -182,6 +182,64 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_infix_expressions() {
+        let input = concat!(
+            "5 + 10;\n",
+            "6 - 10;\n",
+            "7 * 10;\n",
+            "8 / 10;\n",
+            "9 > 10;\n",
+            "10 < 10;\n",
+            "11 == 10;\n",
+            "12 != 10;\n",
+        );
+        let mut expected_operators =
+            VecDeque::from_iter(["+", "-", "*", "/", ">", "<", "==", "!="]);
+        let mut expected_left_values = VecDeque::from_iter([5, 6, 7, 8, 9, 10, 11, 12]);
+        let mut expected_right_values = VecDeque::from_iter([10, 10, 10, 10, 10, 10, 10, 10]);
+
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let mut statements = VecDeque::from(parse_program(&mut parser, expected_operators.len()));
+
+        while !statements.is_empty() {
+            let cur_statement = statements.pop_front().unwrap();
+            let expected_operator = expected_operators.pop_front().unwrap();
+            let expected_left_value = expected_left_values.pop_front().unwrap();
+            let expected_right_value = expected_right_values.pop_front().unwrap();
+            if let Statement::ExpressionStmt {
+                token: _,
+                expression,
+            } = cur_statement
+            {
+                if let Expression::InfixExpression {
+                    token: _,
+                    left_expression,
+                    operator,
+                    right_expression,
+                } = expression
+                {
+                    assert_eq!(
+                        operator, expected_operator,
+                        "Expected operator {} but got {}",
+                        expected_operator, operator
+                    );
+                    test_integer_literal(*left_expression, expected_left_value);
+                    test_integer_literal(*right_expression, expected_right_value);
+                } else {
+                    assert!(false, "Expected InfixExpression, got {:?}", expression);
+                }
+            } else {
+                assert!(
+                    false,
+                    "Expected ExpressionStatement, got {:?}",
+                    cur_statement
+                );
+            }
+        }
+    }
+
     fn test_integer_literal(expression: Expression, expected_value: isize) {
         if let Expression::LiteralExpr { token, value } = expression {
             assert_eq!(

@@ -55,6 +55,12 @@ pub enum Expression {
         operator: String,
         right_expression: Box<Expression>,
     },
+    InfixExpression {
+        token: Token,
+        left_expression: Box<Expression>,
+        operator: String,
+        right_expression: Box<Expression>,
+    },
 }
 
 impl ToString for Expression {
@@ -68,6 +74,17 @@ impl ToString for Expression {
                 operator,
                 right_expression,
             } => format!("({}{})", operator, right_expression.to_string()),
+            Expression::InfixExpression {
+                token: _,
+                left_expression,
+                operator,
+                right_expression,
+            } => format!(
+                "({} {} {})",
+                left_expression.to_string(),
+                operator,
+                right_expression.to_string()
+            ),
         }
     }
 }
