@@ -43,6 +43,7 @@ impl ToString for Statement {
 pub enum Expression {
     DevExpr,
     IdentifierExpr { token: Token, value: String },
+    LiteralExpr { token: Token, value: isize },
 }
 
 impl ToString for Expression {

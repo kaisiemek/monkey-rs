@@ -118,6 +118,39 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_integer_literal_expression() {
+        let input = "5;";
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+
+        let stmt = parse_program(&mut parser, 1).pop().unwrap();
+        if let Statement::ExpressionStmt { token, expression } = stmt {
+            assert_eq!(
+                token.literal, "5",
+                "Expected statement token literal to be '5' but got '{}'",
+                token.literal
+            );
+
+            if let Expression::LiteralExpr { token, value } = expression {
+                assert_eq!(
+                    token.literal, "5",
+                    "Expected expression token literal to be '5' but got '{}'",
+                    token.literal
+                );
+                assert_eq!(
+                    value, 5,
+                    "Expected expression value to be 5 but got {}",
+                    token.literal
+                );
+            } else {
+                assert!(false, "Expected LiteralExpr, got {:?}", expression);
+            }
+        } else {
+            assert!(false, "Expected ExpressionStatement, got {:?}", stmt);
+        }
+    }
+
     fn parse_program(parser: &mut Parser, expected_statements: usize) -> Program {
         match parser.parse_program() {
             Ok(prog) => {

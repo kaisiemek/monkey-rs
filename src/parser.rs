@@ -143,14 +143,33 @@ impl Parser {
     fn parse_prefix_expression(&mut self) -> Result<Expression, ()> {
         match self.cur_token.tok_type {
             TokenType::IDENT => Ok(self.parse_identifier()),
+            TokenType::INT => self.parse_literal(),
             _ => todo!(),
         }
     }
 
-    fn parse_identifier(&mut self) -> Expression {
+    fn parse_identifier(&self) -> Expression {
         Expression::IdentifierExpr {
             token: self.cur_token.clone(),
             value: self.cur_token.literal.clone(),
+        }
+    }
+
+    fn parse_literal(&mut self) -> Result<Expression, ()> {
+        let val = self.cur_token.literal.parse::<isize>();
+        match val {
+            Ok(value) => Ok(Expression::LiteralExpr {
+                token: self.cur_token.clone(),
+                value,
+            }),
+            Err(err) => {
+                self.add_error(format!(
+                    "Unable to parse {} as an integer: {}",
+                    self.cur_token.literal,
+                    err.to_string(),
+                ));
+                Err(())
+            }
         }
     }
 
