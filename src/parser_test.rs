@@ -323,44 +323,6 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_operator_precedences2() {
-        struct TestCase<'a> {
-            input: &'a str,
-            expected: &'a str,
-        }
-
-        let test_cases: Vec<TestCase> = vec![TestCase {
-            input: "a + b + c",
-            expected: "((a + b) + c)",
-        }];
-
-        for test_case in test_cases {
-            let lexer = Lexer::new(test_case.input);
-            let mut parser = Parser::new(lexer);
-            let prog = parser.parse_program();
-            match prog {
-                Ok(stmts) => {
-                    let mut prog_str = String::new();
-                    println!("{}", stmts.len());
-                    for stmt in stmts {
-                        prog_str.push_str(&stmt.to_string());
-                    }
-                    assert_eq!(test_case.expected, prog_str);
-                }
-                Err(errs) => {
-                    let err_str = errs.join("\n");
-                    assert!(
-                        false,
-                        "The parser encountered {} errors:\n{}",
-                        errs.len(),
-                        err_str
-                    );
-                }
-            }
-        }
-    }
-
     fn test_integer_literal(expression: Expression, expected_value: isize) {
         if let Expression::LiteralExpr { token, value } = expression {
             assert_eq!(
