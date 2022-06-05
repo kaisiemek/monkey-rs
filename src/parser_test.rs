@@ -240,6 +240,127 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_operator_precedences() {
+        struct TestCase<'a> {
+            input: &'a str,
+            expected: &'a str,
+        }
+
+        let test_cases: Vec<TestCase> = vec![
+            TestCase {
+                input: "-a * b",
+                expected: "((-a) * b)",
+            },
+            TestCase {
+                input: "!-a",
+                expected: "(!(-a))",
+            },
+            TestCase {
+                input: "a + b + c",
+                expected: "((a + b) + c)",
+            },
+            TestCase {
+                input: "a + b - c",
+                expected: "((a + b) - c)",
+            },
+            TestCase {
+                input: "a * b * c",
+                expected: "((a * b) * c)",
+            },
+            TestCase {
+                input: "a * b / c",
+                expected: "((a * b) / c)",
+            },
+            TestCase {
+                input: "a + b / c",
+                expected: "(a + (b / c))",
+            },
+            TestCase {
+                input: "a + b * c + d / e - f",
+                expected: "(((a + (b * c)) + (d / e)) - f)",
+            },
+            TestCase {
+                input: "3 + 4; -5 * 5",
+                expected: "(3 + 4)((-5) * 5)",
+            },
+            TestCase {
+                input: "5 > 4 == 3 < 4",
+                expected: "((5 > 4) == (3 < 4))",
+            },
+            TestCase {
+                input: "5 < 4 != 3 > 4",
+                expected: "((5 < 4) != (3 > 4))",
+            },
+            TestCase {
+                input: "3 + 4 * 5 == 3 * 1 + 4 * 5",
+                expected: "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+            },
+        ];
+
+        for test_case in test_cases {
+            let lexer = Lexer::new(test_case.input);
+            let mut parser = Parser::new(lexer);
+            let prog = parser.parse_program();
+            match prog {
+                Ok(stmts) => {
+                    let mut prog_str = String::new();
+                    for stmt in stmts {
+                        prog_str.push_str(&stmt.to_string());
+                    }
+                    assert_eq!(test_case.expected, prog_str);
+                }
+                Err(errs) => {
+                    let err_str = errs.join("\n");
+                    assert!(
+                        false,
+                        "The parser encountered {} errors:\n{}",
+                        errs.len(),
+                        err_str
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_operator_precedences2() {
+        struct TestCase<'a> {
+            input: &'a str,
+            expected: &'a str,
+        }
+
+        let test_cases: Vec<TestCase> = vec![TestCase {
+            input: "a + b + c",
+            expected: "((a + b) + c)",
+        }];
+
+        for test_case in test_cases {
+            let lexer = Lexer::new(test_case.input);
+            let mut parser = Parser::new(lexer);
+            let prog = parser.parse_program();
+            match prog {
+                Ok(stmts) => {
+                    let mut prog_str = String::new();
+                    println!("{}", stmts.len());
+                    for stmt in stmts {
+                        prog_str.push_str(&stmt.to_string());
+                    }
+                    assert_eq!(test_case.expected, prog_str);
+                }
+                Err(errs) => {
+                    let err_str = errs.join("\n");
+                    assert!(
+                        false,
+                        "The parser encountered {} errors:\n{}",
+                        errs.len(),
+                        err_str
+                    );
+                }
+            }
+        }
+    }
+
     fn test_integer_literal(expression: Expression, expected_value: isize) {
         if let Expression::LiteralExpr { token, value } = expression {
             assert_eq!(

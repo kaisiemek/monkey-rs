@@ -27,14 +27,14 @@ impl ToString for Statement {
                 token,
                 identifier,
                 value,
-            } => format!("{} {} = {};", token.literal, identifier, value.to_string()),
+            } => format!("{} {} = {}", token.literal, identifier, value.to_string()),
             Statement::ReturnStmt { token, value } => {
-                format!("{} {};", token.literal, value.to_string())
+                format!("{} {}", token.literal, value.to_string())
             }
             Statement::ExpressionStmt {
                 token: _,
                 expression,
-            } => format!("{};", expression.to_string()),
+            } => format!("{}", expression.to_string()),
         }
     }
 }

@@ -7,7 +7,7 @@ use crate::{
     token::TokenType,
 };
 
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
 enum Precedence {
     Lowest,
     Equals,
@@ -152,16 +152,23 @@ impl Parser {
         }
 
         let mut left_expression = prefix.unwrap();
-
+        println!("OUTER LEFT: {}", left_expression.to_string());
+        println!(
+            "PRECEDENCE: {:?}, PEEK: {:?}",
+            precedence,
+            self.peek_precedence()
+        );
         while !self.peek_token_is(TokenType::SEMICOLON) && precedence < self.peek_precedence() {
             let infix = self.parse_infix_expression(left_expression);
             if infix.is_err() {
+                // Get the left expression back that was moved into the infix parsing function
+                // to Box<> it in a InfixExpression object
                 left_expression = infix.unwrap_err();
                 return Ok(left_expression);
             }
-            self.next_token();
 
             left_expression = infix.unwrap();
+            println!("INNER LEFT: {}", left_expression.to_string());
         }
 
         return Ok(left_expression);
