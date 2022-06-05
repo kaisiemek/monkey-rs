@@ -118,7 +118,7 @@ impl Parser {
 
     fn parse_expression_statement(&mut self) -> Result<Statement, ()> {
         let token = self.cur_token.clone();
-        let expression = self.parse_expression()?;
+        let expression = self.parse_expression(Precedence::Lowest)?;
 
         if self.peek_token_is(TokenType::SEMICOLON) {
             self.next_token();
@@ -127,9 +127,13 @@ impl Parser {
         Ok(Statement::ExpressionStmt { token, expression })
     }
 
-    fn parse_expression(&mut self) -> Result<Expression, ()> {
+    fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, ()> {
         let prefix = self.parse_prefix_expression();
         if prefix.is_err() {
+            self.add_error(format!(
+                "Couldn't parse prefix expression for {}",
+                self.cur_token.tok_type
+            ));
             return Err(());
         }
         let left_expression = prefix.unwrap();
@@ -144,6 +148,17 @@ impl Parser {
         match self.cur_token.tok_type {
             TokenType::IDENT => Ok(self.parse_identifier()),
             TokenType::INT => self.parse_literal(),
+            TokenType::BANG | TokenType::MINUS => {
+                let token = self.cur_token.clone();
+                let operator = self.cur_token.literal.clone();
+                self.next_token();
+                let right_expression = Box::new(self.parse_expression(Precedence::Prefix)?);
+                Ok(Expression::PrefixExpression {
+                    token,
+                    operator,
+                    right_expression,
+                })
+            }
             _ => todo!(),
         }
     }
