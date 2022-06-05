@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::{
     ast::{Expression, Program, Statement},
     lexer::Lexer,
@@ -15,7 +13,7 @@ enum Precedence {
     Sum,
     Product,
     Prefix,
-    Call,
+    // Call,
 }
 
 fn get_operator_precedence(operator_type: TokenType) -> Precedence {
@@ -152,12 +150,6 @@ impl Parser {
         }
 
         let mut left_expression = prefix.unwrap();
-        println!("OUTER LEFT: {}", left_expression.to_string());
-        println!(
-            "PRECEDENCE: {:?}, PEEK: {:?}",
-            precedence,
-            self.peek_precedence()
-        );
         while !self.peek_token_is(TokenType::SEMICOLON) && precedence < self.peek_precedence() {
             let infix = self.parse_infix_expression(left_expression);
             if infix.is_err() {
@@ -168,7 +160,6 @@ impl Parser {
             }
 
             left_expression = infix.unwrap();
-            println!("INNER LEFT: {}", left_expression.to_string());
         }
 
         return Ok(left_expression);

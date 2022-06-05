@@ -1,17 +1,17 @@
 use std::io::{self, Write};
 
+use crate::ast::program_to_string;
 use crate::lexer::Lexer;
-use crate::token::TokenType;
+use crate::parser::Parser;
 
 pub fn start() {
     let mut line_str = String::new();
     let in_stream = io::stdin();
-
     println!(
         "Welcome {}! This is the monkey-rs programming language.",
         whoami::username()
     );
-
+    io::stdout().flush().expect("Error flushing stdout");
     loop {
         print!("> ");
         io::stdout().flush().expect("Error flushing stdout");
@@ -24,11 +24,14 @@ pub fn start() {
             return;
         }
 
-        let mut lexer = Lexer::new(&line_str);
-        let mut cur_token = lexer.next_token();
-        while cur_token.tok_type != TokenType::EOF {
-            println!("{:?}", cur_token);
-            cur_token = lexer.next_token();
+        let lexer = Lexer::new(&line_str);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
+        match program {
+            Ok(prog) => println!("{}", program_to_string(prog)),
+            Err(err_vec) => {
+                println!("The following errors occurred:\n{}", err_vec.join("\n"));
+            }
         }
         line_str.clear();
     }
