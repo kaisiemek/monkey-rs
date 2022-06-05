@@ -132,22 +132,72 @@ mod tests {
                 token.literal
             );
 
-            if let Expression::LiteralExpr { token, value } = expression {
-                assert_eq!(
-                    token.literal, "5",
-                    "Expected expression token literal to be '5' but got '{}'",
-                    token.literal
-                );
-                assert_eq!(
-                    value, 5,
-                    "Expected expression value to be 5 but got {}",
-                    token.literal
-                );
-            } else {
-                assert!(false, "Expected LiteralExpr, got {:?}", expression);
-            }
+            test_integer_literal(expression, 5);
         } else {
             assert!(false, "Expected ExpressionStatement, got {:?}", stmt);
+        }
+    }
+
+    #[test]
+    fn test_prefix_expressions() {
+        let input = concat!("-5;\n", "!5\n");
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+
+        let mut statements = VecDeque::from_iter(parse_program(&mut parser, 2));
+        let mut expected_operators = VecDeque::from_iter(["-", "!"]);
+        let mut expected_values = VecDeque::from_iter([5, 5]);
+
+        while !statements.is_empty() {
+            let cur_statement = statements.pop_front().unwrap();
+            let expected_operator = expected_operators.pop_front().unwrap();
+            let expected_value = expected_values.pop_front().unwrap();
+            if let Statement::ExpressionStmt {
+                token: _,
+                expression,
+            } = cur_statement
+            {
+                if let Expression::PrefixExpression {
+                    token: _,
+                    operator,
+                    right_expression,
+                } = expression
+                {
+                    assert_eq!(
+                        operator, expected_operator,
+                        "Expected operator {} but got {}",
+                        expected_operator, operator
+                    );
+                    test_integer_literal(*right_expression, expected_value)
+                } else {
+                    assert!(false, "Expected PrefixExpression, got {:?}", expression);
+                }
+            } else {
+                assert!(
+                    false,
+                    "Expected ExpressionStatement, got {:?}",
+                    cur_statement
+                );
+            }
+        }
+    }
+
+    fn test_integer_literal(expression: Expression, expected_value: isize) {
+        if let Expression::LiteralExpr { token, value } = expression {
+            assert_eq!(
+                token.literal,
+                format!("{}", expected_value),
+                "Expected expression token literal to be {} but got '{}'",
+                expected_value,
+                token.literal
+            );
+            assert_eq!(
+                value, expected_value,
+                "Expected expression value to be {} but got {}",
+                expected_value, token.literal
+            );
+        } else {
+            assert!(false, "Expected LiteralExpr, got {:?}", expression);
         }
     }
 

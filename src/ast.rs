@@ -42,12 +42,32 @@ impl ToString for Statement {
 #[derive(Debug)]
 pub enum Expression {
     DevExpr,
-    IdentifierExpr { token: Token, value: String },
-    LiteralExpr { token: Token, value: isize },
+    IdentifierExpr {
+        token: Token,
+        value: String,
+    },
+    LiteralExpr {
+        token: Token,
+        value: isize,
+    },
+    PrefixExpression {
+        token: Token,
+        operator: String,
+        right_expression: Box<Expression>,
+    },
 }
 
 impl ToString for Expression {
     fn to_string(&self) -> String {
-        String::from("<IMPLEMENT EXPRESSION ToString TRAIT>")
+        match self {
+            Expression::DevExpr => todo!(),
+            Expression::IdentifierExpr { token: _, value } => String::from(value),
+            Expression::LiteralExpr { token: _, value } => format!("{}", value),
+            Expression::PrefixExpression {
+                token: _,
+                operator,
+                right_expression,
+            } => format!("({}{})", operator, right_expression.to_string()),
+        }
     }
 }
