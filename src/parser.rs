@@ -18,6 +18,20 @@ enum Precedence {
     Call,
 }
 
+fn get_operator_precedence(operator_type: TokenType) -> Precedence {
+    match operator_type {
+        TokenType::PLUS => Precedence::Sum,
+        TokenType::MINUS => Precedence::Sum,
+        TokenType::ASTERISK => Precedence::Product,
+        TokenType::SLASH => Precedence::Product,
+        TokenType::EQ => Precedence::Equals,
+        TokenType::NOTEQ => Precedence::Equals,
+        TokenType::LT => Precedence::LessGreater,
+        TokenType::GT => Precedence::LessGreater,
+        _ => Precedence::Lowest,
+    }
+}
+
 pub struct Parser {
     lexer: Lexer,
     cur_token: Token,
@@ -136,18 +150,27 @@ impl Parser {
             ));
             return Err(());
         }
-        let left_expression = prefix.unwrap();
-        return Ok(left_expression);
-    }
 
-    fn parse_infix_expression(&mut self, left_expr: Expression) -> Result<Expression, ()> {
-        todo!();
+        let mut left_expression = prefix.unwrap();
+
+        while !self.peek_token_is(TokenType::SEMICOLON) && precedence < self.peek_precedence() {
+            let infix = self.parse_infix_expression(left_expression);
+            if infix.is_err() {
+                left_expression = infix.unwrap_err();
+                return Ok(left_expression);
+            }
+            self.next_token();
+
+            left_expression = infix.unwrap();
+        }
+
+        return Ok(left_expression);
     }
 
     fn parse_prefix_expression(&mut self) -> Result<Expression, ()> {
         match self.cur_token.tok_type {
             TokenType::IDENT => Ok(self.parse_identifier()),
-            TokenType::INT => self.parse_literal(),
+            TokenType::INT => Ok(self.parse_literal()?),
             TokenType::BANG | TokenType::MINUS => {
                 let token = self.cur_token.clone();
                 let operator = self.cur_token.literal.clone();
@@ -159,8 +182,48 @@ impl Parser {
                     right_expression,
                 })
             }
-            _ => todo!(),
+            _ => Err(()),
         }
+    }
+
+    fn parse_infix_expression(
+        &mut self,
+        left_expression: Expression,
+    ) -> Result<Expression, Expression> {
+        match self.peek_token.tok_type {
+            TokenType::PLUS
+            | TokenType::MINUS
+            | TokenType::ASTERISK
+            | TokenType::SLASH
+            | TokenType::EQ
+            | TokenType::NOTEQ
+            | TokenType::GT
+            | TokenType::LT => {
+                self.next_token();
+            }
+            _ => {
+                return Err(left_expression);
+            }
+        }
+
+        let token = self.cur_token.clone();
+        let operator = self.cur_token.literal.clone();
+
+        let precedence = self.current_precedence();
+        self.next_token();
+
+        let expr = self.parse_expression(precedence);
+        if expr.is_err() {
+            return Err(left_expression);
+        }
+        let right_expression = Box::new(expr.unwrap());
+
+        Ok(Expression::InfixExpression {
+            token,
+            left_expression: Box::new(left_expression),
+            operator,
+            right_expression,
+        })
     }
 
     fn parse_identifier(&self) -> Expression {
@@ -212,6 +275,14 @@ impl Parser {
 
         self.next_token();
         Ok(())
+    }
+
+    fn peek_precedence(&self) -> Precedence {
+        get_operator_precedence(self.peek_token.tok_type)
+    }
+
+    fn current_precedence(&self) -> Precedence {
+        get_operator_precedence(self.cur_token.tok_type)
     }
 
     fn add_error(&mut self, error: String) {

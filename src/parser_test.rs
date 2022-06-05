@@ -265,7 +265,8 @@ mod tests {
                 assert_eq!(
                     prog.len(),
                     expected_statements,
-                    "Expected parser to parse 3 statements, parsed {} instead",
+                    "Expected parser to parse {} statements, parsed {} instead",
+                    expected_statements,
                     prog.len()
                 );
                 return prog;
