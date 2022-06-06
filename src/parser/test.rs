@@ -189,23 +189,54 @@ mod tests {
 
     #[test]
     fn test_prefix_expressions() {
-        let input = concat!("-5;\n", "!5;\n", "-foobar;\n", "!foobar;\n");
-        let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
+        struct TestCase<'a> {
+            input: &'a str,
+            expected_operator: &'a str,
+            expected_right_value: &'a str,
+        }
 
-        let mut expected_operators = VecDeque::from_iter(["-", "!", "-", "!"]);
-        let mut expected_values = VecDeque::from_iter(["5", "5", "foobar", "foobar"]);
-        let mut statements =
-            VecDeque::from_iter(parse_program(&mut parser, expected_operators.len()));
+        let test_cases: Vec<TestCase> = vec![
+            TestCase {
+                input: "-5;",
+                expected_operator: "-",
+                expected_right_value: "5",
+            },
+            TestCase {
+                input: "!5;",
+                expected_operator: "!",
+                expected_right_value: "5",
+            },
+            TestCase {
+                input: "-foobar;",
+                expected_operator: "-",
+                expected_right_value: "foobar",
+            },
+            TestCase {
+                input: "!foobar;",
+                expected_operator: "!",
+                expected_right_value: "foobar",
+            },
+            TestCase {
+                input: "!true;",
+                expected_operator: "!",
+                expected_right_value: "true",
+            },
+            TestCase {
+                input: "!false;",
+                expected_operator: "!",
+                expected_right_value: "false",
+            },
+        ];
 
-        while !statements.is_empty() {
-            let cur_statement = statements.pop_front().unwrap();
-            let expected_operator = expected_operators.pop_front().unwrap();
-            let expected_value = expected_values.pop_front().unwrap();
+        for test_case in test_cases {
+            let lexer = Lexer::new(test_case.input);
+            let mut parser = Parser::new(lexer);
+            let stmt = parse_program(&mut parser, 1).pop().unwrap();
+
             if let Statement::ExpressionStmt {
                 token: _,
                 expression,
-            } = cur_statement
+            } = stmt
             {
                 if let Expression::PrefixExpression {
                     token: _,
@@ -214,20 +245,16 @@ mod tests {
                 } = expression
                 {
                     assert_eq!(
-                        operator, expected_operator,
+                        operator, test_case.expected_operator,
                         "Expected operator {} but got {}",
-                        expected_operator, operator
+                        test_case.expected_operator, operator
                     );
-                    test_literal_expression(*right_expression, expected_value);
+                    test_literal_expression(*right_expression, test_case.expected_right_value);
                 } else {
                     assert!(false, "Expected PrefixExpression, got {:?}", expression);
                 }
             } else {
-                assert!(
-                    false,
-                    "Expected ExpressionStatement, got {:?}",
-                    cur_statement
-                );
+                assert!(false, "Expected ExpressionStmt, got {:?}", stmt);
             }
         }
     }
@@ -337,36 +364,20 @@ mod tests {
         for test_case in test_cases {
             let lexer = Lexer::new(test_case.input);
             let mut parser = Parser::new(lexer);
-            let prog = parser.parse_program();
-
-            match prog {
-                Ok(mut stmts) => {
-                    assert_eq!(stmts.len(), 1, "Parsed more than one statement");
-                    let stmt = stmts.pop().unwrap();
-                    if let Statement::ExpressionStmt {
-                        token: _,
-                        expression,
-                    } = stmt
-                    {
-                        test_infix_expression(
-                            expression,
-                            test_case.expected_left_value,
-                            test_case.expected_operator,
-                            test_case.expected_right_value,
-                        );
-                    } else {
-                        assert!(false, "Expected InfixExpr, got {:?}", stmt);
-                    }
-                }
-                Err(errs) => {
-                    let err_str = errs.join("\n");
-                    assert!(
-                        false,
-                        "The parser encountered {} errors:\n{}",
-                        errs.len(),
-                        err_str
-                    );
-                }
+            let stmt = parse_program(&mut parser, 1).pop().unwrap();
+            if let Statement::ExpressionStmt {
+                token: _,
+                expression,
+            } = stmt
+            {
+                test_infix_expression(
+                    expression,
+                    test_case.expected_left_value,
+                    test_case.expected_operator,
+                    test_case.expected_right_value,
+                );
+            } else {
+                assert!(false, "Expected ExpressionStmt, got {:?}", stmt);
             }
         }
     }
@@ -380,67 +391,67 @@ mod tests {
 
         let test_cases: Vec<TestCase> = vec![
             TestCase {
-                input: "-a * b",
+                input: "-a * b;",
                 expected: "((-a) * b)",
             },
             TestCase {
-                input: "!-a",
+                input: "!-a;",
                 expected: "(!(-a))",
             },
             TestCase {
-                input: "a + b + c",
+                input: "a + b + c;",
                 expected: "((a + b) + c)",
             },
             TestCase {
-                input: "a + b - c",
+                input: "a + b - c;",
                 expected: "((a + b) - c)",
             },
             TestCase {
-                input: "a * b * c",
+                input: "a * b * c;",
                 expected: "((a * b) * c)",
             },
             TestCase {
-                input: "a * b / c",
+                input: "a * b / c;",
                 expected: "((a * b) / c)",
             },
             TestCase {
-                input: "a + b / c",
+                input: "a + b / c;",
                 expected: "(a + (b / c))",
             },
             TestCase {
-                input: "a + b * c + d / e - f",
+                input: "a + b * c + d / e - f;",
                 expected: "(((a + (b * c)) + (d / e)) - f)",
             },
             TestCase {
-                input: "3 + 4; -5 * 5",
-                expected: "(3 + 4)((-5) * 5)",
+                input: "3 + 4 - -5 * 5;",
+                expected: "((3 + 4) - ((-5) * 5))",
             },
             TestCase {
-                input: "5 > 4 == 3 < 4",
+                input: "5 > 4 == 3 < 4;",
                 expected: "((5 > 4) == (3 < 4))",
             },
             TestCase {
-                input: "5 < 4 != 3 > 4",
+                input: "5 < 4 != 3 > 4;",
                 expected: "((5 < 4) != (3 > 4))",
             },
             TestCase {
-                input: "3 + 4 * 5 == 3 * 1 + 4 * 5",
+                input: "3 + 4 * 5 == 3 * 1 + 4 * 5;",
                 expected: "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
             },
             TestCase {
-                input: "true",
+                input: "true;",
                 expected: "true",
             },
             TestCase {
-                input: "false",
+                input: "false;",
                 expected: "false",
             },
             TestCase {
-                input: "3 > 5 == false",
+                input: "3 > 5 == false;",
                 expected: "((3 > 5) == false)",
             },
             TestCase {
-                input: "3 < 5 == true",
+                input: "3 < 5 == true;",
                 expected: "((3 < 5) == true)",
             },
         ];
@@ -448,25 +459,8 @@ mod tests {
         for test_case in test_cases {
             let lexer = Lexer::new(test_case.input);
             let mut parser = Parser::new(lexer);
-            let prog = parser.parse_program();
-            match prog {
-                Ok(stmts) => {
-                    let mut prog_str = String::new();
-                    for stmt in stmts {
-                        prog_str.push_str(&stmt.to_string());
-                    }
-                    assert_eq!(test_case.expected, prog_str);
-                }
-                Err(errs) => {
-                    let err_str = errs.join("\n");
-                    assert!(
-                        false,
-                        "The parser encountered {} errors:\n{}",
-                        errs.len(),
-                        err_str
-                    );
-                }
-            }
+            let stmt = parse_program(&mut parser, 1).pop().unwrap();
+            assert_eq!(test_case.expected, stmt.to_string());
         }
     }
 
