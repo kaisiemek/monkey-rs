@@ -213,6 +213,7 @@ impl Parser {
         match self.cur_token.tok_type {
             TokenType::IDENT => Ok(self.parse_identifier()),
             TokenType::INT => Ok(self.parse_literal()?),
+            TokenType::TRUE | TokenType::FALSE => Ok(self.parse_literal()?),
             TokenType::BANG | TokenType::MINUS => {
                 let token = self.cur_token.clone();
                 let operator = self.cur_token.literal.clone();
@@ -276,20 +277,34 @@ impl Parser {
     }
 
     fn parse_literal(&mut self) -> Result<Expression, ()> {
-        let val = self.cur_token.literal.parse::<isize>();
-        match val {
-            Ok(value) => Ok(Expression::LiteralExpr {
-                token: self.cur_token.clone(),
-                value,
-            }),
-            Err(err) => {
-                self.add_error(format!(
-                    "Unable to parse {} as an integer: {}",
-                    self.cur_token.literal,
-                    err.to_string(),
-                ));
-                Err(())
+        let mut error_msg = String::new();
+
+        match self.cur_token.tok_type {
+            TokenType::TRUE | TokenType::FALSE => {
+                return Ok(Expression::LiteralBoolExpr {
+                    token: self.cur_token.clone(),
+                    value: self.cur_token.literal.parse().unwrap(),
+                })
             }
+            TokenType::INT => {
+                let int_val = self.cur_token.literal.parse::<isize>();
+                if int_val.is_ok() {
+                    return Ok(Expression::LiteralIntExpr {
+                        token: self.cur_token.clone(),
+                        value: int_val.unwrap(),
+                    });
+                } else {
+                    error_msg = format!(": {}", int_val.unwrap_err().to_string());
+                }
+            }
+            _ => {}
         }
+
+        self.add_error(format!(
+            "Unable to parse {} as an integer or boolean{}",
+            self.cur_token.literal, error_msg,
+        ));
+
+        Err(())
     }
 }

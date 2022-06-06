@@ -3,8 +3,6 @@ mod tests {
     use core::panic;
     use std::collections::VecDeque;
 
-    use regex::Regex;
-
     use crate::{
         lexer::{token::Token, Lexer},
         parser::{
@@ -158,6 +156,34 @@ mod tests {
             test_integer_literal(expression, 5);
         } else {
             assert!(false, "Expected ExpressionStatement, got {:?}", stmt);
+        }
+    }
+
+    #[test]
+    fn test_boolean_literal_expression() {
+        let input = "true;\nfalse;\n";
+        let mut expected_values = VecDeque::from_iter(["true", "false"]);
+
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let mut stmts = VecDeque::from(parse_program(&mut parser, expected_values.len()));
+
+        while !stmts.is_empty() {
+            let current_stmt = stmts.pop_front().unwrap();
+            let expected_value = expected_values.pop_front().unwrap();
+            if let Statement::ExpressionStmt {
+                token: _,
+                expression,
+            } = current_stmt
+            {
+                test_literal_expression(expression, expected_value);
+            } else {
+                assert!(
+                    false,
+                    "Expected ExpressionStatement, got {:?}",
+                    current_stmt
+                );
+            }
         }
     }
 
@@ -346,7 +372,7 @@ mod tests {
     }
 
     fn test_integer_literal(expression: Expression, expected_value: isize) {
-        if let Expression::LiteralExpr { token, value } = expression {
+        if let Expression::LiteralIntExpr { token, value } = expression {
             assert_eq!(
                 token.literal,
                 format!("{}", expected_value),
@@ -383,13 +409,39 @@ mod tests {
         }
     }
 
-    fn test_literal_expression(expression: Expression, expected_value: &str) {
-        let re = Regex::new(r"^\d+$").unwrap();
-        if re.is_match(expected_value) {
-            test_integer_literal(expression, expected_value.parse().unwrap());
+    fn test_boolean_literal(expression: Expression, expected_value: bool) {
+        if let Expression::LiteralBoolExpr { token, value } = expression {
+            assert_eq!(
+                token.literal,
+                format!("{}", expected_value),
+                "Expected expression token literal to be {} but got '{}'",
+                expected_value,
+                token.literal
+            );
+            assert_eq!(
+                value, expected_value,
+                "Expected expression value to be {} but got {}",
+                expected_value, token.literal
+            );
         } else {
-            test_identifier(expression, expected_value);
+            assert!(false, "Expected LiteralBoolExpr, got {:?}", expression);
         }
+    }
+
+    fn test_literal_expression(expression: Expression, expected_value: &str) {
+        let value = expected_value.parse::<isize>();
+        if value.is_ok() {
+            test_integer_literal(expression, value.unwrap());
+            return;
+        }
+
+        let value = expected_value.parse::<bool>();
+        if value.is_ok() {
+            test_boolean_literal(expression, value.unwrap());
+            return;
+        }
+
+        test_identifier(expression, expected_value);
     }
 
     fn test_infix_expression(

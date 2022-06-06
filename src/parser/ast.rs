@@ -44,9 +44,13 @@ pub enum Expression {
         token: Token,
         value: String,
     },
-    LiteralExpr {
+    LiteralIntExpr {
         token: Token,
         value: isize,
+    },
+    LiteralBoolExpr {
+        token: Token,
+        value: bool,
     },
     PrefixExpression {
         token: Token,
@@ -65,7 +69,8 @@ impl ToString for Expression {
     fn to_string(&self) -> String {
         match self {
             Expression::IdentifierExpr { token: _, value } => String::from(value),
-            Expression::LiteralExpr { token: _, value } => format!("{}", value),
+            Expression::LiteralIntExpr { token: _, value } => format!("{}", value),
+            Expression::LiteralBoolExpr { token: _, value } => format!("{}", value),
             Expression::PrefixExpression {
                 token: _,
                 operator,
