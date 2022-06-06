@@ -454,6 +454,30 @@ mod tests {
                 input: "3 < 5 == true;",
                 expected: "((3 < 5) == true)",
             },
+            TestCase {
+                input: "1 + (2 + 3) + 4;",
+                expected: "((1 + (2 + 3)) + 4)",
+            },
+            TestCase {
+                input: "1 + (2 + 3) * 4;",
+                expected: "(1 + ((2 + 3) * 4))",
+            },
+            TestCase {
+                input: "(5 + 5) * 2;",
+                expected: "((5 + 5) * 2)",
+            },
+            TestCase {
+                input: "2 / (5 + 5);",
+                expected: "(2 / (5 + 5))",
+            },
+            TestCase {
+                input: "-(5 + 5);",
+                expected: "(-(5 + 5))",
+            },
+            TestCase {
+                input: "!(true == true);",
+                expected: "(!(true == true))",
+            },
         ];
 
         for test_case in test_cases {

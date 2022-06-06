@@ -225,6 +225,7 @@ impl Parser {
                     right_expression,
                 })
             }
+            TokenType::LPAREN => self.parse_grouped_expression(),
             _ => Err(()),
         }
     }
@@ -306,5 +307,12 @@ impl Parser {
         ));
 
         Err(())
+    }
+
+    fn parse_grouped_expression(&mut self) -> Result<Expression, ()> {
+        self.next_token();
+        let expression = self.parse_expression(Precedence::Lowest)?;
+        self.expect_peek(TokenType::RPAREN)?;
+        Ok(expression)
     }
 }
