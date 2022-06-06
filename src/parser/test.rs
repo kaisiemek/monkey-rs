@@ -4,10 +4,11 @@ mod tests {
     use std::collections::VecDeque;
 
     use crate::{
-        ast::{Expression, Program, Statement},
-        lexer::Lexer,
-        parser::Parser,
-        token::Token,
+        lexer::{token::Token, Lexer},
+        parser::{
+            ast::{Expression, Program, Statement},
+            Parser,
+        },
     };
 
     #[test]
@@ -31,17 +32,17 @@ mod tests {
     fn test_let_statement(stmt: Statement, expected_name: &str) {
         let stmt_token: Token;
         let stmt_identifier: String;
-        let stmt_value: Expression;
+        // let stmt_value: Expression;
 
         match stmt {
             Statement::LetStmt {
                 token,
                 identifier,
-                value,
+                value: _,
             } => {
                 stmt_token = token;
                 stmt_identifier = identifier;
-                stmt_value = value;
+                // stmt_value = value;
             }
             _ => {
                 assert!(false, "Expected a LetStatement, got: {:?}", &stmt);

@@ -1,4 +1,7 @@
-use crate::token::{Token, TokenType};
+use self::token::{Token, TokenType};
+
+mod test;
+pub mod token;
 
 pub struct Lexer {
     input: String,
@@ -135,12 +138,4 @@ impl Lexer {
             .take((self.position - pos) as usize)
             .collect();
     }
-}
-
-#[test]
-fn test_peek() {
-    let input = "123";
-    let mut l = Lexer::new(input);
-
-    assert_eq!(l.peek(), '2');
 }

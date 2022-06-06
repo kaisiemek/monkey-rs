@@ -1,7 +1,7 @@
 use std::io::{self, Write};
 
-use crate::ast::program_to_string;
 use crate::lexer::Lexer;
+use crate::parser::print::program_to_string;
 use crate::parser::Parser;
 
 pub fn start() {

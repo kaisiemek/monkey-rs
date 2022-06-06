@@ -1,34 +1,17 @@
-use crate::{
-    ast::{Expression, Program, Statement},
-    lexer::Lexer,
-    token::Token,
-    token::TokenType,
+mod ast;
+mod precedence;
+pub mod print;
+mod test;
+
+use crate::lexer::{
+    token::{Token, TokenType},
+    Lexer,
 };
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
-enum Precedence {
-    Lowest,
-    Equals,
-    LessGreater,
-    Sum,
-    Product,
-    Prefix,
-    // Call,
-}
-
-fn get_operator_precedence(operator_type: TokenType) -> Precedence {
-    match operator_type {
-        TokenType::PLUS => Precedence::Sum,
-        TokenType::MINUS => Precedence::Sum,
-        TokenType::ASTERISK => Precedence::Product,
-        TokenType::SLASH => Precedence::Product,
-        TokenType::EQ => Precedence::Equals,
-        TokenType::NOTEQ => Precedence::Equals,
-        TokenType::LT => Precedence::LessGreater,
-        TokenType::GT => Precedence::LessGreater,
-        _ => Precedence::Lowest,
-    }
-}
+use self::{
+    ast::{Expression, Program, Statement},
+    precedence::{get_operator_precedence, Precedence},
+};
 
 pub struct Parser {
     lexer: Lexer,
@@ -37,6 +20,11 @@ pub struct Parser {
     errors: Vec<String>,
 }
 
+/*
+    ==================================================
+    PUBLIC INTERFACE
+    ==================================================
+*/
 impl Parser {
     pub fn new(lexer: Lexer) -> Self {
         let mut parser = Parser {
@@ -75,7 +63,59 @@ impl Parser {
             Ok(program)
         }
     }
+}
 
+/*
+    ==================================================
+    PARSER TOKEN & ERROR METHODS
+    ==================================================
+*/
+impl Parser {
+    fn next_token(&mut self) {
+        self.cur_token = self.peek_token.clone();
+        self.peek_token = self.lexer.next_token();
+    }
+
+    fn cur_token_is(&self, of_type: TokenType) -> bool {
+        return self.cur_token.tok_type == of_type;
+    }
+
+    fn peek_token_is(&self, of_type: TokenType) -> bool {
+        return self.peek_token.tok_type == of_type;
+    }
+
+    fn expect_peek(&mut self, expected_type: TokenType) -> Result<(), ()> {
+        if !self.peek_token_is(expected_type) {
+            self.add_error(format!(
+                "Expected a token of type {}, but got {} instead",
+                expected_type, self.peek_token.tok_type
+            ));
+            return Err(());
+        }
+
+        self.next_token();
+        Ok(())
+    }
+
+    fn peek_precedence(&self) -> Precedence {
+        get_operator_precedence(self.peek_token.tok_type)
+    }
+
+    fn current_precedence(&self) -> Precedence {
+        get_operator_precedence(self.cur_token.tok_type)
+    }
+
+    fn add_error(&mut self, error: String) {
+        self.errors.push(error);
+    }
+}
+
+/*
+    ==================================================
+    STATEMENT PARSING METHODS
+    ==================================================
+*/
+impl Parser {
     fn parse_statement(&mut self) -> Result<Statement, ()> {
         match self.cur_token.tok_type {
             TokenType::LET => self.parse_let_statement(),
@@ -138,7 +178,14 @@ impl Parser {
 
         Ok(Statement::ExpressionStmt { token, expression })
     }
+}
 
+/*
+    ==================================================
+    EXPRESSION PARSING METHODS
+    ==================================================
+*/
+impl Parser {
     fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, ()> {
         let prefix = self.parse_prefix_expression();
         if prefix.is_err() {
@@ -247,43 +294,5 @@ impl Parser {
                 Err(())
             }
         }
-    }
-
-    fn next_token(&mut self) {
-        self.cur_token = self.peek_token.clone();
-        self.peek_token = self.lexer.next_token();
-    }
-
-    fn cur_token_is(&self, of_type: TokenType) -> bool {
-        return self.cur_token.tok_type == of_type;
-    }
-
-    fn peek_token_is(&self, of_type: TokenType) -> bool {
-        return self.peek_token.tok_type == of_type;
-    }
-
-    fn expect_peek(&mut self, expected_type: TokenType) -> Result<(), ()> {
-        if !self.peek_token_is(expected_type) {
-            self.add_error(format!(
-                "Expected a token of type {}, but got {} instead",
-                expected_type, self.peek_token.tok_type
-            ));
-            return Err(());
-        }
-
-        self.next_token();
-        Ok(())
-    }
-
-    fn peek_precedence(&self) -> Precedence {
-        get_operator_precedence(self.peek_token.tok_type)
-    }
-
-    fn current_precedence(&self) -> Precedence {
-        get_operator_precedence(self.cur_token.tok_type)
-    }
-
-    fn add_error(&mut self, error: String) {
-        self.errors.push(error);
     }
 }

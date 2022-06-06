@@ -2,7 +2,15 @@
 mod tests {
     use std::collections::VecDeque;
 
-    use crate::{lexer::Lexer, token::TokenType};
+    use crate::lexer::{token::TokenType, Lexer};
+
+    #[test]
+    fn test_peek() {
+        let input = "123";
+        let mut l = Lexer::new(input);
+
+        assert_eq!(l.peek(), '2');
+    }
 
     #[test]
     fn test_next_token() {
