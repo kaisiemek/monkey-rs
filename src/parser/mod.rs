@@ -344,11 +344,18 @@ impl Parser {
 
         let consequence = self.parse_block_statement()?;
 
+        let mut alternative: Option<BlockStatement> = None;
+        if self.peek_token_is(TokenType::ELSE) {
+            self.next_token();
+            self.expect_peek(TokenType::LBRACE)?;
+            alternative = Some(self.parse_block_statement()?);
+        }
+
         Ok(Expression::IfExpression {
             token,
             condition,
             consequence,
-            alternative: None,
+            alternative,
         })
     }
 }

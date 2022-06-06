@@ -628,7 +628,7 @@ mod tests {
         if let Statement::ExpressionStmt {
             token: _,
             expression,
-        } = &if_consequence.statements[0]
+        } = &alternative.statements[0]
         {
             alternative_expression = expression.clone();
         } else {
