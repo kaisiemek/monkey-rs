@@ -234,56 +234,139 @@ mod tests {
 
     #[test]
     fn test_infix_expressions() {
-        let input = concat!(
-            "5 + 10;\n",
-            "6 - 10;\n",
-            "7 * 10;\n",
-            "8 / 10;\n",
-            "9 > 10;\n",
-            "10 < 10;\n",
-            "11 == 10;\n",
-            "12 != 10;\n",
-            "foobar != foobar;\n",
-            "x > y;\n",
-            "x < y;\n",
-            "x + y;\n",
-        );
-        let mut expected_operators = VecDeque::from_iter([
-            "+", "-", "*", "/", ">", "<", "==", "!=", "!=", ">", "<", "+",
-        ]);
-        let mut expected_left_values = VecDeque::from_iter([
-            "5", "6", "7", "8", "9", "10", "11", "12", "foobar", "x", "x", "x",
-        ]);
-        let mut expected_right_values = VecDeque::from_iter([
-            "10", "10", "10", "10", "10", "10", "10", "10", "foobar", "y", "y", "y",
-        ]);
+        struct TestCase<'a> {
+            input: &'a str,
+            expected_left_value: &'a str,
+            expected_operator: &'a str,
+            expected_right_value: &'a str,
+        }
 
-        let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
-        let mut statements = VecDeque::from(parse_program(&mut parser, expected_operators.len()));
+        let test_cases: Vec<TestCase> = vec![
+            TestCase {
+                input: "5 + 10;\n",
+                expected_operator: "+",
+                expected_left_value: "5",
+                expected_right_value: "10",
+            },
+            TestCase {
+                input: "6 - 10;\n",
+                expected_operator: "-",
+                expected_left_value: "6",
+                expected_right_value: "10",
+            },
+            TestCase {
+                input: "7 * 10;\n",
+                expected_operator: "*",
+                expected_left_value: "7",
+                expected_right_value: "10",
+            },
+            TestCase {
+                input: "8 / 10;\n",
+                expected_operator: "/",
+                expected_left_value: "8",
+                expected_right_value: "10",
+            },
+            TestCase {
+                input: "9 > 10;\n",
+                expected_operator: ">",
+                expected_left_value: "9",
+                expected_right_value: "10",
+            },
+            TestCase {
+                input: "10 < 10;\n",
+                expected_operator: "<",
+                expected_left_value: "10",
+                expected_right_value: "10",
+            },
+            TestCase {
+                input: "11 == 10;\n",
+                expected_operator: "==",
+                expected_left_value: "11",
+                expected_right_value: "10",
+            },
+            TestCase {
+                input: "12 != 10;\n",
+                expected_operator: "!=",
+                expected_left_value: "12",
+                expected_right_value: "10",
+            },
+            TestCase {
+                input: "foobar != foobar;\n",
+                expected_operator: "!=",
+                expected_left_value: "foobar",
+                expected_right_value: "foobar",
+            },
+            TestCase {
+                input: "x > y;\n",
+                expected_operator: ">",
+                expected_left_value: "x",
+                expected_right_value: "y",
+            },
+            TestCase {
+                input: "x < y;\n",
+                expected_operator: "<",
+                expected_left_value: "x",
+                expected_right_value: "y",
+            },
+            TestCase {
+                input: "x + y;\n",
+                expected_operator: "+",
+                expected_left_value: "x",
+                expected_right_value: "y",
+            },
+            TestCase {
+                input: "true == true;\n",
+                expected_operator: "==",
+                expected_left_value: "true",
+                expected_right_value: "true",
+            },
+            TestCase {
+                input: "true != false;\n",
+                expected_operator: "!=",
+                expected_left_value: "true",
+                expected_right_value: "false",
+            },
+            TestCase {
+                input: "false == false;\n",
+                expected_operator: "==",
+                expected_left_value: "false",
+                expected_right_value: "false",
+            },
+        ];
 
-        while !statements.is_empty() {
-            let cur_statement = statements.pop_front().unwrap();
-            let expected_operator = expected_operators.pop_front().unwrap();
-            let expected_left_value = expected_left_values.pop_front().unwrap();
-            let expected_right_value = expected_right_values.pop_front().unwrap();
-            if let Statement::ExpressionStmt {
-                token: _,
-                expression,
-            } = cur_statement
-            {
-                test_infix_expression(
-                    expression,
-                    expected_left_value,
-                    expected_operator,
-                    expected_right_value,
-                );
-            } else {
-                assert!(
-                    false,
-                    "Expected ExpressionStatement, got {:?}",
-                    cur_statement
-                );
+        for test_case in test_cases {
+            let lexer = Lexer::new(test_case.input);
+            let mut parser = Parser::new(lexer);
+            let prog = parser.parse_program();
+
+            match prog {
+                Ok(mut stmts) => {
+                    assert_eq!(stmts.len(), 1, "Parsed more than one statement");
+                    let stmt = stmts.pop().unwrap();
+                    if let Statement::ExpressionStmt {
+                        token: _,
+                        expression,
+                    } = stmt
+                    {
+                        test_infix_expression(
+                            expression,
+                            test_case.expected_left_value,
+                            test_case.expected_operator,
+                            test_case.expected_right_value,
+                        );
+                    } else {
+                        assert!(false, "Expected InfixExpr, got {:?}", stmt);
+                    }
+                }
+                Err(errs) => {
+                    let err_str = errs.join("\n");
+                    assert!(
+                        false,
+                        "The parser encountered {} errors:\n{}",
+                        errs.len(),
+                        err_str
+                    );
+                }
             }
         }
     }
@@ -343,6 +426,22 @@ mod tests {
             TestCase {
                 input: "3 + 4 * 5 == 3 * 1 + 4 * 5",
                 expected: "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+            },
+            TestCase {
+                input: "true",
+                expected: "true",
+            },
+            TestCase {
+                input: "false",
+                expected: "false",
+            },
+            TestCase {
+                input: "3 > 5 == false",
+                expected: "((3 > 5) == false)",
+            },
+            TestCase {
+                input: "3 < 5 == true",
+                expected: "((3 < 5) == true)",
             },
         ];
 
@@ -447,7 +546,7 @@ mod tests {
     fn test_infix_expression(
         expression: Expression,
         expected_left: &str,
-        expected_op: &str,
+        expected_operator: &str,
         expected_right: &str,
     ) {
         if let Expression::InfixExpression {
@@ -459,9 +558,9 @@ mod tests {
         {
             test_literal_expression(*left_expression, expected_left);
             assert_eq!(
-                operator, expected_op,
+                operator, expected_operator,
                 "Expected operator {} but got {}",
-                expected_op, operator
+                expected_operator, operator
             );
             test_literal_expression(*right_expression, expected_right);
         } else {
