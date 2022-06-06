@@ -3,6 +3,8 @@ mod tests {
     use core::panic;
     use std::collections::VecDeque;
 
+    use regex::Regex;
+
     use crate::{
         lexer::{token::Token, Lexer},
         parser::{
@@ -13,8 +15,16 @@ mod tests {
 
     #[test]
     fn test_let_statements() {
-        let input = concat!("let x = 5;\n", "let y = 10;\n", "let foobar = 838383;\n",);
-        let mut expected_identifiers: VecDeque<&str> = VecDeque::from_iter(["x", "y", "foobar"]);
+        let input = concat!(
+            "let x = 5;\n",
+            "let y = 10;\n",
+            "let foobar = 838383;\n",
+            "let lol = kek;\n"
+        );
+        let mut expected_identifiers: VecDeque<&str> =
+            VecDeque::from_iter(["x", "y", "foobar", "lol"]);
+
+        let mut expected_values: VecDeque<&str> = VecDeque::from_iter(["5", "10", "838383", "kek"]);
 
         let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
@@ -24,25 +34,26 @@ mod tests {
 
         while !expected_identifiers.is_empty() {
             let expected_identifier = expected_identifiers.pop_front().unwrap();
+            let expected_value = expected_values.pop_front().unwrap();
             let current_stmt = statements.pop_front().unwrap();
-            test_let_statement(current_stmt, expected_identifier);
+            test_let_statement(current_stmt, expected_identifier, expected_value);
         }
     }
 
-    fn test_let_statement(stmt: Statement, expected_name: &str) {
+    fn test_let_statement(stmt: Statement, expected_name: &str, expected_value: &str) {
         let stmt_token: Token;
         let stmt_identifier: String;
-        // let stmt_value: Expression;
+        let stmt_value: Expression;
 
         match stmt {
             Statement::LetStmt {
                 token,
                 identifier,
-                value: _,
+                value,
             } => {
                 stmt_token = token;
                 stmt_identifier = identifier;
-                // stmt_value = value;
+                stmt_value = value;
             }
             _ => {
                 assert!(false, "Expected a LetStatement, got: {:?}", &stmt);
@@ -61,25 +72,36 @@ mod tests {
             "Expected identifier value {} but got {}",
             expected_name, stmt_identifier
         );
+
+        test_literal_expression(stmt_value, expected_value);
     }
 
     #[test]
     fn test_return_statements() {
-        let input = concat!("return 5;\n", "return 10;\n", "return 838383;\n",);
+        let input = concat!(
+            "return 5;\n",
+            "return 10;\n",
+            "return 838383;\n",
+            "return kek;"
+        );
+        let mut expected_values: VecDeque<&str> = VecDeque::from_iter(["5", "10", "838383", "kek"]);
         let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
 
-        let program: Program = parse_program(&mut parser, 3);
+        let program: Program = parse_program(&mut parser, expected_values.len());
         let mut statements = VecDeque::from_iter(program);
 
         while !statements.is_empty() {
             let current_stmt = statements.pop_front().unwrap();
-            if let Statement::ReturnStmt { token, .. } = current_stmt {
+            let expected_value = expected_values.pop_front().unwrap();
+
+            if let Statement::ReturnStmt { token, value } = current_stmt {
                 assert_eq!(
                     token.literal, "return",
                     "Expected statement literal to be 'return' but got '{}'",
                     token.literal
                 );
+                test_literal_expression(value, expected_value);
             } else {
                 assert!(false, "Expected ReturnStatement, got {:?}", current_stmt);
             }
@@ -141,13 +163,14 @@ mod tests {
 
     #[test]
     fn test_prefix_expressions() {
-        let input = concat!("-5;\n", "!5\n");
+        let input = concat!("-5;\n", "!5;\n", "-foobar;\n", "!foobar;\n");
         let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
 
-        let mut statements = VecDeque::from_iter(parse_program(&mut parser, 2));
-        let mut expected_operators = VecDeque::from_iter(["-", "!"]);
-        let mut expected_values = VecDeque::from_iter([5, 5]);
+        let mut expected_operators = VecDeque::from_iter(["-", "!", "-", "!"]);
+        let mut expected_values = VecDeque::from_iter(["5", "5", "foobar", "foobar"]);
+        let mut statements =
+            VecDeque::from_iter(parse_program(&mut parser, expected_operators.len()));
 
         while !statements.is_empty() {
             let cur_statement = statements.pop_front().unwrap();
@@ -169,7 +192,7 @@ mod tests {
                         "Expected operator {} but got {}",
                         expected_operator, operator
                     );
-                    test_integer_literal(*right_expression, expected_value)
+                    test_literal_expression(*right_expression, expected_value);
                 } else {
                     assert!(false, "Expected PrefixExpression, got {:?}", expression);
                 }
@@ -194,11 +217,20 @@ mod tests {
             "10 < 10;\n",
             "11 == 10;\n",
             "12 != 10;\n",
+            "foobar != foobar;\n",
+            "x > y;\n",
+            "x < y;\n",
+            "x + y;\n",
         );
-        let mut expected_operators =
-            VecDeque::from_iter(["+", "-", "*", "/", ">", "<", "==", "!="]);
-        let mut expected_left_values = VecDeque::from_iter([5, 6, 7, 8, 9, 10, 11, 12]);
-        let mut expected_right_values = VecDeque::from_iter([10, 10, 10, 10, 10, 10, 10, 10]);
+        let mut expected_operators = VecDeque::from_iter([
+            "+", "-", "*", "/", ">", "<", "==", "!=", "!=", ">", "<", "+",
+        ]);
+        let mut expected_left_values = VecDeque::from_iter([
+            "5", "6", "7", "8", "9", "10", "11", "12", "foobar", "x", "x", "x",
+        ]);
+        let mut expected_right_values = VecDeque::from_iter([
+            "10", "10", "10", "10", "10", "10", "10", "10", "foobar", "y", "y", "y",
+        ]);
 
         let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
@@ -214,23 +246,12 @@ mod tests {
                 expression,
             } = cur_statement
             {
-                if let Expression::InfixExpression {
-                    token: _,
-                    left_expression,
-                    operator,
-                    right_expression,
-                } = expression
-                {
-                    assert_eq!(
-                        operator, expected_operator,
-                        "Expected operator {} but got {}",
-                        expected_operator, operator
-                    );
-                    test_integer_literal(*left_expression, expected_left_value);
-                    test_integer_literal(*right_expression, expected_right_value);
-                } else {
-                    assert!(false, "Expected InfixExpression, got {:?}", expression);
-                }
+                test_infix_expression(
+                    expression,
+                    expected_left_value,
+                    expected_operator,
+                    expected_right_value,
+                );
             } else {
                 assert!(
                     false,
@@ -340,6 +361,59 @@ mod tests {
             );
         } else {
             assert!(false, "Expected LiteralExpr, got {:?}", expression);
+        }
+    }
+
+    fn test_identifier(expression: Expression, expected_name: &str) {
+        if let Expression::IdentifierExpr { token, value } = expression {
+            assert_eq!(
+                token.literal,
+                format!("{}", expected_name),
+                "Expected expression token literal to be {} but got '{}'",
+                expected_name,
+                token.literal
+            );
+            assert_eq!(
+                value, expected_name,
+                "Expected expression value to be {} but got {}",
+                expected_name, token.literal
+            );
+        } else {
+            assert!(false, "Expected IdentifierExpr, got {:?}", expression);
+        }
+    }
+
+    fn test_literal_expression(expression: Expression, expected_value: &str) {
+        let re = Regex::new(r"^\d+$").unwrap();
+        if re.is_match(expected_value) {
+            test_integer_literal(expression, expected_value.parse().unwrap());
+        } else {
+            test_identifier(expression, expected_value);
+        }
+    }
+
+    fn test_infix_expression(
+        expression: Expression,
+        expected_left: &str,
+        expected_op: &str,
+        expected_right: &str,
+    ) {
+        if let Expression::InfixExpression {
+            token: _,
+            left_expression,
+            operator,
+            right_expression,
+        } = expression
+        {
+            test_literal_expression(*left_expression, expected_left);
+            assert_eq!(
+                operator, expected_op,
+                "Expected operator {} but got {}",
+                expected_op, operator
+            );
+            test_literal_expression(*right_expression, expected_right);
+        } else {
+            assert!(false, "Expected IdentifierExpr, got {:?}", expression);
         }
     }
 

@@ -40,7 +40,6 @@ impl ToString for Statement {
 
 #[derive(Debug)]
 pub enum Expression {
-    DevExpr,
     IdentifierExpr {
         token: Token,
         value: String,
@@ -65,7 +64,6 @@ pub enum Expression {
 impl ToString for Expression {
     fn to_string(&self) -> String {
         match self {
-            Expression::DevExpr => todo!(),
             Expression::IdentifierExpr { token: _, value } => String::from(value),
             Expression::LiteralExpr { token: _, value } => format!("{}", value),
             Expression::PrefixExpression {

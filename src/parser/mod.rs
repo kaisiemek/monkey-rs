@@ -131,12 +131,10 @@ impl Parser {
         }
 
         let identifier = self.cur_token.literal.clone();
-        let value = Expression::DevExpr;
 
-        if self.expect_peek(TokenType::ASSIGN).is_err() {
-            return Err(());
-        }
-
+        self.expect_peek(TokenType::ASSIGN)?;
+        self.next_token();
+        let value = self.parse_expression(Precedence::Lowest)?;
         // TODO: Parse expression
         while !self.cur_token_is(TokenType::SEMICOLON) {
             if self.cur_token_is(TokenType::EOF) {
@@ -154,11 +152,10 @@ impl Parser {
 
     fn parse_return_statement(&mut self) -> Result<Statement, ()> {
         let token = self.cur_token.clone();
-        let value = Expression::DevExpr;
 
         self.next_token();
 
-        // TODO: Parse expression
+        let value = self.parse_expression(Precedence::Lowest)?;
         while !self.cur_token_is(TokenType::SEMICOLON) {
             if self.cur_token_is(TokenType::EOF) {
                 return Err(());
