@@ -488,6 +488,161 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_if_expression() {
+        let input = "if (x < y) { x }";
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+
+        let statement = parse_program(&mut parser, 1).pop().unwrap();
+        let if_expression;
+        if let Statement::ExpressionStmt {
+            token: _,
+            expression,
+        } = statement
+        {
+            if_expression = expression;
+        } else {
+            assert!(false, "Expected ExpressionStmt, got {:?}", statement);
+            panic!();
+        }
+
+        let if_condition;
+        let if_consequence;
+        let if_alternative;
+        if let Expression::IfExpression {
+            token: _,
+            condition,
+            consequence,
+            alternative,
+        } = if_expression
+        {
+            if_condition = condition;
+            if_consequence = consequence;
+            if_alternative = alternative;
+        } else {
+            assert!(false, "Expected IfExpression, got {:?}", if_expression);
+            panic!();
+        }
+
+        test_infix_expression(*if_condition, "x", "<", "y");
+        assert_eq!(
+            if_consequence.statements.len(),
+            1,
+            "Expected only one statement in the consequence block"
+        );
+
+        let consequence_expression;
+        if let Statement::ExpressionStmt {
+            token: _,
+            expression,
+        } = &if_consequence.statements[0]
+        {
+            consequence_expression = expression.clone();
+        } else {
+            assert!(
+                false,
+                "Expected ExpressionStatement in consequence block, got {:?}",
+                &if_consequence.statements[0]
+            );
+            panic!();
+        }
+
+        test_identifier(consequence_expression, "x");
+        assert!(
+            if_alternative.is_none(),
+            "Did expect else block to be empty"
+        );
+    }
+
+    #[test]
+    fn test_if_else_expression() {
+        let input = "if (x < y) { x } else { y }";
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+
+        let statement = parse_program(&mut parser, 1).pop().unwrap();
+        let if_expression;
+        if let Statement::ExpressionStmt {
+            token: _,
+            expression,
+        } = statement
+        {
+            if_expression = expression;
+        } else {
+            assert!(false, "Expected ExpressionStmt, got {:?}", statement);
+            panic!();
+        }
+
+        let if_condition;
+        let if_consequence;
+        let if_alternative;
+        if let Expression::IfExpression {
+            token: _,
+            condition,
+            consequence,
+            alternative,
+        } = if_expression
+        {
+            if_condition = condition;
+            if_consequence = consequence;
+            if_alternative = alternative;
+        } else {
+            assert!(false, "Expected IfExpression, got {:?}", if_expression);
+            panic!();
+        }
+
+        test_infix_expression(*if_condition, "x", "<", "y");
+
+        assert_eq!(
+            if_consequence.statements.len(),
+            1,
+            "Expected only one statement in the consequence block"
+        );
+        let consequence_expression;
+        if let Statement::ExpressionStmt {
+            token: _,
+            expression,
+        } = &if_consequence.statements[0]
+        {
+            consequence_expression = expression.clone();
+        } else {
+            assert!(
+                false,
+                "Expected ExpressionStatement in consequence block, got {:?}",
+                &if_consequence.statements[0]
+            );
+            panic!();
+        }
+        test_identifier(consequence_expression, "x");
+
+        assert!(if_alternative.is_some());
+        let alternative = if_alternative.unwrap();
+        assert_eq!(
+            alternative.statements.len(),
+            1,
+            "Expected only one statement in the consequence block"
+        );
+
+        let alternative_expression;
+        if let Statement::ExpressionStmt {
+            token: _,
+            expression,
+        } = &if_consequence.statements[0]
+        {
+            alternative_expression = expression.clone();
+        } else {
+            assert!(
+                false,
+                "Expected ExpressionStatement in consequence block, got {:?}",
+                &if_consequence.statements[0]
+            );
+            panic!();
+        }
+
+        test_identifier(alternative_expression, "y");
+    }
+
     fn test_integer_literal(expression: Expression, expected_value: isize) {
         if let Expression::LiteralIntExpr { token, value } = expression {
             assert_eq!(

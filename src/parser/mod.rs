@@ -9,7 +9,7 @@ use crate::lexer::{
 };
 
 use self::{
-    ast::{Expression, Program, Statement},
+    ast::{BlockStatement, Expression, Program, Statement},
     precedence::{get_operator_precedence, Precedence},
 };
 
@@ -175,6 +175,20 @@ impl Parser {
 
         Ok(Statement::ExpressionStmt { token, expression })
     }
+
+    fn parse_block_statement(&mut self) -> Result<BlockStatement, ()> {
+        let token = self.cur_token.clone();
+        let mut statements: Vec<Statement> = Vec::new();
+
+        self.next_token();
+        while !self.cur_token_is(TokenType::RBRACE) && !self.cur_token_is(TokenType::EOF) {
+            let statement = self.parse_statement()?;
+            statements.push(statement);
+            self.next_token();
+        }
+
+        Ok(BlockStatement { token, statements })
+    }
 }
 
 /*
@@ -226,6 +240,7 @@ impl Parser {
                 })
             }
             TokenType::LPAREN => self.parse_grouped_expression(),
+            TokenType::IF => self.parse_if_expression(),
             _ => Err(()),
         }
     }
@@ -314,5 +329,26 @@ impl Parser {
         let expression = self.parse_expression(Precedence::Lowest)?;
         self.expect_peek(TokenType::RPAREN)?;
         Ok(expression)
+    }
+
+    fn parse_if_expression(&mut self) -> Result<Expression, ()> {
+        let token = self.cur_token.clone();
+
+        self.expect_peek(TokenType::LPAREN)?;
+        self.next_token();
+
+        let condition = Box::new(self.parse_expression(Precedence::Lowest)?);
+
+        self.expect_peek(TokenType::RPAREN)?;
+        self.expect_peek(TokenType::LBRACE)?;
+
+        let consequence = self.parse_block_statement()?;
+
+        Ok(Expression::IfExpression {
+            token,
+            condition,
+            consequence,
+            alternative: None,
+        })
     }
 }

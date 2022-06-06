@@ -2,7 +2,7 @@ use crate::lexer::token::Token;
 
 pub type Program = Vec<Statement>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Statement {
     LetStmt {
         token: Token,
@@ -17,6 +17,12 @@ pub enum Statement {
         token: Token,
         expression: Expression,
     },
+}
+
+#[derive(Debug, Clone)]
+pub struct BlockStatement {
+    pub token: Token,
+    pub statements: Vec<Statement>,
 }
 
 impl ToString for Statement {
@@ -38,7 +44,20 @@ impl ToString for Statement {
     }
 }
 
-#[derive(Debug)]
+impl ToString for BlockStatement {
+    fn to_string(&self) -> String {
+        let mut blockstring = String::from("{\n");
+
+        for statement in &self.statements {
+            blockstring.push_str(&statement.to_string());
+        }
+
+        blockstring.push_str("\n}");
+        blockstring
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum Expression {
     IdentifierExpr {
         token: Token,
@@ -62,6 +81,12 @@ pub enum Expression {
         left_expression: Box<Expression>,
         operator: String,
         right_expression: Box<Expression>,
+    },
+    IfExpression {
+        token: Token,
+        condition: Box<Expression>,
+        consequence: BlockStatement,
+        alternative: Option<BlockStatement>,
     },
 }
 
@@ -87,6 +112,22 @@ impl ToString for Expression {
                 operator,
                 right_expression.to_string()
             ),
+            Expression::IfExpression {
+                token: _,
+                condition,
+                consequence,
+                alternative,
+            } => {
+                let mut blockstring =
+                    format!("if {} {}", condition.to_string(), consequence.to_string());
+
+                if alternative.is_some() {
+                    blockstring.push_str(
+                        format!(" else {}", alternative.as_ref().unwrap().to_string()).as_str(),
+                    );
+                }
+                blockstring
+            }
         }
     }
 }
