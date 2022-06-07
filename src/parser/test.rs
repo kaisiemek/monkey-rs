@@ -643,6 +643,75 @@ mod tests {
         test_identifier(alternative_expression, "y");
     }
 
+    #[test]
+    fn test_function_literal_expression() {
+        let input = "fn(x, y) { x + y; }";
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+
+        let statement = parse_program(&mut parser, 1).pop().unwrap();
+        let contained_expression;
+
+        if let Statement::ExpressionStmt {
+            token: _,
+            expression,
+        } = statement
+        {
+            contained_expression = expression;
+        } else {
+            assert!(false, "Expected ExpressionStmt, got {:?}", statement);
+            panic!();
+        }
+
+        let contained_parameters;
+        let contained_body;
+
+        if let Expression::LiteralFnExpr {
+            token: _,
+            parameters,
+            body,
+        } = contained_expression
+        {
+            contained_parameters = parameters;
+            contained_body = body;
+        } else {
+            assert!(
+                false,
+                "Expected LiteralFnExpr, got {:?}",
+                contained_expression
+            );
+            panic!();
+        }
+
+        assert_eq!(contained_parameters.len(), 2, "Expected 2 parameters");
+        test_literal_expression(contained_parameters[0].clone(), "x");
+        test_literal_expression(contained_parameters[1].clone(), "y");
+
+        assert_eq!(
+            contained_body.statements.len(),
+            1,
+            "Expected one statement in function body"
+        );
+
+        let body_expression;
+        if let Statement::ExpressionStmt {
+            token: _,
+            expression,
+        } = &contained_body.statements[0]
+        {
+            body_expression = expression.clone();
+        } else {
+            assert!(
+                false,
+                "Expected ExpressioStmt in body, got {:?}",
+                contained_body.statements[0]
+            );
+            panic!();
+        }
+
+        test_infix_expression(body_expression, "x", "+", "y");
+    }
+
     fn test_integer_literal(expression: Expression, expected_value: isize) {
         if let Expression::LiteralIntExpr { token, value } = expression {
             assert_eq!(
