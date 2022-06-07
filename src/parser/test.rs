@@ -712,6 +712,76 @@ mod tests {
         test_infix_expression(body_expression, "x", "+", "y");
     }
 
+    #[test]
+    fn test_function_parameters() {
+        struct TestCase<'a> {
+            input: &'a str,
+            expected_parameters: Vec<&'a str>,
+        }
+
+        let test_cases = vec![
+            TestCase {
+                input: "fn() {};",
+                expected_parameters: vec![],
+            },
+            TestCase {
+                input: "fn(x) {};",
+                expected_parameters: vec!["x"],
+            },
+            TestCase {
+                input: "fn(x, y, z) {};",
+                expected_parameters: vec!["x", "y", "z"],
+            },
+            TestCase {
+                input: "fn(a, b, c, d, e, f, g, h) {};",
+                expected_parameters: vec!["a", "b", "c", "d", "e", "f", "g", "h"],
+            },
+        ];
+
+        for test_case in test_cases {
+            let lexer = Lexer::new(test_case.input);
+            let mut parser = Parser::new(lexer);
+
+            let statement = parse_program(&mut parser, 1).pop().unwrap();
+            let contained_expression;
+            if let Statement::ExpressionStmt {
+                token: _,
+                expression,
+            } = statement
+            {
+                contained_expression = expression;
+            } else {
+                assert!(false, "Expected ExpressionStmt, got {:?}", statement);
+                panic!();
+            }
+
+            if let Expression::LiteralFnExpr {
+                token: _,
+                parameters,
+                ..
+            } = contained_expression
+            {
+                assert_eq!(
+                    parameters.len(),
+                    test_case.expected_parameters.len(),
+                    "Expected {} parameters but got {}",
+                    test_case.expected_parameters.len(),
+                    parameters.len()
+                );
+
+                for (i, param) in parameters.iter().enumerate() {
+                    test_literal_expression(param.clone(), test_case.expected_parameters[i]);
+                }
+            } else {
+                assert!(
+                    false,
+                    "Expected LiteralFnExpr, got {:?}",
+                    contained_expression
+                );
+            }
+        }
+    }
+
     fn test_integer_literal(expression: Expression, expected_value: isize) {
         if let Expression::LiteralIntExpr { token, value } = expression {
             assert_eq!(
