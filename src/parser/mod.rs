@@ -241,6 +241,7 @@ impl Parser {
             }
             TokenType::LPAREN => self.parse_grouped_expression(),
             TokenType::IF => self.parse_if_expression(),
+            TokenType::FUNCTION => self.parse_fn_expression(),
             _ => Err(()),
         }
     }
@@ -357,5 +358,44 @@ impl Parser {
             consequence,
             alternative,
         })
+    }
+
+    fn parse_fn_expression(&mut self) -> Result<Expression, ()> {
+        let token = self.cur_token.clone();
+        self.expect_peek(TokenType::LPAREN)?;
+
+        let parameters = self.parse_fn_parameters()?;
+
+        self.expect_peek(TokenType::LBRACE)?;
+
+        let body = self.parse_block_statement()?;
+
+        Ok(Expression::LiteralFnExpr {
+            token,
+            parameters,
+            body,
+        })
+    }
+
+    fn parse_fn_parameters(&mut self) -> Result<Vec<Expression>, ()> {
+        let mut parameters: Vec<Expression> = Vec::new();
+
+        if self.peek_token_is(TokenType::RPAREN) {
+            self.next_token();
+            return Ok(parameters);
+        }
+
+        self.next_token();
+        parameters.push(self.parse_identifier());
+
+        while self.peek_token_is(TokenType::COMMA) {
+            self.next_token();
+            self.next_token();
+            parameters.push(self.parse_identifier());
+        }
+
+        self.expect_peek(TokenType::RPAREN)?;
+
+        Ok(parameters)
     }
 }
