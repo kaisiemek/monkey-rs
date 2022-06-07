@@ -699,8 +699,8 @@ mod tests {
             test_identifier(*function, "add");
             assert_eq!(
                 arguments.len(),
-                3,
-                "Expected 3 arguments, got {}",
+                4,
+                "Expected 4 arguments, got {}",
                 arguments.len()
             );
             test_literal_expression(arguments[0].clone(), "1");

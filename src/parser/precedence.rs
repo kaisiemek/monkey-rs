@@ -8,7 +8,7 @@ pub enum Precedence {
     Sum,
     Product,
     Prefix,
-    // Call,
+    Call,
 }
 
 pub fn get_operator_precedence(operator_type: TokenType) -> Precedence {
@@ -21,6 +21,7 @@ pub fn get_operator_precedence(operator_type: TokenType) -> Precedence {
         TokenType::NOTEQ => Precedence::Equals,
         TokenType::LT => Precedence::LessGreater,
         TokenType::GT => Precedence::LessGreater,
+        TokenType::LPAREN => Precedence::Call,
         _ => Precedence::Lowest,
     }
 }

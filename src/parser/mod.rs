@@ -135,7 +135,7 @@ impl Parser {
         self.expect_peek(TokenType::ASSIGN)?;
         self.next_token();
         let value = self.parse_expression(Precedence::Lowest)?;
-        // TODO: Parse expression
+
         while !self.cur_token_is(TokenType::SEMICOLON) {
             if self.cur_token_is(TokenType::EOF) {
                 return Err(());
@@ -251,6 +251,10 @@ impl Parser {
         left_expression: Expression,
     ) -> Result<Expression, Expression> {
         match self.peek_token.tok_type {
+            TokenType::LPAREN => {
+                self.next_token();
+                return self.parse_call_expression(left_expression);
+            }
             TokenType::PLUS
             | TokenType::MINUS
             | TokenType::ASTERISK
@@ -377,6 +381,24 @@ impl Parser {
         })
     }
 
+    fn parse_call_expression(
+        &mut self,
+        left_expression: Expression,
+    ) -> Result<Expression, Expression> {
+        let token = self.cur_token.clone();
+        let function = Box::from(left_expression);
+
+        let arg_result = self.parse_call_arguments();
+        match arg_result {
+            Ok(arguments) => Ok(Expression::CallExpr {
+                token,
+                function,
+                arguments,
+            }),
+            Err(_) => Err(*function),
+        }
+    }
+
     fn parse_fn_parameters(&mut self) -> Result<Vec<Expression>, ()> {
         let mut parameters: Vec<Expression> = Vec::new();
 
@@ -397,5 +419,27 @@ impl Parser {
         self.expect_peek(TokenType::RPAREN)?;
 
         Ok(parameters)
+    }
+
+    fn parse_call_arguments(&mut self) -> Result<Vec<Expression>, ()> {
+        let mut arguments: Vec<Expression> = Vec::new();
+
+        if self.peek_token_is(TokenType::RPAREN) {
+            self.next_token();
+            return Ok(arguments);
+        }
+
+        self.next_token();
+        arguments.push(self.parse_expression(Precedence::Lowest)?);
+
+        while self.peek_token_is(TokenType::COMMA) {
+            self.next_token();
+            self.next_token();
+            arguments.push(self.parse_expression(Precedence::Lowest)?);
+        }
+
+        self.expect_peek(TokenType::RPAREN)?;
+
+        Ok(arguments)
     }
 }
