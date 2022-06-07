@@ -1,6 +1,5 @@
 #[cfg(test)]
 mod tests {
-    use core::panic;
     use std::collections::VecDeque;
 
     use crate::{
@@ -24,10 +23,7 @@ mod tests {
 
         let mut expected_values: VecDeque<&str> = VecDeque::from_iter(["5", "10", "838383", "kek"]);
 
-        let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
-
-        let program = parse_program(&mut parser, expected_identifiers.len());
+        let program = parse_program(input, expected_identifiers.len());
         let mut statements = VecDeque::from_iter(program);
 
         while !expected_identifiers.is_empty() {
@@ -83,10 +79,8 @@ mod tests {
             "return kek;"
         );
         let mut expected_values: VecDeque<&str> = VecDeque::from_iter(["5", "10", "838383", "kek"]);
-        let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
 
-        let program: Program = parse_program(&mut parser, expected_values.len());
+        let program: Program = parse_program(input, expected_values.len());
         let mut statements = VecDeque::from_iter(program);
 
         while !statements.is_empty() {
@@ -109,10 +103,8 @@ mod tests {
     #[test]
     fn test_identifier_expression() {
         let input = "foobar;";
-        let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
 
-        let stmt = parse_program(&mut parser, 1).pop().unwrap();
+        let stmt = parse_program(input, 1).pop().unwrap();
         if let Statement::ExpressionStmt { token, expression } = stmt {
             assert_eq!(
                 token.literal, "foobar",
@@ -142,10 +134,8 @@ mod tests {
     #[test]
     fn test_integer_literal_expression() {
         let input = "5;";
-        let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
 
-        let stmt = parse_program(&mut parser, 1).pop().unwrap();
+        let stmt = parse_program(input, 1).pop().unwrap();
         if let Statement::ExpressionStmt { token, expression } = stmt {
             assert_eq!(
                 token.literal, "5",
@@ -164,9 +154,7 @@ mod tests {
         let input = "true;\nfalse;\n";
         let mut expected_values = VecDeque::from_iter(["true", "false"]);
 
-        let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
-        let mut stmts = VecDeque::from(parse_program(&mut parser, expected_values.len()));
+        let mut stmts = VecDeque::from(parse_program(input, expected_values.len()));
 
         while !stmts.is_empty() {
             let current_stmt = stmts.pop_front().unwrap();
@@ -229,32 +217,21 @@ mod tests {
         ];
 
         for test_case in test_cases {
-            let lexer = Lexer::new(test_case.input);
-            let mut parser = Parser::new(lexer);
-            let stmt = parse_program(&mut parser, 1).pop().unwrap();
-
-            if let Statement::ExpressionStmt {
+            let expression = parse_expression_statement(test_case.input);
+            if let Expression::PrefixExpr {
                 token: _,
-                expression,
-            } = stmt
+                operator,
+                right_expression,
+            } = expression
             {
-                if let Expression::PrefixExpression {
-                    token: _,
-                    operator,
-                    right_expression,
-                } = expression
-                {
-                    assert_eq!(
-                        operator, test_case.expected_operator,
-                        "Expected operator {} but got {}",
-                        test_case.expected_operator, operator
-                    );
-                    test_literal_expression(*right_expression, test_case.expected_right_value);
-                } else {
-                    assert!(false, "Expected PrefixExpression, got {:?}", expression);
-                }
+                assert_eq!(
+                    operator, test_case.expected_operator,
+                    "Expected operator {} but got {}",
+                    test_case.expected_operator, operator
+                );
+                test_literal_expression(*right_expression, test_case.expected_right_value);
             } else {
-                assert!(false, "Expected ExpressionStmt, got {:?}", stmt);
+                assert!(false, "Expected PrefixExpression, got {:?}", expression);
             }
         }
     }
@@ -362,23 +339,13 @@ mod tests {
         ];
 
         for test_case in test_cases {
-            let lexer = Lexer::new(test_case.input);
-            let mut parser = Parser::new(lexer);
-            let stmt = parse_program(&mut parser, 1).pop().unwrap();
-            if let Statement::ExpressionStmt {
-                token: _,
+            let expression = parse_expression_statement(test_case.input);
+            test_infix_expression(
                 expression,
-            } = stmt
-            {
-                test_infix_expression(
-                    expression,
-                    test_case.expected_left_value,
-                    test_case.expected_operator,
-                    test_case.expected_right_value,
-                );
-            } else {
-                assert!(false, "Expected ExpressionStmt, got {:?}", stmt);
-            }
+                test_case.expected_left_value,
+                test_case.expected_operator,
+                test_case.expected_right_value,
+            );
         }
     }
 
@@ -481,9 +448,7 @@ mod tests {
         ];
 
         for test_case in test_cases {
-            let lexer = Lexer::new(test_case.input);
-            let mut parser = Parser::new(lexer);
-            let stmt = parse_program(&mut parser, 1).pop().unwrap();
+            let stmt = parse_program(test_case.input, 1).pop().unwrap();
             assert_eq!(test_case.expected, stmt.to_string());
         }
     }
@@ -491,26 +456,13 @@ mod tests {
     #[test]
     fn test_if_expression() {
         let input = "if (x < y) { x }";
-        let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
 
-        let statement = parse_program(&mut parser, 1).pop().unwrap();
-        let if_expression;
-        if let Statement::ExpressionStmt {
-            token: _,
-            expression,
-        } = statement
-        {
-            if_expression = expression;
-        } else {
-            assert!(false, "Expected ExpressionStmt, got {:?}", statement);
-            panic!();
-        }
+        let if_expression = parse_expression_statement(input);
 
         let if_condition;
         let if_consequence;
         let if_alternative;
-        if let Expression::IfExpression {
+        if let Expression::IfExpr {
             token: _,
             condition,
             consequence,
@@ -558,26 +510,13 @@ mod tests {
     #[test]
     fn test_if_else_expression() {
         let input = "if (x < y) { x } else { y }";
-        let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
 
-        let statement = parse_program(&mut parser, 1).pop().unwrap();
-        let if_expression;
-        if let Statement::ExpressionStmt {
-            token: _,
-            expression,
-        } = statement
-        {
-            if_expression = expression;
-        } else {
-            assert!(false, "Expected ExpressionStmt, got {:?}", statement);
-            panic!();
-        }
+        let if_expression = parse_expression_statement(input);
 
         let if_condition;
         let if_consequence;
         let if_alternative;
-        if let Expression::IfExpression {
+        if let Expression::IfExpr {
             token: _,
             condition,
             consequence,
@@ -646,22 +585,8 @@ mod tests {
     #[test]
     fn test_function_literal_expression() {
         let input = "fn(x, y) { x + y; }";
-        let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
 
-        let statement = parse_program(&mut parser, 1).pop().unwrap();
-        let contained_expression;
-
-        if let Statement::ExpressionStmt {
-            token: _,
-            expression,
-        } = statement
-        {
-            contained_expression = expression;
-        } else {
-            assert!(false, "Expected ExpressionStmt, got {:?}", statement);
-            panic!();
-        }
+        let expression = parse_expression_statement(input);
 
         let contained_parameters;
         let contained_body;
@@ -670,16 +595,12 @@ mod tests {
             token: _,
             parameters,
             body,
-        } = contained_expression
+        } = expression
         {
             contained_parameters = parameters;
             contained_body = body;
         } else {
-            assert!(
-                false,
-                "Expected LiteralFnExpr, got {:?}",
-                contained_expression
-            );
+            assert!(false, "Expected LiteralFnExpr, got {:?}", expression);
             panic!();
         }
 
@@ -739,27 +660,13 @@ mod tests {
         ];
 
         for test_case in test_cases {
-            let lexer = Lexer::new(test_case.input);
-            let mut parser = Parser::new(lexer);
-
-            let statement = parse_program(&mut parser, 1).pop().unwrap();
-            let contained_expression;
-            if let Statement::ExpressionStmt {
-                token: _,
-                expression,
-            } = statement
-            {
-                contained_expression = expression;
-            } else {
-                assert!(false, "Expected ExpressionStmt, got {:?}", statement);
-                panic!();
-            }
+            let expression = parse_expression_statement(test_case.input);
 
             if let Expression::LiteralFnExpr {
                 token: _,
                 parameters,
                 ..
-            } = contained_expression
+            } = expression
             {
                 assert_eq!(
                     parameters.len(),
@@ -773,11 +680,89 @@ mod tests {
                     test_literal_expression(param.clone(), test_case.expected_parameters[i]);
                 }
             } else {
-                assert!(
-                    false,
-                    "Expected LiteralFnExpr, got {:?}",
-                    contained_expression
+                assert!(false, "Expected LiteralFnExpr, got {:?}", expression);
+            }
+        }
+    }
+
+    #[test]
+    fn test_call_expression() {
+        let input = "add(1, 2 * 3, 4 + 5, true == false)";
+        let expression = parse_expression_statement(input);
+
+        if let Expression::CallExpr {
+            token: _,
+            function,
+            arguments,
+        } = expression
+        {
+            test_identifier(*function, "add");
+            assert_eq!(
+                arguments.len(),
+                3,
+                "Expected 3 arguments, got {}",
+                arguments.len()
+            );
+            test_literal_expression(arguments[0].clone(), "1");
+            test_infix_expression(arguments[1].clone(), "2", "*", "3");
+            test_infix_expression(arguments[2].clone(), "4", "+", "5");
+            test_infix_expression(arguments[3].clone(), "true", "==", "false");
+        } else {
+            assert!(false, "Expected CallExpr, got {:?}", expression);
+            panic!();
+        }
+        // let statement = parse_program(&mut parser, expected_statements)
+    }
+
+    #[test]
+    fn test_call_arguments() {
+        struct TestCase<'a> {
+            input: &'a str,
+            expected_arguments: Vec<&'a str>,
+        }
+
+        let test_cases = vec![
+            TestCase {
+                input: "add();",
+                expected_arguments: vec![],
+            },
+            TestCase {
+                input: "add(x);",
+                expected_arguments: vec!["x"],
+            },
+            TestCase {
+                input: "add(x, y, z);",
+                expected_arguments: vec!["x", "y", "z"],
+            },
+            TestCase {
+                input: "add(a, b, c, d, e, f, g, h);",
+                expected_arguments: vec!["a", "b", "c", "d", "e", "f", "g", "h"],
+            },
+        ];
+
+        for test_case in test_cases {
+            let expression = parse_expression_statement(test_case.input);
+
+            if let Expression::CallExpr {
+                token: _,
+                arguments,
+                function,
+            } = expression
+            {
+                test_identifier(*function, "add");
+                assert_eq!(
+                    arguments.len(),
+                    test_case.expected_arguments.len(),
+                    "Expected {} parameters but got {}",
+                    test_case.expected_arguments.len(),
+                    arguments.len()
                 );
+
+                for (i, param) in arguments.iter().enumerate() {
+                    test_literal_expression(param.clone(), test_case.expected_arguments[i]);
+                }
+            } else {
+                assert!(false, "Expected CallExpr, got {:?}", expression);
             }
         }
     }
@@ -861,7 +846,7 @@ mod tests {
         expected_operator: &str,
         expected_right: &str,
     ) {
-        if let Expression::InfixExpression {
+        if let Expression::InfixExpr {
             token: _,
             left_expression,
             operator,
@@ -880,7 +865,24 @@ mod tests {
         }
     }
 
-    fn parse_program(parser: &mut Parser, expected_statements: usize) -> Program {
+    fn parse_expression_statement(input: &str) -> Expression {
+        let statement = parse_program(input, 1).pop().unwrap();
+        if let Statement::ExpressionStmt {
+            token: _,
+            expression,
+        } = statement
+        {
+            return expression;
+        } else {
+            assert!(false, "Expected ExpressionStmt, got {:?}", statement);
+            panic!();
+        }
+    }
+
+    fn parse_program(input: &str, expected_statements: usize) -> Program {
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+
         match parser.parse_program() {
             Ok(prog) => {
                 assert_eq!(

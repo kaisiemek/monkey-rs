@@ -76,24 +76,24 @@ pub enum Expression {
         parameters: Vec<Expression>,
         body: BlockStatement,
     },
-    PrefixExpression {
+    PrefixExpr {
         token: Token,
         operator: String,
         right_expression: Box<Expression>,
     },
-    InfixExpression {
+    InfixExpr {
         token: Token,
         left_expression: Box<Expression>,
         operator: String,
         right_expression: Box<Expression>,
     },
-    IfExpression {
+    IfExpr {
         token: Token,
         condition: Box<Expression>,
         consequence: BlockStatement,
         alternative: Option<BlockStatement>,
     },
-    CallExpression {
+    CallExpr {
         token: Token,
         function: Box<Expression>,
         arguments: Vec<Expression>,
@@ -106,12 +106,12 @@ impl ToString for Expression {
             Expression::IdentifierExpr { token: _, value } => String::from(value),
             Expression::LiteralIntExpr { token: _, value } => format!("{}", value),
             Expression::LiteralBoolExpr { token: _, value } => format!("{}", value),
-            Expression::PrefixExpression {
+            Expression::PrefixExpr {
                 token: _,
                 operator,
                 right_expression,
             } => format!("({}{})", operator, right_expression.to_string()),
-            Expression::InfixExpression {
+            Expression::InfixExpr {
                 token: _,
                 left_expression,
                 operator,
@@ -122,7 +122,7 @@ impl ToString for Expression {
                 operator,
                 right_expression.to_string()
             ),
-            Expression::IfExpression {
+            Expression::IfExpr {
                 token: _,
                 condition,
                 consequence,
@@ -150,7 +150,7 @@ impl ToString for Expression {
 
                 format!("fn({}) {}", param_strings.join(", "), body.to_string())
             }
-            Expression::CallExpression {
+            Expression::CallExpr {
                 token: _,
                 function,
                 arguments,

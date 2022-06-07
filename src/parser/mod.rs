@@ -233,7 +233,7 @@ impl Parser {
                 let operator = self.cur_token.literal.clone();
                 self.next_token();
                 let right_expression = Box::new(self.parse_expression(Precedence::Prefix)?);
-                Ok(Expression::PrefixExpression {
+                Ok(Expression::PrefixExpr {
                     token,
                     operator,
                     right_expression,
@@ -278,7 +278,7 @@ impl Parser {
         }
         let right_expression = Box::new(expr.unwrap());
 
-        Ok(Expression::InfixExpression {
+        Ok(Expression::InfixExpr {
             token,
             left_expression: Box::new(left_expression),
             operator,
@@ -352,7 +352,7 @@ impl Parser {
             alternative = Some(self.parse_block_statement()?);
         }
 
-        Ok(Expression::IfExpression {
+        Ok(Expression::IfExpr {
             token,
             condition,
             consequence,
