@@ -93,6 +93,11 @@ pub enum Expression {
         consequence: BlockStatement,
         alternative: Option<BlockStatement>,
     },
+    CallExpression {
+        token: Token,
+        function: Box<Expression>,
+        arguments: Vec<Expression>,
+    },
 }
 
 impl ToString for Expression {
@@ -144,6 +149,18 @@ impl ToString for Expression {
                 }
 
                 format!("fn({}) {}", param_strings.join(", "), body.to_string())
+            }
+            Expression::CallExpression {
+                token: _,
+                function,
+                arguments,
+            } => {
+                let mut arg_strings: Vec<String> = vec![];
+                for argument in arguments {
+                    arg_strings.push(argument.to_string());
+                }
+
+                format!("{}({})", function.to_string(), arg_strings.join(", "))
             }
         }
     }
