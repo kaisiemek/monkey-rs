@@ -71,6 +71,11 @@ pub enum Expression {
         token: Token,
         value: bool,
     },
+    LiteralFnExpr {
+        token: Token,
+        parameters: Vec<Expression>,
+        body: BlockStatement,
+    },
     PrefixExpression {
         token: Token,
         operator: String,
@@ -127,6 +132,18 @@ impl ToString for Expression {
                     );
                 }
                 blockstring
+            }
+            Expression::LiteralFnExpr {
+                token: _,
+                parameters,
+                body,
+            } => {
+                let mut param_strings: Vec<String> = vec![];
+                for parameter in parameters {
+                    param_strings.push(parameter.to_string());
+                }
+
+                format!("fn({}) {}", param_strings.join(", "), body.to_string())
             }
         }
     }
