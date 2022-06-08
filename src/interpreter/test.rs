@@ -10,7 +10,7 @@ use super::{eval, object::Object};
 fn test_integer_expression() {
     struct TestCase<'a> {
         input: &'a str,
-        expected: i64,
+        expected: isize,
     }
 
     let test_cases = vec![
@@ -51,7 +51,7 @@ fn test_eval(input: &str) -> Object {
     }
 }
 
-fn test_integer_object(object: Object, expected: i64) {
+fn test_integer_object(object: Object, expected: isize) {
     if let Object::Integer(value) = object {
         assert_eq!(
             value, expected,

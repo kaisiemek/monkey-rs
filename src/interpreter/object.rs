@@ -1,6 +1,6 @@
 #[derive(Debug, Clone)]
 pub enum Object {
-    Integer(i64),
+    Integer(isize),
     Boolean(bool),
     Null,
 }
