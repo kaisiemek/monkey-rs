@@ -74,13 +74,20 @@ fn eval_expression(expression: Expression) -> Object {
 fn eval_prefix_expression(operator: &str, right: Object) -> Object {
     match operator {
         "!" => eval_bang_operator_expression(right),
-        "-" => todo!(),
+        "-" => eval_minus_operator_expression(right),
         _ => Object::Null,
     }
 }
 
 fn eval_bang_operator_expression(right: Object) -> Object {
     Object::Boolean(!is_truthy(right))
+}
+
+fn eval_minus_operator_expression(right: Object) -> Object {
+    match right {
+        Object::Integer(value) => Object::Integer(-value),
+        _ => Object::Null,
+    }
 }
 
 fn is_truthy(object: Object) -> bool {

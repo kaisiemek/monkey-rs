@@ -22,6 +22,14 @@ mod test {
                 input: "10",
                 expected: 10,
             },
+            TestCase {
+                input: "-5",
+                expected: -5,
+            },
+            TestCase {
+                input: "-10",
+                expected: -10,
+            },
         ];
 
         for test_case in test_cases {
