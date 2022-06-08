@@ -6,6 +6,7 @@ pub enum Node {
     Statement(Statement),
     Expression(Expression),
     BlockStatement(BlockStatement),
+    Program(Program),
 }
 
 #[derive(Debug, Clone)]
