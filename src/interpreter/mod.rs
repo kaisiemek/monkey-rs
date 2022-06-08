@@ -90,7 +90,19 @@ fn eval_infix_expression(left: Object, operator: &str, right: Object) -> Object 
         }
     }
 
-    Object::Null
+    if let Object::Boolean(left_value) = left {
+        if let Object::Boolean(right_value) = right {
+            return eval_bool_infix(left_value, operator, right_value);
+        }
+    }
+
+    // Bool and int are never equal, if the operator is anything else
+    // there is no way to produce meaningful values --> return null
+    match operator {
+        "==" => Object::Boolean(false),
+        "!=" => Object::Boolean(true),
+        _ => Object::Null,
+    }
 }
 
 fn eval_integer_infix(left: isize, operator: &str, right: isize) -> Object {
@@ -103,7 +115,15 @@ fn eval_integer_infix(left: isize, operator: &str, right: isize) -> Object {
         ">" => Object::Boolean(left > right),
         "==" => Object::Boolean(left == right),
         "!=" => Object::Boolean(left != right),
-        _ => return Object::Null,
+        _ => Object::Null,
+    }
+}
+
+fn eval_bool_infix(left: bool, operator: &str, right: bool) -> Object {
+    match operator {
+        "==" => Object::Boolean(left == right),
+        "!=" => Object::Boolean(left != right),
+        _ => Object::Null,
     }
 }
 

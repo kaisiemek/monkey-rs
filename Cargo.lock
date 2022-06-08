@@ -39,6 +39,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "monkey-rs"
+version = "0.1.0"
+dependencies = [
+ "whoami",
+]
+
+[[package]]
 name = "proc-macro2"
 version = "1.0.39"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -54,13 +61,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a1feb54ed693b93a84e14094943b84b7c4eae204c512b7ccb95ab0c66d278ad1"
 dependencies = [
  "proc-macro2",
-]
-
-[[package]]
-name = "rust_interpreter"
-version = "0.1.0"
-dependencies = [
- "whoami",
 ]
 
 [[package]]

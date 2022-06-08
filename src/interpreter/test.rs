@@ -130,6 +130,42 @@ mod test {
                 input: "1 != 2",
                 expected: true,
             },
+            TestCase {
+                input: "true == true",
+                expected: true,
+            },
+            TestCase {
+                input: "false == false",
+                expected: true,
+            },
+            TestCase {
+                input: "true == false",
+                expected: false,
+            },
+            TestCase {
+                input: "true != false",
+                expected: true,
+            },
+            TestCase {
+                input: "false != true",
+                expected: true,
+            },
+            TestCase {
+                input: "(1 < 2) == true",
+                expected: true,
+            },
+            TestCase {
+                input: "(1 < 2) == false",
+                expected: false,
+            },
+            TestCase {
+                input: "(1 > 2) == true",
+                expected: false,
+            },
+            TestCase {
+                input: "(1 > 2) == false",
+                expected: true,
+            },
         ];
 
         for test_case in test_cases {
