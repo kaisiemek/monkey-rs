@@ -50,7 +50,7 @@ fn eval_expression(expression: Expression) -> Object {
             token: _,
             operator,
             right_expression,
-        } => todo!(),
+        } => eval_prefix_expression(&operator, eval(Node::Expression(*right_expression))),
         Expression::InfixExpr {
             token: _,
             left_expression,
@@ -68,5 +68,25 @@ fn eval_expression(expression: Expression) -> Object {
             function,
             arguments,
         } => todo!(),
+    }
+}
+
+fn eval_prefix_expression(operator: &str, right: Object) -> Object {
+    match operator {
+        "!" => eval_bang_operator_expression(right),
+        "-" => todo!(),
+        _ => Object::Null,
+    }
+}
+
+fn eval_bang_operator_expression(right: Object) -> Object {
+    Object::Boolean(!is_truthy(right))
+}
+
+fn is_truthy(object: Object) -> bool {
+    match object {
+        Object::Integer(value) => value != 0,
+        Object::Boolean(value) => value,
+        Object::Null => false,
     }
 }
