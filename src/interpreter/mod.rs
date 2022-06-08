@@ -2,7 +2,7 @@ pub mod object;
 mod test;
 
 use self::object::Object;
-use crate::parser::ast::{Expression, Node, Statement};
+use crate::parser::ast::{BlockStatement, Expression, Node, Statement};
 
 pub fn eval(node: Node) -> Object {
     match node {
@@ -66,7 +66,7 @@ fn eval_expression(expression: Expression) -> Object {
             condition,
             consequence,
             alternative,
-        } => todo!(),
+        } => eval_if_else_expression(eval(Node::Expression(*condition)), consequence, alternative),
         Expression::CallExpr {
             token: _,
             function,
@@ -135,6 +135,20 @@ fn eval_minus_operator_expression(right: Object) -> Object {
     match right {
         Object::Integer(value) => Object::Integer(-value),
         _ => Object::Null,
+    }
+}
+
+fn eval_if_else_expression(
+    condition: Object,
+    consequence: BlockStatement,
+    alternative: Option<BlockStatement>,
+) -> Object {
+    if is_truthy(condition) {
+        eval_statements(consequence.statements)
+    } else if alternative.is_some() {
+        eval_statements(alternative.unwrap().statements)
+    } else {
+        Object::Null
     }
 }
 
