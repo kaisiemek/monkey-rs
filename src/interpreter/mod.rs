@@ -40,7 +40,7 @@ fn eval_expression(expression: Expression) -> Object {
     match expression {
         Expression::IdentifierExpr { token: _, value } => todo!(),
         Expression::LiteralIntExpr { token: _, value } => Object::Integer(value),
-        Expression::LiteralBoolExpr { token: _, value } => todo!(),
+        Expression::LiteralBoolExpr { token: _, value } => Object::Boolean(value),
         Expression::LiteralFnExpr {
             token: _,
             parameters,
