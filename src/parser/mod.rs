@@ -1,4 +1,4 @@
-mod ast;
+pub mod ast;
 mod precedence;
 pub mod print;
 mod test;

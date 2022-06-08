@@ -2,6 +2,12 @@ use crate::lexer::token::Token;
 
 pub type Program = Vec<Statement>;
 
+pub enum Node {
+    Statement(Statement),
+    Expression(Expression),
+    BlockStatement(BlockStatement),
+}
+
 #[derive(Debug, Clone)]
 pub enum Statement {
     LetStmt {
