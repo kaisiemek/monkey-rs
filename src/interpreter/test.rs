@@ -175,6 +175,50 @@ mod test {
     }
 
     #[test]
+    fn test_if_else_expression() {
+        struct TestCase<'a> {
+            input: &'a str,
+            expected: Object,
+        }
+
+        let test_cases = vec![
+            TestCase {
+                input: "if (true) { 10 }",
+                expected: Object::Integer(10),
+            },
+            TestCase {
+                input: "if (false) { 10 }",
+                expected: Object::Null,
+            },
+            TestCase {
+                input: "if (1) { 10 }",
+                expected: Object::Integer(10),
+            },
+            TestCase {
+                input: "if (1 < 2) { 10 }",
+                expected: Object::Integer(10),
+            },
+            TestCase {
+                input: "if (1 > 2) { 10 }",
+                expected: Object::Null,
+            },
+            TestCase {
+                input: "if (1 > 2) { 10 } else { 20 }",
+                expected: Object::Integer(20),
+            },
+            TestCase {
+                input: "if (1 < 2) { 10 } else { 20 }",
+                expected: Object::Integer(10),
+            },
+        ];
+
+        for test_case in test_cases {
+            let obj = test_eval(test_case.input);
+            assert_eq!(obj, test_case.expected);
+        }
+    }
+
+    #[test]
     fn test_bang_operator() {
         struct TestCase<'a> {
             input: &'a str,
