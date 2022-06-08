@@ -30,6 +30,30 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_boolean_expression() {
+        struct TestCase<'a> {
+            input: &'a str,
+            expected: bool,
+        }
+
+        let test_cases = vec![
+            TestCase {
+                input: "true",
+                expected: true,
+            },
+            TestCase {
+                input: "false",
+                expected: false,
+            },
+        ];
+
+        for test_case in test_cases {
+            let obj = test_eval(test_case.input);
+            test_bool_object(obj, test_case.expected);
+        }
+    }
+
     fn test_eval(input: &str) -> Object {
         let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
@@ -60,6 +84,18 @@ mod test {
             )
         } else {
             assert!(false, "Expected Integer object, got {:?}", object);
+        }
+    }
+
+    fn test_bool_object(object: Object, expected: bool) {
+        if let Object::Boolean(value) = object {
+            assert_eq!(
+                value, expected,
+                "Expected boolean object to contain value {} but got {}",
+                expected, value
+            )
+        } else {
+            assert!(false, "Expected Boolean object, got {:?}", object);
         }
     }
 }
