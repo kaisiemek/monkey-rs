@@ -54,6 +54,46 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_bang_operator() {
+        struct TestCase<'a> {
+            input: &'a str,
+            expected: bool,
+        }
+
+        let test_cases = vec![
+            TestCase {
+                input: "!true",
+                expected: false,
+            },
+            TestCase {
+                input: "!false",
+                expected: true,
+            },
+            TestCase {
+                input: "!5",
+                expected: false,
+            },
+            TestCase {
+                input: "!!true",
+                expected: true,
+            },
+            TestCase {
+                input: "!!false",
+                expected: false,
+            },
+            TestCase {
+                input: "!!5",
+                expected: true,
+            },
+        ];
+
+        for test_case in test_cases {
+            let obj = test_eval(test_case.input);
+            test_bool_object(obj, test_case.expected);
+        }
+    }
+
     fn test_eval(input: &str) -> Object {
         let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
