@@ -1,7 +1,9 @@
 use std::io::{self, Write};
 
+use crate::interpreter::eval;
+use crate::interpreter::object::Inspectable;
 use crate::lexer::Lexer;
-use crate::parser::print::program_to_string;
+use crate::parser::ast::Node;
 use crate::parser::Parser;
 
 pub fn start() {
@@ -26,9 +28,11 @@ pub fn start() {
 
         let lexer = Lexer::new(&line_str);
         let mut parser = Parser::new(lexer);
-        let program = parser.parse_program();
-        match program {
-            Ok(prog) => println!("{}", program_to_string(prog)),
+        match parser.parse_program() {
+            Ok(program) => {
+                let object = eval(Node::Program(program));
+                println!("{}", object.inspect());
+            }
             Err(err_vec) => {
                 println!("The following errors occurred:\n{}", err_vec.join("\n"));
             }

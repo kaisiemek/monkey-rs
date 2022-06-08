@@ -1,5 +1,5 @@
-mod object;
-pub mod test;
+pub mod object;
+mod test;
 
 use self::object::Object;
 use crate::parser::ast::{Expression, Node, Statement};
