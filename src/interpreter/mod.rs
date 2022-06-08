@@ -6,9 +6,9 @@ use crate::parser::ast::{Expression, Node, Statement};
 
 pub fn eval(node: Node) -> Object {
     match node {
-        Node::Statement(_) => todo!(),
+        Node::Statement(statement) => eval_statement(statement),
         Node::Expression(expression) => eval_expression(expression),
-        Node::BlockStatement(_) => todo!(),
+        Node::BlockStatement(block_statement) => eval_statements(block_statement.statements),
         Node::Program(program) => eval_statements(program),
     }
 }
@@ -56,7 +56,11 @@ fn eval_expression(expression: Expression) -> Object {
             left_expression,
             operator,
             right_expression,
-        } => todo!(),
+        } => eval_infix_expression(
+            eval(Node::Expression(*left_expression)),
+            &operator,
+            eval(Node::Expression(*right_expression)),
+        ),
         Expression::IfExpr {
             token: _,
             condition,
@@ -76,6 +80,30 @@ fn eval_prefix_expression(operator: &str, right: Object) -> Object {
         "!" => eval_bang_operator_expression(right),
         "-" => eval_minus_operator_expression(right),
         _ => Object::Null,
+    }
+}
+
+fn eval_infix_expression(left: Object, operator: &str, right: Object) -> Object {
+    if let Object::Integer(left_value) = left {
+        if let Object::Integer(right_value) = right {
+            return eval_integer_infix(left_value, operator, right_value);
+        }
+    }
+
+    Object::Null
+}
+
+fn eval_integer_infix(left: isize, operator: &str, right: isize) -> Object {
+    match operator {
+        "+" => Object::Integer(left + right),
+        "-" => Object::Integer(left - right),
+        "*" => Object::Integer(left * right),
+        "/" => Object::Integer(left / right),
+        "<" => Object::Boolean(left < right),
+        ">" => Object::Boolean(left > right),
+        "==" => Object::Boolean(left == right),
+        "!=" => Object::Boolean(left != right),
+        _ => return Object::Null,
     }
 }
 
