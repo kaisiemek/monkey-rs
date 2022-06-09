@@ -175,5 +175,6 @@ fn is_truthy(object: Object) -> bool {
         Object::Boolean(value) => value,
         Object::ReturnValue(value) => is_truthy(*value),
         Object::Null => false,
+        Object::Error(message) => todo!(),
     }
 }

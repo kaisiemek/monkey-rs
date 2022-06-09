@@ -294,6 +294,50 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_error_handling() {
+        struct TestCase<'a> {
+            input: &'a str,
+            expected: &'a str,
+        }
+
+        let test_cases = vec![
+            TestCase {
+                input: "5 + true;",
+                expected: "type mismatch: INTEGER + BOOLEAN",
+            },
+            TestCase {
+                input: "5 + true; 5;",
+                expected: "type mismatch: INTEGER + BOOLEAN",
+            },
+            TestCase {
+                input: "-true",
+                expected: "unknown operator: -BOOLEAN",
+            },
+            TestCase {
+                input: "true + false;",
+                expected: "unknown operator: BOOLEAN + BOOLEAN",
+            },
+            TestCase {
+                input: "5; true + false; 5",
+                expected: "unknown operator: BOOLEAN + BOOLEAN",
+            },
+            TestCase {
+                input: "if (10 > 1) { true + false }",
+                expected: "unknown operator: BOOLEAN + BOOLEAN",
+            },
+        ];
+
+        for test_case in test_cases {
+            let obj = test_eval(test_case.input);
+            if let Object::Error(msg) = obj {
+                assert_eq!(msg, test_case.expected);
+            } else {
+                assert!(false, "Expected error object, got {:?}", obj);
+            }
+        }
+    }
+
     fn test_eval(input: &str) -> Object {
         let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
