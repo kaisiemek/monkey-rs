@@ -282,6 +282,10 @@ mod test {
                 input: "9; return 2 * 5; 9;",
                 expected: 10,
             },
+            TestCase {
+                input: "if (10 > 1) { if (10 > 1) { return 10; } return 1; }",
+                expected: 10,
+            },
         ];
 
         for test_case in test_cases {

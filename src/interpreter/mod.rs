@@ -2,26 +2,37 @@ pub mod object;
 mod test;
 
 use self::object::Object;
-use crate::parser::ast::{BlockStatement, Expression, Node, Statement};
+use crate::parser::ast::{BlockStatement, Expression, Node, Program, Statement};
 
 pub fn eval(node: Node) -> Object {
     match node {
         Node::Statement(statement) => eval_statement(statement),
         Node::Expression(expression) => eval_expression(expression),
-        Node::BlockStatement(block_statement) => eval_statements(block_statement.statements),
-        Node::Program(program) => eval_statements(program),
+        Node::BlockStatement(block_statement) => eval_block_statement(block_statement),
+        Node::Program(program) => eval_program(program),
     }
 }
 
-fn eval_statements(statements: Vec<Statement>) -> Object {
-    let mut object = Object::Null;
+fn eval_program(statements: Program) -> Object {
+    let mut result = Object::Null;
     for statement in statements {
-        object = eval_statement(statement);
-        if let Object::ReturnValue(value) = object {
+        result = eval_statement(statement);
+        if let Object::ReturnValue(value) = result {
             return *value;
         }
     }
-    object
+    result
+}
+
+fn eval_block_statement(block: BlockStatement) -> Object {
+    let mut result = Object::Null;
+    for statement in block.statements {
+        result = eval_statement(statement);
+        if let Object::ReturnValue(_) = result {
+            return result;
+        }
+    }
+    result
 }
 
 fn eval_statement(statement: Statement) -> Object {
@@ -150,9 +161,9 @@ fn eval_if_else_expression(
     alternative: Option<BlockStatement>,
 ) -> Object {
     if is_truthy(condition) {
-        eval_statements(consequence.statements)
+        eval_block_statement(consequence)
     } else if alternative.is_some() {
-        eval_statements(alternative.unwrap().statements)
+        eval_block_statement(alternative.unwrap())
     } else {
         Object::Null
     }
