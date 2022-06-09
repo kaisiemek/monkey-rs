@@ -1,10 +1,10 @@
 pub mod object;
 mod test;
 
-use self::object::Object;
+use self::object::{Inspectable, Object};
 use crate::parser::ast::{BlockStatement, Expression, Node, Program, Statement};
 
-pub fn eval(node: Node) -> Object {
+pub fn eval(node: Node) -> Result<Object, String> {
     match node {
         Node::Statement(statement) => eval_statement(statement),
         Node::Expression(expression) => eval_expression(expression),
@@ -13,29 +13,30 @@ pub fn eval(node: Node) -> Object {
     }
 }
 
-fn eval_program(statements: Program) -> Object {
+fn eval_program(statements: Program) -> Result<Object, String> {
     let mut result = Object::Null;
     for statement in statements {
-        result = eval_statement(statement);
+        result = eval_statement(statement)?;
+
         if let Object::ReturnValue(value) = result {
-            return *value;
+            return Ok(*value);
         }
     }
-    result
+    Ok(result)
 }
 
-fn eval_block_statement(block: BlockStatement) -> Object {
+fn eval_block_statement(block: BlockStatement) -> Result<Object, String> {
     let mut result = Object::Null;
     for statement in block.statements {
-        result = eval_statement(statement);
+        result = eval_statement(statement)?;
         if let Object::ReturnValue(_) = result {
-            return result;
+            return Ok(result);
         }
     }
-    result
+    Ok(result)
 }
 
-fn eval_statement(statement: Statement) -> Object {
+fn eval_statement(statement: Statement) -> Result<Object, String> {
     match statement {
         Statement::LetStmt {
             token: _,
@@ -43,9 +44,9 @@ fn eval_statement(statement: Statement) -> Object {
             value,
         } => todo!(),
         Statement::ReturnStmt { token: _, value } => {
-            Object::ReturnValue(Box::from(eval(Node::Expression(value))))
+            let return_object = Box::from(eval(Node::Expression(value))?);
+            Ok(Object::ReturnValue(return_object))
         }
-
         Statement::ExpressionStmt {
             token: _,
             expression,
@@ -53,11 +54,11 @@ fn eval_statement(statement: Statement) -> Object {
     }
 }
 
-fn eval_expression(expression: Expression) -> Object {
+fn eval_expression(expression: Expression) -> Result<Object, String> {
     match expression {
         Expression::IdentifierExpr { token: _, value } => todo!(),
-        Expression::LiteralIntExpr { token: _, value } => Object::Integer(value),
-        Expression::LiteralBoolExpr { token: _, value } => Object::Boolean(value),
+        Expression::LiteralIntExpr { token: _, value } => Ok(Object::Integer(value)),
+        Expression::LiteralBoolExpr { token: _, value } => Ok(Object::Boolean(value)),
         Expression::LiteralFnExpr {
             token: _,
             parameters,
@@ -67,23 +68,27 @@ fn eval_expression(expression: Expression) -> Object {
             token: _,
             operator,
             right_expression,
-        } => eval_prefix_expression(&operator, eval(Node::Expression(*right_expression))),
+        } => eval_prefix_expression(&operator, eval(Node::Expression(*right_expression))?),
         Expression::InfixExpr {
             token: _,
             left_expression,
             operator,
             right_expression,
         } => eval_infix_expression(
-            eval(Node::Expression(*left_expression)),
+            eval(Node::Expression(*left_expression))?,
             &operator,
-            eval(Node::Expression(*right_expression)),
+            eval(Node::Expression(*right_expression))?,
         ),
         Expression::IfExpr {
             token: _,
             condition,
             consequence,
             alternative,
-        } => eval_if_else_expression(eval(Node::Expression(*condition)), consequence, alternative),
+        } => eval_if_else_expression(
+            eval(Node::Expression(*condition))?,
+            consequence,
+            alternative,
+        ),
         Expression::CallExpr {
             token: _,
             function,
@@ -92,15 +97,28 @@ fn eval_expression(expression: Expression) -> Object {
     }
 }
 
-fn eval_prefix_expression(operator: &str, right: Object) -> Object {
+fn eval_prefix_expression(operator: &str, right: Object) -> Result<Object, String> {
     match operator {
         "!" => eval_bang_operator_expression(right),
         "-" => eval_minus_operator_expression(right),
-        _ => Object::Null,
+        _ => Err(format!(
+            "unknown operator: {}{}",
+            operator,
+            right.type_str()
+        )),
     }
 }
 
-fn eval_infix_expression(left: Object, operator: &str, right: Object) -> Object {
+fn eval_infix_expression(left: Object, operator: &str, right: Object) -> Result<Object, String> {
+    if left.type_str() != right.type_str() {
+        return Err(format!(
+            "type mismatch: {} {} {}",
+            left.type_str(),
+            operator,
+            right.type_str()
+        ));
+    }
+
     if let Object::Integer(left_value) = left {
         if let Object::Integer(right_value) = right {
             return eval_integer_infix(left_value, operator, right_value);
@@ -113,45 +131,44 @@ fn eval_infix_expression(left: Object, operator: &str, right: Object) -> Object 
         }
     }
 
-    // Bool and int are never equal, if the operator is anything else
-    // there is no way to produce meaningful values --> return null
+    Err(format!(
+        "unknown operator: {} {} {}",
+        left.type_str(),
+        operator,
+        right.type_str()
+    ))
+}
+
+fn eval_integer_infix(left: isize, operator: &str, right: isize) -> Result<Object, String> {
     match operator {
-        "==" => Object::Boolean(false),
-        "!=" => Object::Boolean(true),
-        _ => Object::Null,
+        "+" => Ok(Object::Integer(left + right)),
+        "-" => Ok(Object::Integer(left - right)),
+        "*" => Ok(Object::Integer(left * right)),
+        "/" => Ok(Object::Integer(left / right)),
+        "<" => Ok(Object::Boolean(left < right)),
+        ">" => Ok(Object::Boolean(left > right)),
+        "==" => Ok(Object::Boolean(left == right)),
+        "!=" => Ok(Object::Boolean(left != right)),
+        _ => Err(format!("unknown operator: INTEGER {} INTEGER", operator,)),
     }
 }
 
-fn eval_integer_infix(left: isize, operator: &str, right: isize) -> Object {
+fn eval_bool_infix(left: bool, operator: &str, right: bool) -> Result<Object, String> {
     match operator {
-        "+" => Object::Integer(left + right),
-        "-" => Object::Integer(left - right),
-        "*" => Object::Integer(left * right),
-        "/" => Object::Integer(left / right),
-        "<" => Object::Boolean(left < right),
-        ">" => Object::Boolean(left > right),
-        "==" => Object::Boolean(left == right),
-        "!=" => Object::Boolean(left != right),
-        _ => Object::Null,
+        "==" => Ok(Object::Boolean(left == right)),
+        "!=" => Ok(Object::Boolean(left != right)),
+        _ => Err(format!("unknown operator: BOOLEAN {} BOOLEAN", operator,)),
     }
 }
 
-fn eval_bool_infix(left: bool, operator: &str, right: bool) -> Object {
-    match operator {
-        "==" => Object::Boolean(left == right),
-        "!=" => Object::Boolean(left != right),
-        _ => Object::Null,
-    }
+fn eval_bang_operator_expression(right: Object) -> Result<Object, String> {
+    Ok(Object::Boolean(!is_truthy(right)))
 }
 
-fn eval_bang_operator_expression(right: Object) -> Object {
-    Object::Boolean(!is_truthy(right))
-}
-
-fn eval_minus_operator_expression(right: Object) -> Object {
+fn eval_minus_operator_expression(right: Object) -> Result<Object, String> {
     match right {
-        Object::Integer(value) => Object::Integer(-value),
-        _ => Object::Null,
+        Object::Integer(value) => Ok(Object::Integer(-value)),
+        _ => Err(format!("unknown operator: -{}", right.type_str())),
     }
 }
 
@@ -159,13 +176,13 @@ fn eval_if_else_expression(
     condition: Object,
     consequence: BlockStatement,
     alternative: Option<BlockStatement>,
-) -> Object {
+) -> Result<Object, String> {
     if is_truthy(condition) {
         eval_block_statement(consequence)
     } else if alternative.is_some() {
         eval_block_statement(alternative.unwrap())
     } else {
-        Object::Null
+        Ok(Object::Null)
     }
 }
 
@@ -175,6 +192,5 @@ fn is_truthy(object: Object) -> bool {
         Object::Boolean(value) => value,
         Object::ReturnValue(value) => is_truthy(*value),
         Object::Null => false,
-        Object::Error(message) => todo!(),
     }
 }

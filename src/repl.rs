@@ -30,8 +30,11 @@ pub fn start() {
         let mut parser = Parser::new(lexer);
         match parser.parse_program() {
             Ok(program) => {
-                let object = eval(Node::Program(program));
-                println!("{}", object.inspect());
+                let result = eval(Node::Program(program));
+                match result {
+                    Ok(object) => println!("{}", object.inspect()),
+                    Err(msg) => println!("ERROR! {}", msg),
+                }
             }
             Err(err_vec) => {
                 println!("The following errors occurred:\n{}", err_vec.join("\n"));

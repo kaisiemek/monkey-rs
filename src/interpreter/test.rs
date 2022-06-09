@@ -1,7 +1,10 @@
 #[cfg(test)]
 mod test {
     use crate::{
-        interpreter::{eval, object::Object},
+        interpreter::{
+            eval,
+            object::{Inspectable, Object},
+        },
         lexer::Lexer,
         parser::{ast::Node, Parser},
     };
@@ -326,15 +329,22 @@ mod test {
                 input: "if (10 > 1) { true + false }",
                 expected: "unknown operator: BOOLEAN + BOOLEAN",
             },
+            TestCase {
+                input: concat!(
+                    "if (10 > 1) {",
+                    "  if (10 > 1) {",
+                    "    return true + false;",
+                    "  }",
+                    "  return 1;",
+                    "}",
+                ),
+                expected: "unknown operator: BOOLEAN + BOOLEAN",
+            },
         ];
 
         for test_case in test_cases {
-            let obj = test_eval(test_case.input);
-            if let Object::Error(msg) = obj {
-                assert_eq!(msg, test_case.expected);
-            } else {
-                assert!(false, "Expected error object, got {:?}", obj);
-            }
+            let msg = test_eval_error(test_case.input);
+            assert_eq!(msg, test_case.expected);
         }
     }
 
@@ -344,7 +354,50 @@ mod test {
 
         match parser.parse_program() {
             Ok(program) => {
-                return eval(Node::Program(program));
+                let object = eval(Node::Program(program));
+                match object {
+                    Ok(obj) => obj,
+                    Err(msg) => {
+                        assert!(
+                            false,
+                            "An error occured while evaluating the program: {}",
+                            msg
+                        );
+                        panic!();
+                    }
+                }
+            }
+            Err(errors) => {
+                let error_str = errors.join("\n");
+                assert!(
+                    false,
+                    "The parser encountered {} errors:\n{}",
+                    errors.len(),
+                    error_str
+                );
+                panic!();
+            }
+        }
+    }
+
+    fn test_eval_error(input: &str) -> String {
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+
+        match parser.parse_program() {
+            Ok(program) => {
+                let object = eval(Node::Program(program));
+                match object {
+                    Ok(obj) => {
+                        assert!(
+                            false,
+                            "Expected an error to occur, but it didn't. Eval returned: {}",
+                            obj.inspect()
+                        );
+                        panic!();
+                    }
+                    Err(msg) => msg,
+                }
             }
             Err(errors) => {
                 let error_str = errors.join("\n");
