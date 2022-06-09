@@ -209,6 +209,7 @@ fn is_truthy(object: Object) -> bool {
         Object::Integer(value) => value != 0,
         Object::Boolean(value) => value,
         Object::ReturnValue(value) => is_truthy(*value),
+        Object::Function { .. } => true,
         Object::Null => false,
     }
 }

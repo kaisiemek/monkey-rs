@@ -1,8 +1,17 @@
-#[derive(Debug, Clone, PartialEq, Eq)]
+use crate::parser::ast::BlockStatement;
+
+use super::environment::Environment;
+
+#[derive(Debug, Clone)]
 pub enum Object {
     Integer(isize),
     Boolean(bool),
     ReturnValue(Box<Object>),
+    Function {
+        parameters: Vec<String>,
+        body: BlockStatement,
+        environment: Box<Environment>,
+    },
     Null,
 }
 
@@ -17,6 +26,13 @@ impl Inspectable for Object {
             Object::Integer(value) => format!("{}", value),
             Object::Boolean(value) => format!("{}", value),
             Object::ReturnValue(value) => format!("{}", value.inspect()),
+            Object::Function {
+                parameters,
+                body,
+                environment: _,
+            } => {
+                format!("fn({}) {}", parameters.join(", "), body.to_string())
+            }
             Object::Null => String::from("null"),
         }
     }
@@ -26,6 +42,7 @@ impl Inspectable for Object {
             Object::Integer(_) => String::from("INTEGER"),
             Object::Boolean(_) => String::from("BOOLEAN"),
             Object::ReturnValue(value) => format!("RETURN {}", value.type_str()),
+            Object::Function { .. } => String::from("FUNCTION"),
             Object::Null => String::from("NULL"),
         }
     }

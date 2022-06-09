@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use super::object::Object;
 
+#[derive(Debug, Clone)]
 pub struct Environment {
     identifiers: HashMap<String, Object>,
 }

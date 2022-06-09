@@ -218,7 +218,7 @@ mod test {
 
         for test_case in test_cases {
             let obj = test_eval(test_case.input);
-            assert_eq!(obj, test_case.expected);
+            assert_eq!(obj.inspect(), test_case.expected.inspect());
         }
     }
 
@@ -415,6 +415,28 @@ mod test {
                 );
                 panic!();
             }
+        }
+    }
+
+    #[test]
+    fn test_function_object() {
+        let input = "f(x) { x + 1; };";
+        let object = test_eval(input);
+
+        assert_eq!(object.type_str(), "FUNCTION");
+        println!("{}", object.inspect());
+        if let Object::Function {
+            parameters,
+            body,
+            environment: _,
+        } = object
+        {
+            assert_eq!(parameters.len(), 1);
+            assert_eq!(parameters[0], "x");
+            assert_eq!(body.to_string(), "(x + 2)");
+        } else {
+            assert_eq!(object.type_str(), "FUNCTION");
+            panic!("how?");
         }
     }
 
