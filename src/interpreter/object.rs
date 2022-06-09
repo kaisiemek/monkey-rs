@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::{cell::RefCell, rc::Rc};
 
 use crate::parser::ast::{BlockStatement, Expression};
 
@@ -12,7 +12,7 @@ pub enum Object {
     Function {
         parameters: Vec<Expression>,
         body: BlockStatement,
-        environment: RefCell<Environment>,
+        environment: Rc<RefCell<Environment>>,
     },
     Null,
 }

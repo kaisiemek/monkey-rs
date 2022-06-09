@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use std::cell::RefCell;
+    use std::{cell::RefCell, rc::Rc};
 
     use crate::{
         interpreter::{
@@ -390,11 +390,11 @@ mod test {
     fn test_eval(input: &str) -> Object {
         let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
-        let environment = RefCell::new(Environment::new());
+        let environment = Rc::new(RefCell::new(Environment::new()));
 
         match parser.parse_program() {
             Ok(program) => {
-                let object = eval(Node::Program(program), &environment);
+                let object = eval(Node::Program(program), environment);
                 match object {
                     Ok(obj) => obj,
                     Err(msg) => {
@@ -442,14 +442,54 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_function_application() {
+        struct TestCase<'a> {
+            input: &'a str,
+            expected: isize,
+        }
+
+        let test_cases = vec![
+            TestCase {
+                input: "let identity = fn(x) { x; }; identity(5);",
+                expected: 5,
+            },
+            TestCase {
+                input: "let identity = fn(x) { return x; }; identity(5);",
+                expected: 5,
+            },
+            TestCase {
+                input: "let double = fn(x) { x * 2; }; double(5);",
+                expected: 10,
+            },
+            TestCase {
+                input: "let add = fn(x, y) { x + y; }; add(5, 5);",
+                expected: 10,
+            },
+            TestCase {
+                input: "let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));",
+                expected: 20,
+            },
+            TestCase {
+                input: "fn(x) { x; }(5)",
+                expected: 5,
+            },
+        ];
+
+        for test_case in test_cases {
+            let object = test_eval(test_case.input);
+            test_integer_object(object, test_case.expected);
+        }
+    }
+
     fn test_eval_error(input: &str) -> String {
         let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
-        let environment = RefCell::new(Environment::new());
+        let environment = Rc::new(RefCell::new(Environment::new()));
 
         match parser.parse_program() {
             Ok(program) => {
-                let object = eval(Node::Program(program), &environment);
+                let object = eval(Node::Program(program), environment);
                 match object {
                     Ok(obj) => {
                         assert!(

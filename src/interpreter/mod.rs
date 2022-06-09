@@ -2,7 +2,7 @@ pub mod environment;
 pub mod object;
 mod test;
 
-use std::cell::RefCell;
+use std::{cell::RefCell, rc::Rc};
 
 use self::{
     environment::Environment,
@@ -10,7 +10,7 @@ use self::{
 };
 use crate::parser::ast::{BlockStatement, Expression, Node, Program, Statement};
 
-pub fn eval(node: Node, env: &RefCell<Environment>) -> Result<Object, String> {
+pub fn eval(node: Node, env: Rc<RefCell<Environment>>) -> Result<Object, String> {
     match node {
         Node::Statement(statement) => eval_statement(statement, env),
         Node::Expression(expression) => eval_expression(expression, env),
@@ -19,10 +19,10 @@ pub fn eval(node: Node, env: &RefCell<Environment>) -> Result<Object, String> {
     }
 }
 
-fn eval_program(statements: Program, env: &RefCell<Environment>) -> Result<Object, String> {
+fn eval_program(statements: Program, env: Rc<RefCell<Environment>>) -> Result<Object, String> {
     let mut result = Object::Null;
     for statement in statements {
-        result = eval_statement(statement, env)?;
+        result = eval_statement(statement, env.clone())?;
 
         if let Object::ReturnValue(value) = result {
             return Ok(*value);
@@ -33,11 +33,11 @@ fn eval_program(statements: Program, env: &RefCell<Environment>) -> Result<Objec
 
 fn eval_block_statement(
     block: BlockStatement,
-    env: &RefCell<Environment>,
+    env: Rc<RefCell<Environment>>,
 ) -> Result<Object, String> {
     let mut result = Object::Null;
     for statement in block.statements {
-        result = eval_statement(statement, env)?;
+        result = eval_statement(statement, env.clone())?;
         if let Object::ReturnValue(_) = result {
             return Ok(result);
         }
@@ -45,15 +45,15 @@ fn eval_block_statement(
     Ok(result)
 }
 
-fn eval_statement(statement: Statement, env: &RefCell<Environment>) -> Result<Object, String> {
+fn eval_statement(statement: Statement, env: Rc<RefCell<Environment>>) -> Result<Object, String> {
     match statement {
         Statement::LetStmt {
             token: _,
             identifier,
             value,
         } => {
-            let val = eval(Node::Expression(value), env)?;
-            env.borrow_mut().set(&identifier, val);
+            let val = eval(Node::Expression(value), env.clone())?;
+            (*env).borrow_mut().set(&identifier, val);
             Ok(Object::Null)
         }
         Statement::ReturnStmt { token: _, value } => {
@@ -67,7 +67,10 @@ fn eval_statement(statement: Statement, env: &RefCell<Environment>) -> Result<Ob
     }
 }
 
-fn eval_expression(expression: Expression, env: &RefCell<Environment>) -> Result<Object, String> {
+fn eval_expression(
+    expression: Expression,
+    env: Rc<RefCell<Environment>>,
+) -> Result<Object, String> {
     match expression {
         Expression::IdentifierExpr { token: _, value } => eval_identifier(&value, env),
         Expression::LiteralIntExpr { token: _, value } => Ok(Object::Integer(value)),
@@ -79,7 +82,7 @@ fn eval_expression(expression: Expression, env: &RefCell<Environment>) -> Result
         } => Ok(Object::Function {
             parameters,
             body,
-            environment: env.to_owned(),
+            environment: env,
         }),
         Expression::PrefixExpr {
             token: _,
@@ -92,7 +95,7 @@ fn eval_expression(expression: Expression, env: &RefCell<Environment>) -> Result
             operator,
             right_expression,
         } => eval_infix_expression(
-            eval(Node::Expression(*left_expression), env)?,
+            eval(Node::Expression(*left_expression), env.clone())?,
             &operator,
             eval(Node::Expression(*right_expression), env)?,
         ),
@@ -102,7 +105,7 @@ fn eval_expression(expression: Expression, env: &RefCell<Environment>) -> Result
             consequence,
             alternative,
         } => eval_if_else_expression(
-            eval(Node::Expression(*condition), env)?,
+            eval(Node::Expression(*condition), env.clone())?,
             consequence,
             alternative,
             env,
@@ -111,7 +114,7 @@ fn eval_expression(expression: Expression, env: &RefCell<Environment>) -> Result
             token: _,
             function,
             arguments,
-        } => todo!(),
+        } => eval_call_expression(function, arguments, env),
     }
 }
 
@@ -194,7 +197,7 @@ fn eval_if_else_expression(
     condition: Object,
     consequence: BlockStatement,
     alternative: Option<BlockStatement>,
-    env: &RefCell<Environment>,
+    env: Rc<RefCell<Environment>>,
 ) -> Result<Object, String> {
     if is_truthy(condition) {
         eval_block_statement(consequence, env)
@@ -205,13 +208,74 @@ fn eval_if_else_expression(
     }
 }
 
-fn eval_identifier(name: &str, env: &RefCell<Environment>) -> Result<Object, String> {
+fn eval_call_expression(
+    func: Box<Expression>,
+    arguments: Vec<Expression>,
+    env: Rc<RefCell<Environment>>,
+) -> Result<Object, String> {
+    let function = eval_expression(*func, env.clone())?;
+    let mut args = Vec::new();
+
+    for expression in arguments {
+        args.push(eval_expression(expression, env.clone())?);
+    }
+
+    apply_function(function, args)
+}
+
+fn eval_identifier(name: &str, env: Rc<RefCell<Environment>>) -> Result<Object, String> {
     let environment = env.borrow();
     let value = environment.get(name);
     match value {
         Some(object) => Ok(object.clone()),
         None => Err(format!("unknown identifier: {}", name)),
     }
+}
+
+fn apply_function(function: Object, arguments: Vec<Object>) -> Result<Object, String> {
+    if let Object::Function {
+        parameters,
+        body,
+        environment,
+    } = function
+    {
+        let extended_env = extend_function_env(&parameters, &arguments, environment)?;
+        eval_block_statement(body, extended_env)
+    } else {
+        Err(format!("not a function: {}", function.type_str()))
+    }
+}
+
+fn extend_function_env(
+    parameters: &[Expression],
+    arguments: &[Object],
+    env: Rc<RefCell<Environment>>,
+) -> Result<Rc<RefCell<Environment>>, String> {
+    let mut extended_env = Environment::new_enclosed(env);
+    if parameters.len() != arguments.len() {
+        return Err(format!(
+            "the amount of supplied arguments {} differed from the specified parameters {}",
+            arguments.len(),
+            parameters.len(),
+        ));
+    }
+
+    for (param, arg) in parameters.iter().zip(arguments.iter()) {
+        if let Expression::IdentifierExpr {
+            token: _,
+            value: name,
+        } = param
+        {
+            extended_env.set(name, arg.clone());
+        } else {
+            return Err(format!(
+                "Expected all parameters to be IdentifierExpr, but got {:?}",
+                param
+            ));
+        }
+    }
+
+    Ok(Rc::new(RefCell::new(extended_env)))
 }
 
 fn is_truthy(object: Object) -> bool {
