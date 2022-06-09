@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod test {
+    use std::cell::RefCell;
+
     use crate::{
         interpreter::{
             environment::Environment,
@@ -388,11 +390,11 @@ mod test {
     fn test_eval(input: &str) -> Object {
         let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
-        let mut environment = Environment::new();
+        let environment = RefCell::new(Environment::new());
 
         match parser.parse_program() {
             Ok(program) => {
-                let object = eval(Node::Program(program), &mut environment);
+                let object = eval(Node::Program(program), &environment);
                 match object {
                     Ok(obj) => obj,
                     Err(msg) => {
@@ -420,7 +422,7 @@ mod test {
 
     #[test]
     fn test_function_object() {
-        let input = "f(x) { x + 1; };";
+        let input = "fn(x) { x + 1; };";
         let object = test_eval(input);
 
         assert_eq!(object.type_str(), "FUNCTION");
@@ -432,8 +434,8 @@ mod test {
         } = object
         {
             assert_eq!(parameters.len(), 1);
-            assert_eq!(parameters[0], "x");
-            assert_eq!(body.to_string(), "(x + 2)");
+            assert_eq!(parameters[0].to_string(), "x");
+            assert_eq!(body.to_string(), "{\n\t(x + 1)\n}");
         } else {
             assert_eq!(object.type_str(), "FUNCTION");
             panic!("how?");
@@ -443,11 +445,11 @@ mod test {
     fn test_eval_error(input: &str) -> String {
         let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
-        let mut environment = Environment::new();
+        let environment = RefCell::new(Environment::new());
 
         match parser.parse_program() {
             Ok(program) => {
-                let object = eval(Node::Program(program), &mut environment);
+                let object = eval(Node::Program(program), &environment);
                 match object {
                     Ok(obj) => {
                         assert!(

@@ -1,4 +1,6 @@
-use crate::parser::ast::BlockStatement;
+use std::cell::RefCell;
+
+use crate::parser::ast::{BlockStatement, Expression};
 
 use super::environment::Environment;
 
@@ -8,9 +10,9 @@ pub enum Object {
     Boolean(bool),
     ReturnValue(Box<Object>),
     Function {
-        parameters: Vec<String>,
+        parameters: Vec<Expression>,
         body: BlockStatement,
-        environment: Box<Environment>,
+        environment: RefCell<Environment>,
     },
     Null,
 }
@@ -31,7 +33,9 @@ impl Inspectable for Object {
                 body,
                 environment: _,
             } => {
-                format!("fn({}) {}", parameters.join(", "), body.to_string())
+                let param_strings: Vec<String> =
+                    parameters.iter().map(|param| param.to_string()).collect();
+                format!("fn({}) {}", param_strings.join(", "), body.to_string())
             }
             Object::Null => String::from("null"),
         }

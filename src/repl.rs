@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::io::{self, Write};
 use std::process::exit;
 
@@ -16,7 +17,7 @@ pub fn start() -> ! {
         whoami::username()
     );
     io::stdout().flush().expect("Error flushing stdout");
-    let mut repl_environment = Environment::new();
+    let repl_environment = RefCell::new(Environment::new());
 
     loop {
         print!("> ");
@@ -34,7 +35,7 @@ pub fn start() -> ! {
         let mut parser = Parser::new(lexer);
         match parser.parse_program() {
             Ok(program) => {
-                let result = eval(Node::Program(program), &mut repl_environment);
+                let result = eval(Node::Program(program), &repl_environment);
                 match result {
                     Ok(object) => println!("{}", object.inspect()),
                     Err(msg) => println!("ERROR! {}", msg),

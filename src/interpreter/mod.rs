@@ -2,13 +2,15 @@ pub mod environment;
 pub mod object;
 mod test;
 
+use std::cell::RefCell;
+
 use self::{
     environment::Environment,
     object::{Inspectable, Object},
 };
 use crate::parser::ast::{BlockStatement, Expression, Node, Program, Statement};
 
-pub fn eval(node: Node, env: &mut Environment) -> Result<Object, String> {
+pub fn eval(node: Node, env: &RefCell<Environment>) -> Result<Object, String> {
     match node {
         Node::Statement(statement) => eval_statement(statement, env),
         Node::Expression(expression) => eval_expression(expression, env),
@@ -17,7 +19,7 @@ pub fn eval(node: Node, env: &mut Environment) -> Result<Object, String> {
     }
 }
 
-fn eval_program(statements: Program, env: &mut Environment) -> Result<Object, String> {
+fn eval_program(statements: Program, env: &RefCell<Environment>) -> Result<Object, String> {
     let mut result = Object::Null;
     for statement in statements {
         result = eval_statement(statement, env)?;
@@ -29,7 +31,10 @@ fn eval_program(statements: Program, env: &mut Environment) -> Result<Object, St
     Ok(result)
 }
 
-fn eval_block_statement(block: BlockStatement, env: &mut Environment) -> Result<Object, String> {
+fn eval_block_statement(
+    block: BlockStatement,
+    env: &RefCell<Environment>,
+) -> Result<Object, String> {
     let mut result = Object::Null;
     for statement in block.statements {
         result = eval_statement(statement, env)?;
@@ -40,7 +45,7 @@ fn eval_block_statement(block: BlockStatement, env: &mut Environment) -> Result<
     Ok(result)
 }
 
-fn eval_statement(statement: Statement, env: &mut Environment) -> Result<Object, String> {
+fn eval_statement(statement: Statement, env: &RefCell<Environment>) -> Result<Object, String> {
     match statement {
         Statement::LetStmt {
             token: _,
@@ -48,7 +53,7 @@ fn eval_statement(statement: Statement, env: &mut Environment) -> Result<Object,
             value,
         } => {
             let val = eval(Node::Expression(value), env)?;
-            env.set(&identifier, val);
+            env.borrow_mut().set(&identifier, val);
             Ok(Object::Null)
         }
         Statement::ReturnStmt { token: _, value } => {
@@ -62,7 +67,7 @@ fn eval_statement(statement: Statement, env: &mut Environment) -> Result<Object,
     }
 }
 
-fn eval_expression(expression: Expression, env: &mut Environment) -> Result<Object, String> {
+fn eval_expression(expression: Expression, env: &RefCell<Environment>) -> Result<Object, String> {
     match expression {
         Expression::IdentifierExpr { token: _, value } => eval_identifier(&value, env),
         Expression::LiteralIntExpr { token: _, value } => Ok(Object::Integer(value)),
@@ -71,7 +76,11 @@ fn eval_expression(expression: Expression, env: &mut Environment) -> Result<Obje
             token: _,
             parameters,
             body,
-        } => todo!(),
+        } => Ok(Object::Function {
+            parameters,
+            body,
+            environment: env.to_owned(),
+        }),
         Expression::PrefixExpr {
             token: _,
             operator,
@@ -185,7 +194,7 @@ fn eval_if_else_expression(
     condition: Object,
     consequence: BlockStatement,
     alternative: Option<BlockStatement>,
-    env: &mut Environment,
+    env: &RefCell<Environment>,
 ) -> Result<Object, String> {
     if is_truthy(condition) {
         eval_block_statement(consequence, env)
@@ -196,8 +205,9 @@ fn eval_if_else_expression(
     }
 }
 
-fn eval_identifier(name: &str, env: &mut Environment) -> Result<Object, String> {
-    let value = env.get(name);
+fn eval_identifier(name: &str, env: &RefCell<Environment>) -> Result<Object, String> {
+    let environment = env.borrow();
+    let value = environment.get(name);
     match value {
         Some(object) => Ok(object.clone()),
         None => Err(format!("unknown identifier: {}", name)),

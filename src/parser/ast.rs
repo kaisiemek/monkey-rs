@@ -53,14 +53,13 @@ impl ToString for Statement {
 
 impl ToString for BlockStatement {
     fn to_string(&self) -> String {
-        let mut blockstring = String::from("{\n");
+        let mut stmt_strings = Vec::new();
 
         for statement in &self.statements {
-            blockstring.push_str(&statement.to_string());
+            stmt_strings.push(statement.to_string());
         }
 
-        blockstring.push_str("\n}");
-        blockstring
+        format!("{{\n\t{}\n}}", stmt_strings.join("\n\t"))
     }
 }
 
