@@ -76,11 +76,7 @@ fn eval_expression(expression: Expression, env: &mut Environment) -> Result<Obje
             token: _,
             operator,
             right_expression,
-        } => eval_prefix_expression(
-            &operator,
-            eval(Node::Expression(*right_expression), env)?,
-            env,
-        ),
+        } => eval_prefix_expression(&operator, eval(Node::Expression(*right_expression), env)?),
         Expression::InfixExpr {
             token: _,
             left_expression,
@@ -90,7 +86,6 @@ fn eval_expression(expression: Expression, env: &mut Environment) -> Result<Obje
             eval(Node::Expression(*left_expression), env)?,
             &operator,
             eval(Node::Expression(*right_expression), env)?,
-            env,
         ),
         Expression::IfExpr {
             token: _,
@@ -111,14 +106,10 @@ fn eval_expression(expression: Expression, env: &mut Environment) -> Result<Obje
     }
 }
 
-fn eval_prefix_expression(
-    operator: &str,
-    right: Object,
-    env: &mut Environment,
-) -> Result<Object, String> {
+fn eval_prefix_expression(operator: &str, right: Object) -> Result<Object, String> {
     match operator {
-        "!" => eval_bang_operator_expression(right, env),
-        "-" => eval_minus_operator_expression(right, env),
+        "!" => eval_bang_operator_expression(right),
+        "-" => eval_minus_operator_expression(right),
         _ => Err(format!(
             "unknown operator: {}{}",
             operator,
@@ -127,12 +118,7 @@ fn eval_prefix_expression(
     }
 }
 
-fn eval_infix_expression(
-    left: Object,
-    operator: &str,
-    right: Object,
-    env: &mut Environment,
-) -> Result<Object, String> {
+fn eval_infix_expression(left: Object, operator: &str, right: Object) -> Result<Object, String> {
     if left.type_str() != right.type_str() {
         return Err(format!(
             "type mismatch: {} {} {}",
@@ -144,13 +130,13 @@ fn eval_infix_expression(
 
     if let Object::Integer(left_value) = left {
         if let Object::Integer(right_value) = right {
-            return eval_integer_infix(left_value, operator, right_value, env);
+            return eval_integer_infix(left_value, operator, right_value);
         }
     }
 
     if let Object::Boolean(left_value) = left {
         if let Object::Boolean(right_value) = right {
-            return eval_bool_infix(left_value, operator, right_value, env);
+            return eval_bool_infix(left_value, operator, right_value);
         }
     }
 
@@ -162,12 +148,7 @@ fn eval_infix_expression(
     ))
 }
 
-fn eval_integer_infix(
-    left: isize,
-    operator: &str,
-    right: isize,
-    env: &mut Environment,
-) -> Result<Object, String> {
+fn eval_integer_infix(left: isize, operator: &str, right: isize) -> Result<Object, String> {
     match operator {
         "+" => Ok(Object::Integer(left + right)),
         "-" => Ok(Object::Integer(left - right)),
@@ -181,12 +162,7 @@ fn eval_integer_infix(
     }
 }
 
-fn eval_bool_infix(
-    left: bool,
-    operator: &str,
-    right: bool,
-    env: &mut Environment,
-) -> Result<Object, String> {
+fn eval_bool_infix(left: bool, operator: &str, right: bool) -> Result<Object, String> {
     match operator {
         "==" => Ok(Object::Boolean(left == right)),
         "!=" => Ok(Object::Boolean(left != right)),
@@ -194,11 +170,11 @@ fn eval_bool_infix(
     }
 }
 
-fn eval_bang_operator_expression(right: Object, env: &mut Environment) -> Result<Object, String> {
+fn eval_bang_operator_expression(right: Object) -> Result<Object, String> {
     Ok(Object::Boolean(!is_truthy(right)))
 }
 
-fn eval_minus_operator_expression(right: Object, env: &mut Environment) -> Result<Object, String> {
+fn eval_minus_operator_expression(right: Object) -> Result<Object, String> {
     match right {
         Object::Integer(value) => Ok(Object::Integer(-value)),
         _ => Err(format!("unknown operator: -{}", right.type_str())),
