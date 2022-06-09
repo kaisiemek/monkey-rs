@@ -2,6 +2,7 @@
 mod test {
     use crate::{
         interpreter::{
+            environment::Environment,
             eval,
             object::{Inspectable, Object},
         },
@@ -340,6 +341,10 @@ mod test {
                 ),
                 expected: "unknown operator: BOOLEAN + BOOLEAN",
             },
+            TestCase {
+                input: "foobar",
+                expected: "unknown identifier: foobar",
+            },
         ];
 
         for test_case in test_cases {
@@ -348,13 +353,46 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_let_statements() {
+        struct TestCase<'a> {
+            input: &'a str,
+            expected: isize,
+        }
+
+        let test_cases = vec![
+            TestCase {
+                input: "let a = 5; a;",
+                expected: 5,
+            },
+            TestCase {
+                input: "let a = 5 * 5; a;",
+                expected: 25,
+            },
+            TestCase {
+                input: "let a = 5; let b = a; b;",
+                expected: 5,
+            },
+            TestCase {
+                input: "let a = 5; let b = a; let c = a + b + 5; c;",
+                expected: 15,
+            },
+        ];
+
+        for test_case in test_cases {
+            let object = test_eval(test_case.input);
+            test_integer_object(object, test_case.expected);
+        }
+    }
+
     fn test_eval(input: &str) -> Object {
         let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
+        let mut environment = Environment::new();
 
         match parser.parse_program() {
             Ok(program) => {
-                let object = eval(Node::Program(program));
+                let object = eval(Node::Program(program), &mut environment);
                 match object {
                     Ok(obj) => obj,
                     Err(msg) => {
@@ -383,10 +421,11 @@ mod test {
     fn test_eval_error(input: &str) -> String {
         let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
+        let mut environment = Environment::new();
 
         match parser.parse_program() {
             Ok(program) => {
-                let object = eval(Node::Program(program));
+                let object = eval(Node::Program(program), &mut environment);
                 match object {
                     Ok(obj) => {
                         assert!(
