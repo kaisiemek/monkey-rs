@@ -17,6 +17,9 @@ fn eval_statements(statements: Vec<Statement>) -> Object {
     let mut object = Object::Null;
     for statement in statements {
         object = eval_statement(statement);
+        if let Object::ReturnValue(value) = object {
+            return *value;
+        }
     }
     object
 }
@@ -28,7 +31,10 @@ fn eval_statement(statement: Statement) -> Object {
             identifier,
             value,
         } => todo!(),
-        Statement::ReturnStmt { token: _, value } => todo!(),
+        Statement::ReturnStmt { token: _, value } => {
+            Object::ReturnValue(Box::from(eval(Node::Expression(value))))
+        }
+
         Statement::ExpressionStmt {
             token: _,
             expression,
@@ -156,6 +162,7 @@ fn is_truthy(object: Object) -> bool {
     match object {
         Object::Integer(value) => value != 0,
         Object::Boolean(value) => value,
+        Object::ReturnValue(value) => is_truthy(*value),
         Object::Null => false,
     }
 }

@@ -258,6 +258,38 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_return_statement() {
+        struct TestCase<'a> {
+            input: &'a str,
+            expected: isize,
+        }
+
+        let test_cases = vec![
+            TestCase {
+                input: "return 10;",
+                expected: 10,
+            },
+            TestCase {
+                input: "return 10; 9;",
+                expected: 10,
+            },
+            TestCase {
+                input: "return 2 * 5; 9;",
+                expected: 10,
+            },
+            TestCase {
+                input: "9; return 2 * 5; 9;",
+                expected: 10,
+            },
+        ];
+
+        for test_case in test_cases {
+            let obj = test_eval(test_case.input);
+            test_integer_object(obj, test_case.expected);
+        }
+    }
+
     fn test_eval(input: &str) -> Object {
         let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);

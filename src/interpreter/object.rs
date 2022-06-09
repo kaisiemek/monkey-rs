@@ -2,6 +2,7 @@
 pub enum Object {
     Integer(isize),
     Boolean(bool),
+    ReturnValue(Box<Object>),
     Null,
 }
 
@@ -15,6 +16,7 @@ impl Inspectable for Object {
             Object::Integer(value) => format!("{}", value),
             Object::Boolean(value) => format!("{}", value),
             Object::Null => String::from("null"),
+            Object::ReturnValue(value) => format!("{}", value.inspect()),
         }
     }
 }
