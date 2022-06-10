@@ -9,6 +9,7 @@ pub enum Object {
     Integer(isize),
     Boolean(bool),
     String(String),
+    Array(Vec<Object>),
     ReturnValue(Box<Object>),
     Function {
         parameters: Vec<Expression>,
@@ -33,6 +34,10 @@ impl Inspectable for Object {
             Object::Integer(value) => format!("{}", value),
             Object::Boolean(value) => format!("{}", value),
             Object::String(value) => value.clone(),
+            Object::Array(elements) => {
+                let expr_strings: Vec<String> = elements.iter().map(|val| val.inspect()).collect();
+                format!("[{}]", expr_strings.join(", "))
+            }
             Object::ReturnValue(value) => format!("{}", value.inspect()),
             Object::Function {
                 parameters,
@@ -53,6 +58,7 @@ impl Inspectable for Object {
             Object::Integer(_) => String::from("INTEGER"),
             Object::Boolean(_) => String::from("BOOLEAN"),
             Object::String(_) => String::from("STRING"),
+            Object::Array(_) => String::from("ARRAY"),
             Object::ReturnValue(value) => format!("RETURN {}", value.type_str()),
             Object::Function { .. } => String::from("FUNCTION"),
             Object::BuiltIn { .. } => String::from("BUILTIN"),

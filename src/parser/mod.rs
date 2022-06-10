@@ -246,6 +246,7 @@ impl Parser {
                 token: self.cur_token.clone(),
                 value: self.cur_token.literal.clone(),
             }),
+            TokenType::LBRACKET => self.parse_array(),
             _ => Err(()),
         }
     }
@@ -372,7 +373,7 @@ impl Parser {
         let token = self.cur_token.clone();
         self.expect_peek(TokenType::LPAREN)?;
 
-        let parameters = self.parse_fn_parameters()?;
+        let parameters = self.parse_expression_list(TokenType::RPAREN)?;
 
         self.expect_peek(TokenType::LBRACE)?;
 
@@ -392,7 +393,7 @@ impl Parser {
         let token = self.cur_token.clone();
         let function = Box::from(left_expression);
 
-        let arg_result = self.parse_call_arguments();
+        let arg_result = self.parse_expression_list(TokenType::RPAREN);
         match arg_result {
             Ok(arguments) => Ok(Expression::CallExpr {
                 token,
@@ -403,47 +404,33 @@ impl Parser {
         }
     }
 
-    fn parse_fn_parameters(&mut self) -> Result<Vec<Expression>, ()> {
-        let mut parameters: Vec<Expression> = Vec::new();
+    fn parse_array(&mut self) -> Result<Expression, ()> {
+        let token = self.cur_token.clone();
 
-        if self.peek_token_is(TokenType::RPAREN) {
-            self.next_token();
-            return Ok(parameters);
-        }
+        let elements = self.parse_expression_list(TokenType::RBRACKET)?;
 
-        self.next_token();
-        parameters.push(self.parse_identifier());
-
-        while self.peek_token_is(TokenType::COMMA) {
-            self.next_token();
-            self.next_token();
-            parameters.push(self.parse_identifier());
-        }
-
-        self.expect_peek(TokenType::RPAREN)?;
-
-        Ok(parameters)
+        Ok(Expression::LiteralArrayExpr { token, elements })
     }
 
-    fn parse_call_arguments(&mut self) -> Result<Vec<Expression>, ()> {
-        let mut arguments: Vec<Expression> = Vec::new();
+    fn parse_expression_list(&mut self, end: TokenType) -> Result<Vec<Expression>, ()> {
+        let mut result = Vec::new();
 
-        if self.peek_token_is(TokenType::RPAREN) {
+        if self.peek_token_is(end) {
             self.next_token();
-            return Ok(arguments);
+            return Ok(result);
         }
 
         self.next_token();
-        arguments.push(self.parse_expression(Precedence::Lowest)?);
+        result.push(self.parse_expression(Precedence::Lowest)?);
 
         while self.peek_token_is(TokenType::COMMA) {
             self.next_token();
             self.next_token();
-            arguments.push(self.parse_expression(Precedence::Lowest)?);
+            result.push(self.parse_expression(Precedence::Lowest)?);
         }
 
-        self.expect_peek(TokenType::RPAREN)?;
+        self.expect_peek(end)?;
 
-        Ok(arguments)
+        Ok(result)
     }
 }

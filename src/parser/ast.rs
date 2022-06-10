@@ -81,6 +81,10 @@ pub enum Expression {
         token: Token,
         value: String,
     },
+    LiteralArrayExpr {
+        token: Token,
+        elements: Vec<Expression>,
+    },
     LiteralFnExpr {
         token: Token,
         parameters: Vec<Expression>,
@@ -117,6 +121,13 @@ impl ToString for Expression {
             Expression::LiteralIntExpr { token: _, value } => format!("{}", value),
             Expression::LiteralBoolExpr { token: _, value } => format!("{}", value),
             Expression::LiteralStringExpr { token: _, value } => value.clone(),
+            Expression::LiteralArrayExpr {
+                token: _,
+                elements: value,
+            } => {
+                let expr_strings: Vec<String> = value.iter().map(|val| val.to_string()).collect();
+                format!("[{}]", expr_strings.join(", "))
+            }
             Expression::PrefixExpr {
                 token: _,
                 operator,

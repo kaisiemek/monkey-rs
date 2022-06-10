@@ -753,8 +753,8 @@ mod test {
         ];
 
         for test_case in test_cases {
+            println!("{}", test_case.input);
             let expression = parse_expression_statement(test_case.input);
-
             if let Expression::CallExpr {
                 token: _,
                 arguments,
@@ -787,6 +787,25 @@ mod test {
             assert_eq!(value, "hello world");
         } else {
             assert!(false, "Expected LiteralStringExpr, got {:?}", expr);
+        }
+    }
+
+    #[test]
+    fn test_array_literal() {
+        let input = "[1, 2 * 2, 3 + 3]";
+
+        let expression = parse_expression_statement(input);
+        if let Expression::LiteralArrayExpr {
+            token: _,
+            elements: value,
+        } = expression
+        {
+            assert_eq!(value.len(), 3);
+            test_integer_literal(value[0].clone(), 1);
+            test_infix_expression(value[1].clone(), "2", "*", "2");
+            test_infix_expression(value[2].clone(), "3", "+", "3");
+        } else {
+            panic!("Expected LiteralArrayExpr, got {:?}", expression);
         }
     }
 

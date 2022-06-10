@@ -31,6 +31,8 @@ pub enum TokenType {
     RPAREN,
     LBRACE,
     RBRACE,
+    LBRACKET,
+    RBRACKET,
 
     // keywords
     FUNCTION,
@@ -100,6 +102,8 @@ impl fmt::Display for TokenType {
             TokenType::RPAREN => write!(f, ")"),
             TokenType::LBRACE => write!(f, "{{"),
             TokenType::RBRACE => write!(f, "}}"),
+            TokenType::LBRACKET => write!(f, "["),
+            TokenType::RBRACKET => write!(f, "]"),
             TokenType::FUNCTION => write!(f, "FUNCTION"),
             TokenType::LET => write!(f, "LET"),
             TokenType::TRUE => write!(f, "TRUE"),

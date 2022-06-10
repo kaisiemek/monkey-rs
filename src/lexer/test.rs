@@ -51,13 +51,14 @@ mod test {
             "  x + y;\n",
             "};\n",
             "\n",
-            "let result = add(five, ten);\n"
+            "let result = add(five, ten);\n",
+            "[1, \"test\", true]\n"
         );
 
         let mut expected_strings: VecDeque<&str> = VecDeque::from_iter([
             "let", "five", "=", "5", ";", "let", "ten", "=", "10", ";", "let", "add", "=", "fn",
             "(", "x", ",", "y", ")", "{", "x", "+", "y", ";", "}", ";", "let", "result", "=",
-            "add", "(", "five", ",", "ten", ")", ";", "",
+            "add", "(", "five", ",", "ten", ")", ";", "[", "1", ",", "test", ",", "true", "]", "",
         ]);
 
         let mut expected_types: VecDeque<TokenType> = VecDeque::from_iter([
@@ -97,6 +98,13 @@ mod test {
             TokenType::IDENT,
             TokenType::RPAREN,
             TokenType::SEMICOLON,
+            TokenType::LBRACKET,
+            TokenType::INT,
+            TokenType::COMMA,
+            TokenType::STRING,
+            TokenType::COMMA,
+            TokenType::TRUE,
+            TokenType::RBRACKET,
             TokenType::EOF,
         ]);
 

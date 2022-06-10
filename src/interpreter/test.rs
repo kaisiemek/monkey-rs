@@ -586,6 +586,23 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_array() {
+        let input = "[1, 3 * 4, 1 + 1 + 1 + 1 + 1, \"foo\" + \"bar\", true == false]";
+
+        let obj = test_eval(input);
+        if let Object::Array(elements) = obj {
+            assert_eq!(elements.len(), 5);
+            test_integer_object(elements[0].clone(), 1);
+            test_integer_object(elements[1].clone(), 12);
+            test_integer_object(elements[2].clone(), 5);
+            test_string_object(elements[3].clone(), "foobar");
+            test_bool_object(elements[4].clone(), false);
+        } else {
+            panic!("Expected array object, got {}", obj.inspect());
+        }
+    }
+
     fn test_eval_error(input: &str) -> String {
         let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);

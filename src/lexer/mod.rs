@@ -40,6 +40,8 @@ impl Lexer {
             ')' => Token::new_from_char(TokenType::RPAREN, self.cur_char),
             '{' => Token::new_from_char(TokenType::LBRACE, self.cur_char),
             '}' => Token::new_from_char(TokenType::RBRACE, self.cur_char),
+            '[' => Token::new_from_char(TokenType::LBRACKET, self.cur_char),
+            ']' => Token::new_from_char(TokenType::RBRACKET, self.cur_char),
             '\0' => Token::new(TokenType::EOF, ""),
             '=' => {
                 if self.peek() == '=' {

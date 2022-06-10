@@ -78,6 +78,7 @@ fn eval_expression(
         Expression::LiteralIntExpr { token: _, value } => Ok(Object::Integer(value)),
         Expression::LiteralBoolExpr { token: _, value } => Ok(Object::Boolean(value)),
         Expression::LiteralStringExpr { token: _, value } => Ok(Object::String(value)),
+        Expression::LiteralArrayExpr { token: _, elements } => eval_array(elements, env),
         Expression::LiteralFnExpr {
             token: _,
             parameters,
@@ -246,7 +247,7 @@ fn eval_identifier(name: &str, env: Rc<RefCell<Environment>>) -> Result<Object, 
         return Ok(value.unwrap().clone());
     }
 
-    let builtin = builtins::get_builtin(name);
+    let builtin = get_builtin(name);
 
     match builtin {
         Some(function) => Ok(Object::BuiltIn {
@@ -255,6 +256,19 @@ fn eval_identifier(name: &str, env: Rc<RefCell<Environment>>) -> Result<Object, 
         }),
         None => Err(format!("unknown identifier: {}", name)),
     }
+}
+
+fn eval_array(
+    element_expressions: Vec<Expression>,
+    env: Rc<RefCell<Environment>>,
+) -> Result<Object, String> {
+    let mut elements = Vec::new();
+
+    for expression in element_expressions {
+        elements.push(eval_expression(expression, env.clone())?);
+    }
+
+    Ok(Object::Array(elements))
 }
 
 fn apply_function(function: Object, arguments: Vec<Object>) -> Result<Object, String> {
@@ -308,10 +322,8 @@ fn is_truthy(object: Object) -> bool {
     match object {
         Object::Integer(value) => value != 0,
         Object::Boolean(value) => value,
-        Object::String(_) => true,
-        Object::ReturnValue(value) => is_truthy(*value),
-        Object::Function { .. } => true,
-        Object::BuiltIn { .. } => true,
         Object::Null => false,
+        Object::ReturnValue(value) => is_truthy(*value),
+        _ => true,
     }
 }
