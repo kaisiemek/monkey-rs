@@ -347,6 +347,18 @@ mod test {
                 input: "foobar",
                 expected: "unknown identifier: foobar",
             },
+            TestCase {
+                input: "\"Hello\" - \"World\"",
+                expected: "unknown operator: STRING - STRING",
+            },
+            TestCase {
+                input: "\"Hello\" * \"World\"",
+                expected: "unknown operator: STRING * STRING",
+            },
+            TestCase {
+                input: "-\"Hello\"",
+                expected: "unknown operator: -STRING",
+            },
         ];
 
         for test_case in test_cases {
@@ -496,11 +508,34 @@ mod test {
     }
 
     #[test]
-    fn test_string_literal() {
-        let input = "\"hello world\"";
+    fn test_strings() {
+        struct TestCase<'a> {
+            input: &'a str,
+            expected: &'a str,
+        }
+        let test_cases = vec![
+            TestCase {
+                input: "\"foobar\"",
+                expected: "foobar",
+            },
+            TestCase {
+                input: "let x = \"foobar\"; x",
+                expected: "foobar",
+            },
+            TestCase {
+                input: "\"foobar\" + \"_test\"",
+                expected: "foobar_test",
+            },
+            TestCase {
+                input: "let x = \"foo\"; let y = \"bar\"; x + y;",
+                expected: "foobar",
+            },
+        ];
 
-        let object = test_eval(input);
-        test_string_object(object, "hello world");
+        for test_case in test_cases {
+            let object = test_eval(test_case.input);
+            test_string_object(object, test_case.expected);
+        }
     }
 
     fn test_eval_error(input: &str) -> String {

@@ -153,6 +153,12 @@ fn eval_infix_expression(left: Object, operator: &str, right: Object) -> Result<
         }
     }
 
+    if let Object::String(left_value) = &left {
+        if let Object::String(right_value) = &right {
+            return eval_string_infix(left_value, operator, right_value);
+        }
+    }
+
     Err(format!(
         "unknown operator: {} {} {}",
         left.type_str(),
@@ -180,6 +186,13 @@ fn eval_bool_infix(left: bool, operator: &str, right: bool) -> Result<Object, St
         "==" => Ok(Object::Boolean(left == right)),
         "!=" => Ok(Object::Boolean(left != right)),
         _ => Err(format!("unknown operator: BOOLEAN {} BOOLEAN", operator,)),
+    }
+}
+
+fn eval_string_infix(left: &str, operator: &str, right: &str) -> Result<Object, String> {
+    match operator {
+        "+" => Ok(Object::String(format!("{}{}", left, right))),
+        _ => Err(format!("unknown operator: STRING {} STRING", operator)),
     }
 }
 
