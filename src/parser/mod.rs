@@ -257,8 +257,10 @@ impl Parser {
     ) -> Result<Expression, Expression> {
         match self.peek_token.tok_type {
             TokenType::LPAREN => {
-                self.next_token();
                 return self.parse_call_expression(left_expression);
+            }
+            TokenType::LBRACKET => {
+                return self.parse_index_expression(left_expression);
             }
             TokenType::PLUS
             | TokenType::MINUS
@@ -341,6 +343,27 @@ impl Parser {
         Ok(expression)
     }
 
+    fn parse_index_expression(&mut self, left: Expression) -> Result<Expression, Expression> {
+        self.next_token();
+        let token = self.cur_token.clone();
+        self.next_token();
+
+        let index = self.parse_expression(Precedence::Lowest);
+        if index.is_err() {
+            return Err(left);
+        }
+
+        if self.expect_peek(TokenType::RBRACKET).is_err() {
+            return Err(left);
+        }
+
+        Ok(Expression::IndexExpr {
+            token,
+            left: Box::from(left),
+            index: Box::from(index.unwrap()),
+        })
+    }
+
     fn parse_if_expression(&mut self) -> Result<Expression, ()> {
         let token = self.cur_token.clone();
 
@@ -390,6 +413,7 @@ impl Parser {
         &mut self,
         left_expression: Expression,
     ) -> Result<Expression, Expression> {
+        self.next_token();
         let token = self.cur_token.clone();
         let function = Box::from(left_expression);
 

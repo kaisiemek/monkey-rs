@@ -457,6 +457,14 @@ mod test {
                 input: "add(a + b + c * d / f + g)",
                 expected: "add((((a + b) + ((c * d) / f)) + g))",
             },
+            TestCase {
+                input: "a * [1, 2, 3, 4][b * c] * d",
+                expected: "((a * ([1, 2, 3, 4][(b * c)])) * d)",
+            },
+            TestCase {
+                input: "add(a * b[2], b[1], 2 * [1, 2][1])",
+                expected: "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))",
+            },
         ];
 
         for test_case in test_cases {
@@ -806,6 +814,24 @@ mod test {
             test_infix_expression(value[2].clone(), "3", "+", "3");
         } else {
             panic!("Expected LiteralArrayExpr, got {:?}", expression);
+        }
+    }
+
+    #[test]
+    fn test_index_expression() {
+        let input = "arr[1 + 1]";
+        let expression = parse_expression_statement(input);
+
+        if let Expression::IndexExpr {
+            token: _,
+            left,
+            index,
+        } = expression
+        {
+            test_identifier(*left, "arr");
+            test_infix_expression(*index, "1", "+", "1");
+        } else {
+            panic!("Expected IndexExpr, got {:?}", expression);
         }
     }
 

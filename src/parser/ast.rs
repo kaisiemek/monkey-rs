@@ -101,6 +101,11 @@ pub enum Expression {
         operator: String,
         right_expression: Box<Expression>,
     },
+    IndexExpr {
+        token: Token,
+        left: Box<Expression>,
+        index: Box<Expression>,
+    },
     IfExpr {
         token: Token,
         condition: Box<Expression>,
@@ -144,6 +149,13 @@ impl ToString for Expression {
                 operator,
                 right_expression.to_string()
             ),
+            Expression::IndexExpr {
+                token: _,
+                left,
+                index,
+            } => {
+                format!("({}[{}])", left.to_string(), index.to_string())
+            }
             Expression::IfExpr {
                 token: _,
                 condition,

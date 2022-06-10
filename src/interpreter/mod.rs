@@ -92,16 +92,24 @@ fn eval_expression(
             token: _,
             operator,
             right_expression,
-        } => eval_prefix_expression(&operator, eval(Node::Expression(*right_expression), env)?),
+        } => eval_prefix_expression(&operator, eval_expression(*right_expression, env)?),
         Expression::InfixExpr {
             token: _,
             left_expression,
             operator,
             right_expression,
         } => eval_infix_expression(
-            eval(Node::Expression(*left_expression), env.clone())?,
+            eval_expression(*left_expression, env.clone())?,
             &operator,
-            eval(Node::Expression(*right_expression), env)?,
+            eval_expression(*right_expression, env.clone())?,
+        ),
+        Expression::IndexExpr {
+            token: _,
+            left,
+            index,
+        } => eval_index_expression(
+            eval_expression(*left, env.clone())?,
+            eval_expression(*index, env.clone())?,
         ),
         Expression::IfExpr {
             token: _,
@@ -269,6 +277,31 @@ fn eval_array(
     }
 
     Ok(Object::Array(elements))
+}
+
+fn eval_index_expression(left: Object, index: Object) -> Result<Object, String> {
+    if let Object::Integer(i) = index {
+        match left {
+            Object::Array(elements) => Ok(eval_array_index_expression(&elements, i)),
+            other => Err(format!(
+                "index operator not supported: {}",
+                other.type_str()
+            )),
+        }
+    } else {
+        Err(format!(
+            "index must be an integer, got: {}",
+            index.type_str()
+        ))
+    }
+}
+
+fn eval_array_index_expression(elements: &Vec<Object>, index: isize) -> Object {
+    if index < 0 {
+        return Object::Null;
+    };
+    let result = elements.get(index as usize);
+    result.unwrap_or(&Object::Null).clone()
 }
 
 fn apply_function(function: Object, arguments: Vec<Object>) -> Result<Object, String> {

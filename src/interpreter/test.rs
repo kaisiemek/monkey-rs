@@ -603,6 +603,61 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_array_index_expressions() {
+        struct TestCase<'a> {
+            input: &'a str,
+            expected: isize,
+        }
+
+        let test_cases = vec![
+            TestCase {
+                input: "[1, 2, 3][0]",
+                expected: 1,
+            },
+            TestCase {
+                input: "[1, 2, 3][1]",
+                expected: 2,
+            },
+            TestCase {
+                input: "[1, 2, 3][2]",
+                expected: 3,
+            },
+            TestCase {
+                input: "let i = 0; [1][i];",
+                expected: 1,
+            },
+            TestCase {
+                input: "[1, 2, 3][1 + 1];",
+                expected: 3,
+            },
+            TestCase {
+                input: "let myArray = [1, 2, 3]; myArray[2];",
+                expected: 3,
+            },
+            TestCase {
+                input: "let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];",
+                expected: 6,
+            },
+            TestCase {
+                input: "let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]",
+                expected: 2,
+            },
+        ];
+
+        for test_case in test_cases {
+            let object = test_eval(test_case.input);
+            test_integer_object(object, test_case.expected);
+        }
+
+        let test_cases2 = vec!["[1, 2, 3][3]", "[1, 2, 3][-1]"];
+
+        for test_case in test_cases2 {
+            let object = test_eval(test_case);
+            assert_eq!(object.type_str(), "NULL");
+        }
+    }
+
     fn test_eval_error(input: &str) -> String {
         let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);

@@ -33,7 +33,7 @@ impl Inspectable for Object {
         match self {
             Object::Integer(value) => format!("{}", value),
             Object::Boolean(value) => format!("{}", value),
-            Object::String(value) => value.clone(),
+            Object::String(value) => format!("\"{}\"", value),
             Object::Array(elements) => {
                 let expr_strings: Vec<String> = elements.iter().map(|val| val.inspect()).collect();
                 format!("[{}]", expr_strings.join(", "))
