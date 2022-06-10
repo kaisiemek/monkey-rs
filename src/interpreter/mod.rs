@@ -1,3 +1,4 @@
+mod builtins;
 pub mod environment;
 pub mod object;
 mod test;
@@ -5,6 +6,7 @@ mod test;
 use std::{cell::RefCell, rc::Rc};
 
 use self::{
+    builtins::get_builtin,
     environment::Environment,
     object::{Inspectable, Object},
 };
@@ -240,23 +242,33 @@ fn eval_call_expression(
 fn eval_identifier(name: &str, env: Rc<RefCell<Environment>>) -> Result<Object, String> {
     let environment = env.borrow();
     let value = environment.get(name);
-    match value {
-        Some(object) => Ok(object.clone()),
+    if value.is_some() {
+        return Ok(value.unwrap().clone());
+    }
+
+    let builtin = builtins::get_builtin(name);
+
+    match builtin {
+        Some(function) => Ok(Object::BuiltIn {
+            name: name.to_string(),
+            function,
+        }),
         None => Err(format!("unknown identifier: {}", name)),
     }
 }
 
 fn apply_function(function: Object, arguments: Vec<Object>) -> Result<Object, String> {
-    if let Object::Function {
-        parameters,
-        body,
-        environment,
-    } = function
-    {
-        let extended_env = extend_function_env(&parameters, &arguments, environment)?;
-        eval_block_statement(body, extended_env)
-    } else {
-        Err(format!("not a function: {}", function.type_str()))
+    match function {
+        Object::Function {
+            parameters,
+            body,
+            environment,
+        } => {
+            let extended_env = extend_function_env(&parameters, &arguments, environment)?;
+            eval_block_statement(body, extended_env)
+        }
+        Object::BuiltIn { name: _, function } => function(arguments),
+        other => Err(format!("not a function: {}", other.type_str())),
     }
 }
 
@@ -299,6 +311,7 @@ fn is_truthy(object: Object) -> bool {
         Object::String(_) => true,
         Object::ReturnValue(value) => is_truthy(*value),
         Object::Function { .. } => true,
+        Object::BuiltIn { .. } => true,
         Object::Null => false,
     }
 }

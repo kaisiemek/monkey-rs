@@ -2,7 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use crate::parser::ast::{BlockStatement, Expression};
 
-use super::environment::Environment;
+use super::{builtins::BuiltinFunction, environment::Environment};
 
 #[derive(Debug, Clone)]
 pub enum Object {
@@ -14,6 +14,10 @@ pub enum Object {
         parameters: Vec<Expression>,
         body: BlockStatement,
         environment: Rc<RefCell<Environment>>,
+    },
+    BuiltIn {
+        name: String,
+        function: BuiltinFunction,
     },
     Null,
 }
@@ -40,6 +44,7 @@ impl Inspectable for Object {
                 format!("fn({}) {}", param_strings.join(", "), body.to_string())
             }
             Object::Null => String::from("null"),
+            Object::BuiltIn { name, .. } => format!("Built-in function {}", name),
         }
     }
 
@@ -50,6 +55,7 @@ impl Inspectable for Object {
             Object::String(_) => String::from("STRING"),
             Object::ReturnValue(value) => format!("RETURN {}", value.type_str()),
             Object::Function { .. } => String::from("FUNCTION"),
+            Object::BuiltIn { .. } => String::from("BUILTIN"),
             Object::Null => String::from("NULL"),
         }
     }

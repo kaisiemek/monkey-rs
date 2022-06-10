@@ -538,6 +538,54 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_builtins() {
+        enum Expected<'a> {
+            Error(&'a str),
+            Value(isize),
+        }
+        struct TestCase<'a> {
+            input: &'a str,
+            expected: Expected<'a>,
+        }
+
+        let test_cases = vec![
+            TestCase {
+                input: "len(\"\")",
+                expected: Expected::Value(0),
+            },
+            TestCase {
+                input: "len(\"four\")",
+                expected: Expected::Value(4),
+            },
+            TestCase {
+                input: "len(\"hello world\")",
+                expected: Expected::Value(11),
+            },
+            TestCase {
+                input: "len(1)",
+                expected: Expected::Error("argument to len not supported, got=INTEGER"),
+            },
+            TestCase {
+                input: "len(\"one\", \"two\")",
+                expected: Expected::Error("wrong number of arguments. got=2, want=1"),
+            },
+        ];
+
+        for test_case in test_cases {
+            match test_case.expected {
+                Expected::Error(msg) => {
+                    let err = test_eval_error(test_case.input);
+                    assert_eq!(err, msg);
+                }
+                Expected::Value(val) => {
+                    let obj = test_eval(test_case.input);
+                    test_integer_object(obj, val);
+                }
+            }
+        }
+    }
+
     fn test_eval_error(input: &str) -> String {
         let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
