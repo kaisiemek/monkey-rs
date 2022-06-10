@@ -779,6 +779,17 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_string_literal_expression() {
+        let input = "\"hello world\"";
+        let expr = parse_expression_statement(input);
+        if let Expression::LiteralStringExpr { token: _, value } = expr {
+            assert_eq!(value, "hello world");
+        } else {
+            assert!(false, "Expected LiteralStringExpr, got {:?}", expr);
+        }
+    }
+
     fn test_integer_literal(expression: Expression, expected_value: isize) {
         if let Expression::LiteralIntExpr { token, value } = expression {
             assert_eq!(

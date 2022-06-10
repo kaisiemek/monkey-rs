@@ -57,6 +57,10 @@ impl Lexer {
                     Token::new_from_char(TokenType::BANG, self.cur_char)
                 }
             }
+            '"' => {
+                let literal = self.read_string();
+                Token::new(TokenType::STRING, &literal)
+            }
             _ => {
                 if self.cur_char.is_ascii_alphabetic() || self.cur_char == '_' {
                     let literal = self.read_identifier();
@@ -131,6 +135,22 @@ impl Lexer {
         // Get all the chars as an iterable object, skip the first pos chars,
         // then take the next current position - pos chars and collect them
         // into a string.
+        return self
+            .input
+            .chars()
+            .skip(pos as usize)
+            .take((self.position - pos) as usize)
+            .collect();
+    }
+
+    fn read_string(&mut self) -> String {
+        self.read_char();
+        let pos = self.position;
+
+        while self.cur_char != '"' && self.cur_char != '\0' {
+            self.read_char();
+        }
+
         return self
             .input
             .chars()

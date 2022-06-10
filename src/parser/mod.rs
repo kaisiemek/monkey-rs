@@ -242,6 +242,10 @@ impl Parser {
             TokenType::LPAREN => self.parse_grouped_expression(),
             TokenType::IF => self.parse_if_expression(),
             TokenType::FUNCTION => self.parse_fn_expression(),
+            TokenType::STRING => Ok(Expression::LiteralStringExpr {
+                token: self.cur_token.clone(),
+                value: self.cur_token.literal.clone(),
+            }),
             _ => Err(()),
         }
     }

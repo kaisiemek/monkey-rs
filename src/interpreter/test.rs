@@ -482,6 +482,27 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_closures() {
+        let input = "
+        let newAdder = fn(x) {
+            fn(y) { x + y } 
+        };
+        let addTwo = newAdder(2);
+        addTwo(2);";
+
+        let object = test_eval(input);
+        test_integer_object(object, 4);
+    }
+
+    #[test]
+    fn test_string_literal() {
+        let input = "\"hello world\"";
+
+        let object = test_eval(input);
+        test_string_object(object, "hello world");
+    }
+
     fn test_eval_error(input: &str) -> String {
         let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
@@ -536,6 +557,18 @@ mod test {
             )
         } else {
             assert!(false, "Expected Boolean object, got {:?}", object);
+        }
+    }
+
+    fn test_string_object(object: Object, expected: &str) {
+        if let Object::String(value) = object {
+            assert_eq!(
+                value, expected,
+                "Expected string object to contain value {} but got {}",
+                expected, value
+            )
+        } else {
+            assert!(false, "Expected String object, got {:?}", object);
         }
     }
 }

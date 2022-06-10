@@ -8,6 +8,7 @@ use super::environment::Environment;
 pub enum Object {
     Integer(isize),
     Boolean(bool),
+    String(String),
     ReturnValue(Box<Object>),
     Function {
         parameters: Vec<Expression>,
@@ -27,6 +28,7 @@ impl Inspectable for Object {
         match self {
             Object::Integer(value) => format!("{}", value),
             Object::Boolean(value) => format!("{}", value),
+            Object::String(value) => value.clone(),
             Object::ReturnValue(value) => format!("{}", value.inspect()),
             Object::Function {
                 parameters,
@@ -45,6 +47,7 @@ impl Inspectable for Object {
         match self {
             Object::Integer(_) => String::from("INTEGER"),
             Object::Boolean(_) => String::from("BOOLEAN"),
+            Object::String(_) => String::from("STRING"),
             Object::ReturnValue(value) => format!("RETURN {}", value.type_str()),
             Object::Function { .. } => String::from("FUNCTION"),
             Object::Null => String::from("NULL"),

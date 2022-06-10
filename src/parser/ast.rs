@@ -77,6 +77,10 @@ pub enum Expression {
         token: Token,
         value: bool,
     },
+    LiteralStringExpr {
+        token: Token,
+        value: String,
+    },
     LiteralFnExpr {
         token: Token,
         parameters: Vec<Expression>,
@@ -112,6 +116,7 @@ impl ToString for Expression {
             Expression::IdentifierExpr { token: _, value } => String::from(value),
             Expression::LiteralIntExpr { token: _, value } => format!("{}", value),
             Expression::LiteralBoolExpr { token: _, value } => format!("{}", value),
+            Expression::LiteralStringExpr { token: _, value } => value.clone(),
             Expression::PrefixExpr {
                 token: _,
                 operator,

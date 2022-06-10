@@ -75,6 +75,7 @@ fn eval_expression(
         Expression::IdentifierExpr { token: _, value } => eval_identifier(&value, env),
         Expression::LiteralIntExpr { token: _, value } => Ok(Object::Integer(value)),
         Expression::LiteralBoolExpr { token: _, value } => Ok(Object::Boolean(value)),
+        Expression::LiteralStringExpr { token: _, value } => Ok(Object::String(value)),
         Expression::LiteralFnExpr {
             token: _,
             parameters,
@@ -282,6 +283,7 @@ fn is_truthy(object: Object) -> bool {
     match object {
         Object::Integer(value) => value != 0,
         Object::Boolean(value) => value,
+        Object::String(_) => true,
         Object::ReturnValue(value) => is_truthy(*value),
         Object::Function { .. } => true,
         Object::Null => false,

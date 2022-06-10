@@ -132,6 +132,9 @@ mod test {
             "\n",
             "10 == 10;\n",
             "10 != 9;\n",
+            "\"foobar\"\n",
+            "\"foo bar\"\n",
+            "\"\"\n"
         );
 
         let mut expected_strings: VecDeque<&str> = VecDeque::from_iter([
@@ -139,7 +142,8 @@ mod test {
             "(", "x", ",", "y", ")", "{", "x", "+", "y", ";", "}", ";", "let", "result", "=",
             "add", "(", "five", ",", "ten", ")", ";", "!", "-", "/", "*", "5", ";", "5", "<", "10",
             ">", "5", ";", "if", "(", "5", "<", "10", ")", "{", "return", "true", ";", "}", "else",
-            "{", "return", "false", ";", "}", "10", "==", "10", ";", "10", "!=", "9", ";", "",
+            "{", "return", "false", ";", "}", "10", "==", "10", ";", "10", "!=", "9", ";",
+            "foobar", "foo bar", "", "",
         ]);
 
         let mut expected_types: VecDeque<TokenType> = VecDeque::from_iter([
@@ -216,6 +220,9 @@ mod test {
             TokenType::NOTEQ,
             TokenType::INT,
             TokenType::SEMICOLON,
+            TokenType::STRING,
+            TokenType::STRING,
+            TokenType::STRING,
             TokenType::EOF,
         ]);
 
