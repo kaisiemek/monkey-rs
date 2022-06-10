@@ -136,10 +136,7 @@ impl Parser {
         self.next_token();
         let value = self.parse_expression(Precedence::Lowest)?;
 
-        while !self.cur_token_is(TokenType::SEMICOLON) {
-            if self.cur_token_is(TokenType::EOF) {
-                return Err(());
-            }
+        while !self.cur_token_is(TokenType::SEMICOLON) && !self.cur_token_is(TokenType::EOF) {
             self.next_token();
         }
 

@@ -1,0 +1,45 @@
+let map = fn(arr, f) { 
+    let iter = fn(arr, acc) { 
+        if (len(arr) == 0) { 
+            acc 
+        } else { 
+            iter(rest(arr), push(acc, f(first(arr)))) 
+        }
+    }; 
+    
+    iter(arr, [])
+};
+let map=fn(arr,f){let iter=fn(arr,acc){if(len(arr)==0){return acc;}else{return iter(tail(arr),push(acc,f(first(arr))));}}; return iter(arr,[]);};
+
+let outer = fn(x) {
+    let inner = fn(y) {
+        if (x + y < 0) {
+            return "done";
+        } else {
+            print(y);
+            inner(y - 1);
+        }
+    };
+
+    return inner(x);
+};
+let outer=fn(x){let inner=fn(y){if(x+y<0){return "done";}else{print(y);inner(y-1);}};return inner(x);};
+
+let reduce = fn(arr, initial, f) { 
+    let iter = fn(arr, result) {
+        if (len(arr) == 0) { 
+            result
+        } else {
+            iter(tail(arr), f(result, first(arr)));
+        }
+    };
+    iter(arr, initial);
+};
+let reduce=fn(arr,initial,f){let iter=fn(arr,result){if(len(arr)==0){result}else{iter(tail(arr),f(result,first(arr)));}};iter(arr, initial);};
+
+let sum = fn(arr) { 
+    reduce(arr, 0, fn(initial, el) { 
+        initial + el 
+    });
+};
+let sum=fn(arr){reduce(arr,0,fn(initial,el){initial+el});};
