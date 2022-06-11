@@ -79,6 +79,7 @@ fn eval_expression(
         Expression::LiteralBoolExpr { token: _, value } => Ok(Object::Boolean(value)),
         Expression::LiteralStringExpr { token: _, value } => Ok(Object::String(value)),
         Expression::LiteralArrayExpr { token: _, elements } => eval_array(elements, env),
+        Expression::LiteralHashExpr { token, entries } => todo!(),
         Expression::LiteralFnExpr {
             token: _,
             parameters,

@@ -1,9 +1,12 @@
 #[cfg(test)]
 mod test {
-    use std::collections::VecDeque;
+    use std::collections::{HashMap, VecDeque};
 
     use crate::{
-        lexer::{token::Token, Lexer},
+        lexer::{
+            token::{Token, TokenType},
+            Lexer,
+        },
         parser::{
             ast::{Expression, Program, Statement},
             Parser,
@@ -832,6 +835,77 @@ mod test {
             test_infix_expression(*index, "1", "+", "1");
         } else {
             panic!("Expected IndexExpr, got {:?}", expression);
+        }
+    }
+
+    #[test]
+    fn test_hash_literal_string_key() {
+        let input = "{\"one\": 1, \"two\": 2, \"three\": 3}";
+        let expected: HashMap<String, isize> = HashMap::from([
+            ("one".to_string(), 1),
+            ("two".to_string(), 2),
+            ("three".to_string(), 3),
+        ]);
+
+        let expression = parse_expression_statement(input);
+
+        if let Expression::LiteralHashExpr { token: _, entries } = expression {
+            assert_eq!(entries.len(), 3);
+            for (key, val) in entries {
+                {
+                    if let Expression::LiteralIntExpr { token: _, value } = val {
+                        let expected_val = expected.get(&key.to_string()).unwrap().to_owned();
+                        assert_eq!(value, expected_val);
+                    } else {
+                        panic!("Expected LiteralIntExpr, got {:?}", val)
+                    }
+                }
+            }
+        } else {
+            panic!("Expected LiteralHashExpr, got {:?}", expression);
+        }
+    }
+
+    #[test]
+    fn test_empty_hash_literal() {
+        let input = "{}";
+        let expression = parse_expression_statement(input);
+
+        if let Expression::LiteralHashExpr { token: _, entries } = expression {
+            assert_eq!(entries.len(), 0);
+        } else {
+            panic!("Expected LiteralHashExpr, got {:?}", expression);
+        }
+    }
+
+    #[test]
+    fn test_hash_literal_expressions() {
+        let input = "{\"one\": 0 + 1, \"two\": 10 - 8, \"three\": 15 / 5}";
+        let expression = parse_expression_statement(input);
+
+        let one = Expression::LiteralStringExpr {
+            token: Token::new(TokenType::STRING, "one"),
+            value: "one".to_string(),
+        };
+        let two = Expression::LiteralStringExpr {
+            token: Token::new(TokenType::STRING, "two"),
+            value: "two".to_string(),
+        };
+        let three = Expression::LiteralStringExpr {
+            token: Token::new(TokenType::STRING, "three"),
+            value: "three".to_string(),
+        };
+
+        if let Expression::LiteralHashExpr { token: _, entries } = expression {
+            assert_eq!(entries.len(), 3);
+            let val1 = entries.get(&one).unwrap().clone();
+            let val2 = entries.get(&two).unwrap().clone();
+            let val3 = entries.get(&three).unwrap().clone();
+            test_infix_expression(val1, "0", "+", "1");
+            test_infix_expression(val2, "10", "-", "8");
+            test_infix_expression(val3, "15", "/", "5");
+        } else {
+            panic!("Epected LiteralHashExpr, got {:?}", expression);
         }
     }
 

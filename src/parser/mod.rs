@@ -3,6 +3,8 @@ mod precedence;
 pub mod print;
 mod test;
 
+use std::collections::HashMap;
+
 use crate::lexer::{
     token::{Token, TokenType},
     Lexer,
@@ -244,6 +246,7 @@ impl Parser {
                 value: self.cur_token.literal.clone(),
             }),
             TokenType::LBRACKET => self.parse_array(),
+            TokenType::LBRACE => self.parse_hash(),
             _ => Err(()),
         }
     }
@@ -431,6 +434,31 @@ impl Parser {
         let elements = self.parse_expression_list(TokenType::RBRACKET)?;
 
         Ok(Expression::LiteralArrayExpr { token, elements })
+    }
+
+    fn parse_hash(&mut self) -> Result<Expression, ()> {
+        let token = self.cur_token.clone();
+        let mut entries: HashMap<Expression, Expression> = HashMap::new();
+
+        while !self.peek_token_is(TokenType::RBRACE) {
+            self.next_token();
+            let key = self.parse_expression(Precedence::Lowest)?;
+
+            self.expect_peek(TokenType::COLON)?;
+            self.next_token();
+
+            let value = self.parse_expression(Precedence::Lowest)?;
+
+            entries.insert(key, value);
+
+            if !self.peek_token_is(TokenType::RBRACE) {
+                self.expect_peek(TokenType::COMMA)?;
+            }
+        }
+
+        self.expect_peek(TokenType::RBRACE)?;
+
+        Ok(Expression::LiteralHashExpr { token, entries })
     }
 
     fn parse_expression_list(&mut self, end: TokenType) -> Result<Vec<Expression>, ()> {

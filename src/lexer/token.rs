@@ -26,6 +26,7 @@ pub enum TokenType {
     // delimiters
     COMMA,
     SEMICOLON,
+    COLON,
 
     LPAREN,
     RPAREN,
@@ -44,7 +45,7 @@ pub enum TokenType {
     RETURN,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Token {
     pub tok_type: TokenType,
     pub literal: String,
@@ -98,6 +99,7 @@ impl fmt::Display for TokenType {
             TokenType::GT => write!(f, ">"),
             TokenType::COMMA => write!(f, ","),
             TokenType::SEMICOLON => write!(f, ";"),
+            TokenType::COLON => write!(f, ":"),
             TokenType::LPAREN => write!(f, "("),
             TokenType::RPAREN => write!(f, ")"),
             TokenType::LBRACE => write!(f, "{{"),

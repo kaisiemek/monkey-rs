@@ -35,6 +35,7 @@ impl Lexer {
             '<' => Token::new_from_char(TokenType::LT, self.cur_char),
             '>' => Token::new_from_char(TokenType::GT, self.cur_char),
             ';' => Token::new_from_char(TokenType::SEMICOLON, self.cur_char),
+            ':' => Token::new_from_char(TokenType::COLON, self.cur_char),
             ',' => Token::new_from_char(TokenType::COMMA, self.cur_char),
             '(' => Token::new_from_char(TokenType::LPAREN, self.cur_char),
             ')' => Token::new_from_char(TokenType::RPAREN, self.cur_char),

@@ -1,3 +1,5 @@
+use std::{collections::HashMap, hash::Hash};
+
 use crate::lexer::token::Token;
 
 pub type Program = Vec<Statement>;
@@ -9,7 +11,7 @@ pub enum Node {
     Program(Program),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Statement {
     LetStmt {
         token: Token,
@@ -26,7 +28,7 @@ pub enum Statement {
     },
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BlockStatement {
     pub token: Token,
     pub statements: Vec<Statement>,
@@ -63,7 +65,7 @@ impl ToString for BlockStatement {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Expression {
     IdentifierExpr {
         token: Token,
@@ -84,6 +86,10 @@ pub enum Expression {
     LiteralArrayExpr {
         token: Token,
         elements: Vec<Expression>,
+    },
+    LiteralHashExpr {
+        token: Token,
+        entries: HashMap<Expression, Expression>,
     },
     LiteralFnExpr {
         token: Token,
@@ -132,6 +138,14 @@ impl ToString for Expression {
             } => {
                 let expr_strings: Vec<String> = value.iter().map(|val| val.to_string()).collect();
                 format!("[{}]", expr_strings.join(", "))
+            }
+            Expression::LiteralHashExpr { token: _, entries } => {
+                let entry_strings: Vec<String> = entries
+                    .iter()
+                    .map(|(key, val)| format!("{}: {}", key.to_string(), val.to_string()))
+                    .collect();
+
+                format!("{{{}}}", entry_strings.join(", "))
             }
             Expression::PrefixExpr {
                 token: _,
@@ -197,5 +211,13 @@ impl ToString for Expression {
                 format!("{}({})", function.to_string(), arg_strings.join(", "))
             }
         }
+    }
+}
+
+impl Hash for Expression {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        let string_representation = self.to_string();
+        string_representation.hash(state);
+        core::mem::discriminant(self).hash(state);
     }
 }
