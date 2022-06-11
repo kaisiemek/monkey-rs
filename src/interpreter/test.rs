@@ -5,11 +5,11 @@ mod test {
     use crate::{
         interpreter::{
             environment::Environment,
-            eval,
+            eval_program,
             object::{Inspectable, Object},
         },
         lexer::Lexer,
-        parser::{ast::Node, Parser},
+        parser::Parser,
     };
 
     #[test]
@@ -406,7 +406,7 @@ mod test {
 
         match parser.parse_program() {
             Ok(program) => {
-                let object = eval(Node::Program(program), environment);
+                let object = eval_program(program, environment);
                 match object {
                     Ok(obj) => obj,
                     Err(msg) => {
@@ -665,7 +665,7 @@ mod test {
 
         match parser.parse_program() {
             Ok(program) => {
-                let object = eval(Node::Program(program), environment);
+                let object = eval_program(program, environment);
                 match object {
                     Ok(obj) => {
                         assert!(

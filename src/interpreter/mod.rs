@@ -10,18 +10,9 @@ use self::{
     environment::Environment,
     object::{Inspectable, Object},
 };
-use crate::parser::ast::{BlockStatement, Expression, Node, Program, Statement};
+use crate::parser::ast::{BlockStatement, Expression, Program, Statement};
 
-pub fn eval(node: Node, env: Rc<RefCell<Environment>>) -> Result<Object, String> {
-    match node {
-        Node::Statement(statement) => eval_statement(statement, env),
-        Node::Expression(expression) => eval_expression(expression, env),
-        Node::BlockStatement(block_statement) => eval_block_statement(block_statement, env),
-        Node::Program(program) => eval_program(program, env),
-    }
-}
-
-fn eval_program(statements: Program, env: Rc<RefCell<Environment>>) -> Result<Object, String> {
+pub fn eval_program(statements: Program, env: Rc<RefCell<Environment>>) -> Result<Object, String> {
     let mut result = Object::Null;
     for statement in statements {
         result = eval_statement(statement, env.clone())?;
@@ -54,12 +45,12 @@ fn eval_statement(statement: Statement, env: Rc<RefCell<Environment>>) -> Result
             identifier,
             value,
         } => {
-            let val = eval(Node::Expression(value), env.clone())?;
+            let val = eval_expression(value, env.clone())?;
             (*env).borrow_mut().set(&identifier, val);
             Ok(Object::Null)
         }
         Statement::ReturnStmt { token: _, value } => {
-            let return_object = Box::from(eval(Node::Expression(value), env)?);
+            let return_object = Box::from(eval_expression(value, env)?);
             Ok(Object::ReturnValue(return_object))
         }
         Statement::ExpressionStmt {
@@ -118,7 +109,7 @@ fn eval_expression(
             consequence,
             alternative,
         } => eval_if_else_expression(
-            eval(Node::Expression(*condition), env.clone())?,
+            eval_expression(*condition, env.clone())?,
             consequence,
             alternative,
             env,

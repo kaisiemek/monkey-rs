@@ -4,10 +4,9 @@ use std::process::exit;
 use std::rc::Rc;
 
 use crate::interpreter::environment::Environment;
-use crate::interpreter::eval;
+use crate::interpreter::eval_program;
 use crate::interpreter::object::Inspectable;
 use crate::lexer::Lexer;
-use crate::parser::ast::Node;
 use crate::parser::Parser;
 
 pub fn start() -> ! {
@@ -36,7 +35,7 @@ pub fn start() -> ! {
         let mut parser = Parser::new(lexer);
         match parser.parse_program() {
             Ok(program) => {
-                let result = eval(Node::Program(program), repl_environment.clone());
+                let result = eval_program(program, repl_environment.clone());
                 match result {
                     Ok(object) => println!("{}", object.inspect()),
                     Err(msg) => println!("ERROR! {}", msg),

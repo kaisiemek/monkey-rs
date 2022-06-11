@@ -4,13 +4,6 @@ use crate::lexer::token::Token;
 
 pub type Program = Vec<Statement>;
 
-pub enum Node {
-    Statement(Statement),
-    Expression(Expression),
-    BlockStatement(BlockStatement),
-    Program(Program),
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Statement {
     LetStmt {
