@@ -224,7 +224,7 @@ mod test {
             if let Expression::Prefix {
                 token: _,
                 operator,
-                right_expression,
+                right: right_expression,
             } = expression
             {
                 assert_eq!(
@@ -990,9 +990,9 @@ mod test {
     ) {
         if let Expression::Infix {
             token: _,
-            left_expression,
+            left: left_expression,
             operator,
-            right_expression,
+            right: right_expression,
         } = expression
         {
             test_literal_expression(*left_expression, expected_left);

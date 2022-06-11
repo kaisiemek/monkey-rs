@@ -61,13 +61,13 @@ pub enum Expression {
     Prefix {
         token: Token,
         operator: String,
-        right_expression: Box<Expression>,
+        right: Box<Expression>,
     },
     Infix {
         token: Token,
-        left_expression: Box<Expression>,
+        left: Box<Expression>,
         operator: String,
-        right_expression: Box<Expression>,
+        right: Box<Expression>,
     },
     Index {
         token: Token,
@@ -143,13 +143,13 @@ impl ToString for Expression {
             Expression::Prefix {
                 token: _,
                 operator,
-                right_expression,
+                right: right_expression,
             } => format!("({}{})", operator, right_expression.to_string()),
             Expression::Infix {
                 token: _,
-                left_expression,
+                left: left_expression,
                 operator,
-                right_expression,
+                right: right_expression,
             } => format!(
                 "({} {} {})",
                 left_expression.to_string(),

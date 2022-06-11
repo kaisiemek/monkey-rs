@@ -1,14 +1,19 @@
 mod builtins;
 pub mod environment;
+mod modify;
 pub mod object;
 mod test;
 
 use self::{
     builtins::get_builtin,
     environment::Environment,
+    modify::modify_expression,
     object::{Inspectable, Object},
 };
-use crate::parser::ast::{BlockStatement, Expression, Program, Statement};
+use crate::{
+    lexer::token::{Token, TokenType},
+    parser::ast::{BlockStatement, Expression, Program, Statement},
+};
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 /*
@@ -99,17 +104,17 @@ fn eval_expression(
         Expression::Prefix {
             token: _,
             operator,
-            right_expression,
-        } => eval_prefix_expression(&operator, eval_expression(*right_expression, env)?),
+            right,
+        } => eval_prefix_expression(&operator, eval_expression(*right, env)?),
         Expression::Infix {
             token: _,
-            left_expression,
+            left,
             operator,
-            right_expression,
+            right,
         } => eval_infix_expression(
-            eval_expression(*left_expression, env.clone())?,
+            eval_expression(*left, env.clone())?,
             &operator,
-            eval_expression(*right_expression, env.clone())?,
+            eval_expression(*right, env.clone())?,
         ),
         Expression::Index {
             token: _,
@@ -131,10 +136,16 @@ fn eval_expression(
             env,
         ),
         Expression::Call {
-            token: _,
+            token,
             function,
             arguments,
-        } => eval_call_expression(function, arguments, env),
+        } => {
+            if token.literal == "quote" {
+                quote(arguments)
+            } else {
+                eval_call_expression(function, arguments, env)
+            }
+        }
     }
 }
 
@@ -381,6 +392,70 @@ fn eval_hash_index_expression(
 
 /*
     ==================================================
+    MACRO FUNCTIONS
+    ==================================================
+*/
+fn quote(arguments: Vec<Expression>, env: Rc<RefCell<Environment>>) -> Result<Object, String> {
+    if arguments.len() != 1 {
+        return Err(format!(
+            "quote takes only one argument, {} given",
+            arguments.len()
+        ));
+    }
+
+    let argument = arguments[0];
+    argument = eval_unquotes(argument, env);
+
+    // let new_arguments = vec![];
+
+    // for argument in arguments {
+    //     if let Expression::Call {
+    //         token,
+    //         function: _,
+    //         arguments: unquote_args,
+    //     } = argument
+    //     {
+    //         if token.literal == "unquote" {
+    //             for arg in unquote_args {}
+    //         }
+    //     }
+    // }
+
+    Ok(Object::Quote(arguments[0].clone()))
+}
+
+fn eval_unquotes(quoted: Expression, env: Rc<RefCell<Environment>>) -> Expression {
+    modify_expression(quoted, |expr| {
+        if is_unquote_call(expr) {
+            if let Expression::Call {
+                token: _,
+                function: _,
+                arguments,
+            } = expr
+            {
+                return object_to_expression(eval_expression(arguments[0], env).unwrap());
+            } else {
+                panic!("unreachable");
+            }
+        }
+
+        if let Expression::Call {
+            token,
+            function,
+            arguments,
+        } = expr
+        {
+            if arguments.len() != 1 {
+                return expr.clone();
+            }
+        }
+
+        return expr.clone();
+    })
+}
+
+/*
+    ==================================================
     HELPER FUNCTIONS
     ==================================================
 */
@@ -424,4 +499,34 @@ fn extend_function_env(
     }
 
     Ok(Rc::new(RefCell::new(extended_env)))
+}
+
+fn is_unquote_call(expression: &Expression) -> bool {
+    if let Expression::Call { token, .. } = expression {
+        token.literal == "unquote"
+    } else {
+        false
+    }
+}
+
+fn object_to_expression(object: Object) -> Expression {
+    match object {
+        Object::Integer(value) => Expression::IntLiteral {
+            token: Token::new(TokenType::Int, format!("{}", value).as_str()),
+            value,
+        },
+        Object::Boolean(_) => todo!(),
+        Object::String(_) => todo!(),
+        Object::Array(_) => todo!(),
+        Object::Hash(_) => todo!(),
+        Object::ReturnValue(_) => todo!(),
+        Object::Function {
+            parameters,
+            body,
+            environment,
+        } => todo!(),
+        Object::BuiltIn { name, function } => todo!(),
+        Object::Null => todo!(),
+        Object::Quote(_) => todo!(),
+    }
 }

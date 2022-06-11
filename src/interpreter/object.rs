@@ -20,6 +20,7 @@ pub enum Object {
         function: BuiltinFunction,
     },
     Null,
+    Quote(Expression),
 }
 
 pub trait Inspectable {
@@ -57,6 +58,7 @@ impl Inspectable for Object {
             }
             Object::Null => String::from("null"),
             Object::BuiltIn { name, .. } => format!("Built-in function {}", name),
+            Object::Quote(statement) => format!("QUOTE({})", statement.to_string()),
         }
     }
 
@@ -71,6 +73,7 @@ impl Inspectable for Object {
             Object::Function { .. } => String::from("FUNCTION"),
             Object::BuiltIn { .. } => String::from("BUILTIN"),
             Object::Null => String::from("NULL"),
+            Object::Quote(_) => String::from("QUOTE"),
         }
     }
 }

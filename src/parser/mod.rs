@@ -189,13 +189,13 @@ impl Parser {
 */
 impl Parser {
     fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, String> {
-        let mut left_expression = self.parse_prefix_expression()?;
+        let mut left = self.parse_prefix_expression()?;
 
         while !self.peek_token_is(TokenType::Semicolon) && precedence < self.peek_precedence() {
-            left_expression = self.parse_infix_expression(left_expression.clone())?;
+            left = self.parse_infix_expression(left.clone())?;
         }
 
-        Ok(left_expression)
+        Ok(left)
     }
 
     fn parse_prefix_expression(&mut self) -> Result<Expression, String> {
@@ -208,11 +208,11 @@ impl Parser {
                 let token = self.cur_token.clone();
                 let operator = self.cur_token.literal.clone();
                 self.next_token();
-                let right_expression = Box::new(self.parse_expression(Precedence::Prefix)?);
+                let right = Box::new(self.parse_expression(Precedence::Prefix)?);
                 Ok(Expression::Prefix {
                     token,
                     operator,
-                    right_expression,
+                    right,
                 })
             }
             TokenType::LParen => self.parse_grouped_expression(),
@@ -227,13 +227,10 @@ impl Parser {
         }
     }
 
-    fn parse_infix_expression(
-        &mut self,
-        left_expression: Expression,
-    ) -> Result<Expression, String> {
+    fn parse_infix_expression(&mut self, left: Expression) -> Result<Expression, String> {
         match self.peek_token.tok_type {
-            TokenType::LParen => self.parse_call_expression(left_expression),
-            TokenType::LBracket => self.parse_index_expression(left_expression),
+            TokenType::LParen => self.parse_call_expression(left),
+            TokenType::LBracket => self.parse_index_expression(left),
             TokenType::Plus
             | TokenType::Minus
             | TokenType::Asterisk
@@ -241,7 +238,7 @@ impl Parser {
             | TokenType::Eq
             | TokenType::NotEq
             | TokenType::Gt
-            | TokenType::Lt => self.parse_infix_inner(left_expression),
+            | TokenType::Lt => self.parse_infix_inner(left),
             other => Err(format!(
                 "No infix expression for {} found",
                 other.to_string()
@@ -301,10 +298,11 @@ impl Parser {
         })
     }
 
-    fn parse_call_expression(&mut self, left_expression: Expression) -> Result<Expression, String> {
-        self.next_token();
+    fn parse_call_expression(&mut self, left: Expression) -> Result<Expression, String> {
         let token = self.cur_token.clone();
-        let function = Box::from(left_expression);
+
+        self.next_token();
+        let function = Box::from(left);
 
         let arguments = self.parse_expression_list(TokenType::RParen)?;
         Ok(Expression::Call {
@@ -416,7 +414,7 @@ impl Parser {
     ==================================================
 */
 impl Parser {
-    fn parse_infix_inner(&mut self, left_expression: Expression) -> Result<Expression, String> {
+    fn parse_infix_inner(&mut self, left: Expression) -> Result<Expression, String> {
         self.next_token();
         let token = self.cur_token.clone();
         let operator = self.cur_token.literal.clone();
@@ -424,13 +422,13 @@ impl Parser {
         let precedence = self.current_precedence();
         self.next_token();
 
-        let right_expression = self.parse_expression(precedence)?;
+        let right = self.parse_expression(precedence)?;
 
         Ok(Expression::Infix {
             token,
-            left_expression: Box::new(left_expression),
+            left: Box::new(left),
             operator,
-            right_expression: Box::new(right_expression),
+            right: Box::new(right),
         })
     }
 
