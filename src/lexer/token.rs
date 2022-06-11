@@ -1,48 +1,46 @@
-use std::fmt;
-
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum TokenType {
-    ILLEGAL,
+    Illegal,
     EOF,
 
     // identifiers, literals
-    IDENT,
-    INT,
-    STRING,
+    Ident,
+    Int,
+    String,
 
     // operators
-    ASSIGN,
-    PLUS,
-    MINUS,
-    BANG,
-    ASTERISK,
-    SLASH,
+    Assign,
+    Plus,
+    Minus,
+    Bang,
+    Asterisk,
+    Slash,
 
-    EQ,
-    NOTEQ,
-    LT,
-    GT,
+    Eq,
+    NotEq,
+    Lt,
+    Gt,
 
     // delimiters
-    COMMA,
-    SEMICOLON,
-    COLON,
+    Comma,
+    Semicolon,
+    Colon,
 
-    LPAREN,
-    RPAREN,
-    LBRACE,
-    RBRACE,
-    LBRACKET,
-    RBRACKET,
+    LParen,
+    RParen,
+    LBrace,
+    RBrace,
+    LBracket,
+    RBracket,
 
     // keywords
-    FUNCTION,
-    LET,
-    TRUE,
-    FALSE,
-    IF,
-    ELSE,
-    RETURN,
+    Function,
+    Let,
+    True,
+    False,
+    If,
+    Else,
+    Return,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -68,52 +66,52 @@ impl Token {
 
     pub fn lookup_ident_type(literal: &str) -> TokenType {
         return match literal {
-            "fn" => TokenType::FUNCTION,
-            "let" => TokenType::LET,
-            "true" => TokenType::TRUE,
-            "false" => TokenType::FALSE,
-            "if" => TokenType::IF,
-            "else" => TokenType::ELSE,
-            "return" => TokenType::RETURN,
-            _ => TokenType::IDENT,
+            "fn" => TokenType::Function,
+            "let" => TokenType::Let,
+            "true" => TokenType::True,
+            "false" => TokenType::False,
+            "if" => TokenType::If,
+            "else" => TokenType::Else,
+            "return" => TokenType::Return,
+            _ => TokenType::Ident,
         };
     }
 }
 
-impl fmt::Display for TokenType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl ToString for TokenType {
+    fn to_string(&self) -> String {
         match self {
-            TokenType::ILLEGAL => write!(f, "ILLEGAL"),
-            TokenType::EOF => write!(f, "EOF"),
-            TokenType::IDENT => write!(f, "IDENT"),
-            TokenType::INT => write!(f, "INT"),
-            TokenType::ASSIGN => write!(f, "="),
-            TokenType::PLUS => write!(f, "+"),
-            TokenType::MINUS => write!(f, "-"),
-            TokenType::BANG => write!(f, "!"),
-            TokenType::ASTERISK => write!(f, "*"),
-            TokenType::SLASH => write!(f, "/"),
-            TokenType::EQ => write!(f, "=="),
-            TokenType::NOTEQ => write!(f, "!="),
-            TokenType::LT => write!(f, "<"),
-            TokenType::GT => write!(f, ">"),
-            TokenType::COMMA => write!(f, ","),
-            TokenType::SEMICOLON => write!(f, ";"),
-            TokenType::COLON => write!(f, ":"),
-            TokenType::LPAREN => write!(f, "("),
-            TokenType::RPAREN => write!(f, ")"),
-            TokenType::LBRACE => write!(f, "{{"),
-            TokenType::RBRACE => write!(f, "}}"),
-            TokenType::LBRACKET => write!(f, "["),
-            TokenType::RBRACKET => write!(f, "]"),
-            TokenType::FUNCTION => write!(f, "FUNCTION"),
-            TokenType::LET => write!(f, "LET"),
-            TokenType::TRUE => write!(f, "TRUE"),
-            TokenType::FALSE => write!(f, "FALSE"),
-            TokenType::IF => write!(f, "IF"),
-            TokenType::ELSE => write!(f, "ELSE"),
-            TokenType::RETURN => write!(f, "RETURN"),
-            TokenType::STRING => write!(f, "STRING"),
+            TokenType::Illegal => "ILLEGAL".to_string(),
+            TokenType::EOF => "EOF".to_string(),
+            TokenType::Ident => "IDENT".to_string(),
+            TokenType::Int => "INT".to_string(),
+            TokenType::String => "STRING".to_string(),
+            TokenType::Assign => "=".to_string(),
+            TokenType::Plus => "+".to_string(),
+            TokenType::Minus => "-".to_string(),
+            TokenType::Bang => "!".to_string(),
+            TokenType::Asterisk => "*".to_string(),
+            TokenType::Slash => "/".to_string(),
+            TokenType::Eq => "==".to_string(),
+            TokenType::NotEq => "!=".to_string(),
+            TokenType::Lt => "<".to_string(),
+            TokenType::Gt => ">".to_string(),
+            TokenType::Comma => ",".to_string(),
+            TokenType::Semicolon => ";".to_string(),
+            TokenType::Colon => ":".to_string(),
+            TokenType::LParen => "(".to_string(),
+            TokenType::RParen => ")".to_string(),
+            TokenType::LBrace => "{{".to_string(),
+            TokenType::RBrace => "}}".to_string(),
+            TokenType::LBracket => "[".to_string(),
+            TokenType::RBracket => "]".to_string(),
+            TokenType::Function => "FUNCTION".to_string(),
+            TokenType::Let => "LET".to_string(),
+            TokenType::True => "TRUE".to_string(),
+            TokenType::False => "FALSE".to_string(),
+            TokenType::If => "IF".to_string(),
+            TokenType::Else => "ELSE".to_string(),
+            TokenType::Return => "RETURN".to_string(),
         }
     }
 }

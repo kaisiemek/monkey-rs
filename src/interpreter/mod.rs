@@ -40,7 +40,7 @@ fn eval_block_statement(
 
 fn eval_statement(statement: Statement, env: Rc<RefCell<Environment>>) -> Result<Object, String> {
     match statement {
-        Statement::LetStmt {
+        Statement::Let {
             token: _,
             identifier,
             value,
@@ -49,11 +49,11 @@ fn eval_statement(statement: Statement, env: Rc<RefCell<Environment>>) -> Result
             (*env).borrow_mut().set(&identifier, val);
             Ok(Object::Null)
         }
-        Statement::ReturnStmt { token: _, value } => {
+        Statement::Return { token: _, value } => {
             let return_object = Box::from(eval_expression(value, env)?);
             Ok(Object::ReturnValue(return_object))
         }
-        Statement::ExpressionStmt {
+        Statement::Expression {
             token: _,
             expression,
         } => eval_expression(expression, env),
@@ -65,13 +65,13 @@ fn eval_expression(
     env: Rc<RefCell<Environment>>,
 ) -> Result<Object, String> {
     match expression {
-        Expression::IdentifierExpr { token: _, value } => eval_identifier(&value, env),
-        Expression::LiteralIntExpr { token: _, value } => Ok(Object::Integer(value)),
-        Expression::LiteralBoolExpr { token: _, value } => Ok(Object::Boolean(value)),
-        Expression::LiteralStringExpr { token: _, value } => Ok(Object::String(value)),
-        Expression::LiteralArrayExpr { token: _, elements } => eval_array(elements, env),
-        Expression::LiteralHashExpr { token: _, entries } => eval_hash(entries, env),
-        Expression::LiteralFnExpr {
+        Expression::Identifier { token: _, value } => eval_identifier(&value, env),
+        Expression::IntLiteral { token: _, value } => Ok(Object::Integer(value)),
+        Expression::BoolLiteral { token: _, value } => Ok(Object::Boolean(value)),
+        Expression::StringLiteral { token: _, value } => Ok(Object::String(value)),
+        Expression::ArrayLiteral { token: _, elements } => eval_array(elements, env),
+        Expression::HashLiteral { token: _, entries } => eval_hash(entries, env),
+        Expression::FnLiteral {
             token: _,
             parameters,
             body,
@@ -80,12 +80,12 @@ fn eval_expression(
             body,
             environment: env,
         }),
-        Expression::PrefixExpr {
+        Expression::Prefix {
             token: _,
             operator,
             right_expression,
         } => eval_prefix_expression(&operator, eval_expression(*right_expression, env)?),
-        Expression::InfixExpr {
+        Expression::Infix {
             token: _,
             left_expression,
             operator,
@@ -95,7 +95,7 @@ fn eval_expression(
             &operator,
             eval_expression(*right_expression, env.clone())?,
         ),
-        Expression::IndexExpr {
+        Expression::Index {
             token: _,
             left,
             index,
@@ -103,7 +103,7 @@ fn eval_expression(
             eval_expression(*left, env.clone())?,
             eval_expression(*index, env.clone())?,
         ),
-        Expression::IfExpr {
+        Expression::If {
             token: _,
             condition,
             consequence,
@@ -114,7 +114,7 @@ fn eval_expression(
             alternative,
             env,
         ),
-        Expression::CallExpr {
+        Expression::Call {
             token: _,
             function,
             arguments,
@@ -359,7 +359,7 @@ fn extend_function_env(
     }
 
     for (param, arg) in parameters.iter().zip(arguments.iter()) {
-        if let Expression::IdentifierExpr {
+        if let Expression::Identifier {
             token: _,
             value: name,
         } = param

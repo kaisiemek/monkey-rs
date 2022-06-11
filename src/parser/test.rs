@@ -43,7 +43,7 @@ mod test {
         let stmt_value: Expression;
 
         match stmt {
-            Statement::LetStmt {
+            Statement::Let {
                 token,
                 identifier,
                 value,
@@ -90,7 +90,7 @@ mod test {
             let current_stmt = statements.pop_front().unwrap();
             let expected_value = expected_values.pop_front().unwrap();
 
-            if let Statement::ReturnStmt { token, value } = current_stmt {
+            if let Statement::Return { token, value } = current_stmt {
                 assert_eq!(
                     token.literal, "return",
                     "Expected statement literal to be 'return' but got '{}'",
@@ -108,14 +108,14 @@ mod test {
         let input = "foobar;";
 
         let stmt = parse_program(input, 1).pop().unwrap();
-        if let Statement::ExpressionStmt { token, expression } = stmt {
+        if let Statement::Expression { token, expression } = stmt {
             assert_eq!(
                 token.literal, "foobar",
                 "Expected statement token literal to be 'foobar' but got '{}'",
                 token.literal
             );
 
-            if let Expression::IdentifierExpr { token, value } = expression {
+            if let Expression::Identifier { token, value } = expression {
                 assert_eq!(
                     token.literal, "foobar",
                     "Expected expression token literal to be 'foobar' but got '{}'",
@@ -139,7 +139,7 @@ mod test {
         let input = "5;";
 
         let stmt = parse_program(input, 1).pop().unwrap();
-        if let Statement::ExpressionStmt { token, expression } = stmt {
+        if let Statement::Expression { token, expression } = stmt {
             assert_eq!(
                 token.literal, "5",
                 "Expected statement token literal to be '5' but got '{}'",
@@ -162,7 +162,7 @@ mod test {
         while !stmts.is_empty() {
             let current_stmt = stmts.pop_front().unwrap();
             let expected_value = expected_values.pop_front().unwrap();
-            if let Statement::ExpressionStmt {
+            if let Statement::Expression {
                 token: _,
                 expression,
             } = current_stmt
@@ -221,7 +221,7 @@ mod test {
 
         for test_case in test_cases {
             let expression = parse_expression_statement(test_case.input);
-            if let Expression::PrefixExpr {
+            if let Expression::Prefix {
                 token: _,
                 operator,
                 right_expression,
@@ -485,7 +485,7 @@ mod test {
         let if_condition;
         let if_consequence;
         let if_alternative;
-        if let Expression::IfExpr {
+        if let Expression::If {
             token: _,
             condition,
             consequence,
@@ -508,7 +508,7 @@ mod test {
         );
 
         let consequence_expression;
-        if let Statement::ExpressionStmt {
+        if let Statement::Expression {
             token: _,
             expression,
         } = &if_consequence.statements[0]
@@ -539,7 +539,7 @@ mod test {
         let if_condition;
         let if_consequence;
         let if_alternative;
-        if let Expression::IfExpr {
+        if let Expression::If {
             token: _,
             condition,
             consequence,
@@ -562,7 +562,7 @@ mod test {
             "Expected only one statement in the consequence block"
         );
         let consequence_expression;
-        if let Statement::ExpressionStmt {
+        if let Statement::Expression {
             token: _,
             expression,
         } = &if_consequence.statements[0]
@@ -587,7 +587,7 @@ mod test {
         );
 
         let alternative_expression;
-        if let Statement::ExpressionStmt {
+        if let Statement::Expression {
             token: _,
             expression,
         } = &alternative.statements[0]
@@ -614,7 +614,7 @@ mod test {
         let contained_parameters;
         let contained_body;
 
-        if let Expression::LiteralFnExpr {
+        if let Expression::FnLiteral {
             token: _,
             parameters,
             body,
@@ -638,7 +638,7 @@ mod test {
         );
 
         let body_expression;
-        if let Statement::ExpressionStmt {
+        if let Statement::Expression {
             token: _,
             expression,
         } = &contained_body.statements[0]
@@ -685,7 +685,7 @@ mod test {
         for test_case in test_cases {
             let expression = parse_expression_statement(test_case.input);
 
-            if let Expression::LiteralFnExpr {
+            if let Expression::FnLiteral {
                 token: _,
                 parameters,
                 ..
@@ -713,7 +713,7 @@ mod test {
         let input = "add(1, 2 * 3, 4 + 5, true == false)";
         let expression = parse_expression_statement(input);
 
-        if let Expression::CallExpr {
+        if let Expression::Call {
             token: _,
             function,
             arguments,
@@ -766,7 +766,7 @@ mod test {
         for test_case in test_cases {
             println!("{}", test_case.input);
             let expression = parse_expression_statement(test_case.input);
-            if let Expression::CallExpr {
+            if let Expression::Call {
                 token: _,
                 arguments,
                 function,
@@ -794,7 +794,7 @@ mod test {
     fn test_string_literal_expression() {
         let input = "\"hello world\"";
         let expr = parse_expression_statement(input);
-        if let Expression::LiteralStringExpr { token: _, value } = expr {
+        if let Expression::StringLiteral { token: _, value } = expr {
             assert_eq!(value, "hello world");
         } else {
             assert!(false, "Expected LiteralStringExpr, got {:?}", expr);
@@ -806,7 +806,7 @@ mod test {
         let input = "[1, 2 * 2, 3 + 3]";
 
         let expression = parse_expression_statement(input);
-        if let Expression::LiteralArrayExpr {
+        if let Expression::ArrayLiteral {
             token: _,
             elements: value,
         } = expression
@@ -825,7 +825,7 @@ mod test {
         let input = "arr[1 + 1]";
         let expression = parse_expression_statement(input);
 
-        if let Expression::IndexExpr {
+        if let Expression::Index {
             token: _,
             left,
             index,
@@ -849,11 +849,11 @@ mod test {
 
         let expression = parse_expression_statement(input);
 
-        if let Expression::LiteralHashExpr { token: _, entries } = expression {
+        if let Expression::HashLiteral { token: _, entries } = expression {
             assert_eq!(entries.len(), 3);
             for (key, val) in entries {
                 {
-                    if let Expression::LiteralIntExpr { token: _, value } = val {
+                    if let Expression::IntLiteral { token: _, value } = val {
                         let expected_val = expected.get(&key.to_string()).unwrap().to_owned();
                         assert_eq!(value, expected_val);
                     } else {
@@ -871,7 +871,7 @@ mod test {
         let input = "{}";
         let expression = parse_expression_statement(input);
 
-        if let Expression::LiteralHashExpr { token: _, entries } = expression {
+        if let Expression::HashLiteral { token: _, entries } = expression {
             assert_eq!(entries.len(), 0);
         } else {
             panic!("Expected LiteralHashExpr, got {:?}", expression);
@@ -883,20 +883,20 @@ mod test {
         let input = "{\"one\": 0 + 1, \"two\": 10 - 8, \"three\": 15 / 5}";
         let expression = parse_expression_statement(input);
 
-        let one = Expression::LiteralStringExpr {
-            token: Token::new(TokenType::STRING, "one"),
+        let one = Expression::StringLiteral {
+            token: Token::new(TokenType::String, "one"),
             value: "one".to_string(),
         };
-        let two = Expression::LiteralStringExpr {
-            token: Token::new(TokenType::STRING, "two"),
+        let two = Expression::StringLiteral {
+            token: Token::new(TokenType::String, "two"),
             value: "two".to_string(),
         };
-        let three = Expression::LiteralStringExpr {
-            token: Token::new(TokenType::STRING, "three"),
+        let three = Expression::StringLiteral {
+            token: Token::new(TokenType::String, "three"),
             value: "three".to_string(),
         };
 
-        if let Expression::LiteralHashExpr { token: _, entries } = expression {
+        if let Expression::HashLiteral { token: _, entries } = expression {
             assert_eq!(entries.len(), 3);
             let val1 = entries.get(&one).unwrap().clone();
             let val2 = entries.get(&two).unwrap().clone();
@@ -910,7 +910,7 @@ mod test {
     }
 
     fn test_integer_literal(expression: Expression, expected_value: isize) {
-        if let Expression::LiteralIntExpr { token, value } = expression {
+        if let Expression::IntLiteral { token, value } = expression {
             assert_eq!(
                 token.literal,
                 format!("{}", expected_value),
@@ -929,7 +929,7 @@ mod test {
     }
 
     fn test_identifier(expression: Expression, expected_name: &str) {
-        if let Expression::IdentifierExpr { token, value } = expression {
+        if let Expression::Identifier { token, value } = expression {
             assert_eq!(
                 token.literal,
                 format!("{}", expected_name),
@@ -948,7 +948,7 @@ mod test {
     }
 
     fn test_boolean_literal(expression: Expression, expected_value: bool) {
-        if let Expression::LiteralBoolExpr { token, value } = expression {
+        if let Expression::BoolLiteral { token, value } = expression {
             assert_eq!(
                 token.literal,
                 format!("{}", expected_value),
@@ -988,7 +988,7 @@ mod test {
         expected_operator: &str,
         expected_right: &str,
     ) {
-        if let Expression::InfixExpr {
+        if let Expression::Infix {
             token: _,
             left_expression,
             operator,
@@ -1009,7 +1009,7 @@ mod test {
 
     fn parse_expression_statement(input: &str) -> Expression {
         let statement = parse_program(input, 1).pop().unwrap();
-        if let Statement::ExpressionStmt {
+        if let Statement::Expression {
             token: _,
             expression,
         } = statement

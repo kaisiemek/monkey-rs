@@ -28,41 +28,41 @@ impl Lexer {
         let mut skip_next_read = false;
 
         let tok: Token = match self.cur_char {
-            '+' => Token::new_from_char(TokenType::PLUS, self.cur_char),
-            '-' => Token::new_from_char(TokenType::MINUS, self.cur_char),
-            '/' => Token::new_from_char(TokenType::SLASH, self.cur_char),
-            '*' => Token::new_from_char(TokenType::ASTERISK, self.cur_char),
-            '<' => Token::new_from_char(TokenType::LT, self.cur_char),
-            '>' => Token::new_from_char(TokenType::GT, self.cur_char),
-            ';' => Token::new_from_char(TokenType::SEMICOLON, self.cur_char),
-            ':' => Token::new_from_char(TokenType::COLON, self.cur_char),
-            ',' => Token::new_from_char(TokenType::COMMA, self.cur_char),
-            '(' => Token::new_from_char(TokenType::LPAREN, self.cur_char),
-            ')' => Token::new_from_char(TokenType::RPAREN, self.cur_char),
-            '{' => Token::new_from_char(TokenType::LBRACE, self.cur_char),
-            '}' => Token::new_from_char(TokenType::RBRACE, self.cur_char),
-            '[' => Token::new_from_char(TokenType::LBRACKET, self.cur_char),
-            ']' => Token::new_from_char(TokenType::RBRACKET, self.cur_char),
+            '+' => Token::new_from_char(TokenType::Plus, self.cur_char),
+            '-' => Token::new_from_char(TokenType::Minus, self.cur_char),
+            '/' => Token::new_from_char(TokenType::Slash, self.cur_char),
+            '*' => Token::new_from_char(TokenType::Asterisk, self.cur_char),
+            '<' => Token::new_from_char(TokenType::Lt, self.cur_char),
+            '>' => Token::new_from_char(TokenType::Gt, self.cur_char),
+            ';' => Token::new_from_char(TokenType::Semicolon, self.cur_char),
+            ':' => Token::new_from_char(TokenType::Colon, self.cur_char),
+            ',' => Token::new_from_char(TokenType::Comma, self.cur_char),
+            '(' => Token::new_from_char(TokenType::LParen, self.cur_char),
+            ')' => Token::new_from_char(TokenType::RParen, self.cur_char),
+            '{' => Token::new_from_char(TokenType::LBrace, self.cur_char),
+            '}' => Token::new_from_char(TokenType::RBrace, self.cur_char),
+            '[' => Token::new_from_char(TokenType::LBracket, self.cur_char),
+            ']' => Token::new_from_char(TokenType::RBracket, self.cur_char),
             '\0' => Token::new(TokenType::EOF, ""),
             '=' => {
                 if self.peek() == '=' {
                     self.read_char();
-                    Token::new(TokenType::EQ, "==")
+                    Token::new(TokenType::Eq, "==")
                 } else {
-                    Token::new_from_char(TokenType::ASSIGN, self.cur_char)
+                    Token::new_from_char(TokenType::Assign, self.cur_char)
                 }
             }
             '!' => {
                 if self.peek() == '=' {
                     self.read_char();
-                    Token::new(TokenType::NOTEQ, "!=")
+                    Token::new(TokenType::NotEq, "!=")
                 } else {
-                    Token::new_from_char(TokenType::BANG, self.cur_char)
+                    Token::new_from_char(TokenType::Bang, self.cur_char)
                 }
             }
             '"' => {
                 let literal = self.read_string();
-                Token::new(TokenType::STRING, &literal)
+                Token::new(TokenType::String, &literal)
             }
             _ => {
                 if self.cur_char.is_ascii_alphabetic() || self.cur_char == '_' {
@@ -72,9 +72,9 @@ impl Lexer {
                     Token::new(tok_type, &literal)
                 } else if self.cur_char.is_ascii_digit() {
                     skip_next_read = true;
-                    Token::new(TokenType::INT, &self.read_number())
+                    Token::new(TokenType::Int, &self.read_number())
                 } else {
-                    Token::new_from_char(TokenType::ILLEGAL, self.cur_char)
+                    Token::new_from_char(TokenType::Illegal, self.cur_char)
                 }
             }
         };

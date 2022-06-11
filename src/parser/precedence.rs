@@ -14,16 +14,16 @@ pub enum Precedence {
 
 pub fn get_operator_precedence(operator_type: TokenType) -> Precedence {
     match operator_type {
-        TokenType::PLUS => Precedence::Sum,
-        TokenType::MINUS => Precedence::Sum,
-        TokenType::ASTERISK => Precedence::Product,
-        TokenType::SLASH => Precedence::Product,
-        TokenType::EQ => Precedence::Equals,
-        TokenType::NOTEQ => Precedence::Equals,
-        TokenType::LT => Precedence::LessGreater,
-        TokenType::GT => Precedence::LessGreater,
-        TokenType::LPAREN => Precedence::Call,
-        TokenType::LBRACKET => Precedence::Index,
+        TokenType::Plus => Precedence::Sum,
+        TokenType::Minus => Precedence::Sum,
+        TokenType::Asterisk => Precedence::Product,
+        TokenType::Slash => Precedence::Product,
+        TokenType::Eq => Precedence::Equals,
+        TokenType::NotEq => Precedence::Equals,
+        TokenType::Lt => Precedence::LessGreater,
+        TokenType::Gt => Precedence::LessGreater,
+        TokenType::LParen => Precedence::Call,
+        TokenType::LBracket => Precedence::Index,
         _ => Precedence::Lowest,
     }
 }

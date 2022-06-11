@@ -38,7 +38,7 @@ pub fn start() -> ! {
                 let result = eval_program(program, repl_environment.clone());
                 match result {
                     Ok(object) => println!("{}", object.inspect()),
-                    Err(msg) => println!("ERROR! {}", msg),
+                    Err(msg) => println!("ERROR: {}", msg),
                 }
             }
             Err(err_vec) => {

@@ -6,16 +6,16 @@ pub type Program = Vec<Statement>;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Statement {
-    LetStmt {
+    Let {
         token: Token,
         identifier: String,
         value: Expression,
     },
-    ReturnStmt {
+    Return {
         token: Token,
         value: Expression,
     },
-    ExpressionStmt {
+    Expression {
         token: Token,
         expression: Expression,
     },
@@ -27,18 +27,78 @@ pub struct BlockStatement {
     pub statements: Vec<Statement>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Expression {
+    Identifier {
+        token: Token,
+        value: String,
+    },
+    IntLiteral {
+        token: Token,
+        value: isize,
+    },
+    BoolLiteral {
+        token: Token,
+        value: bool,
+    },
+    StringLiteral {
+        token: Token,
+        value: String,
+    },
+    ArrayLiteral {
+        token: Token,
+        elements: Vec<Expression>,
+    },
+    HashLiteral {
+        token: Token,
+        entries: HashMap<Expression, Expression>,
+    },
+    FnLiteral {
+        token: Token,
+        parameters: Vec<Expression>,
+        body: BlockStatement,
+    },
+    Prefix {
+        token: Token,
+        operator: String,
+        right_expression: Box<Expression>,
+    },
+    Infix {
+        token: Token,
+        left_expression: Box<Expression>,
+        operator: String,
+        right_expression: Box<Expression>,
+    },
+    Index {
+        token: Token,
+        left: Box<Expression>,
+        index: Box<Expression>,
+    },
+    If {
+        token: Token,
+        condition: Box<Expression>,
+        consequence: BlockStatement,
+        alternative: Option<BlockStatement>,
+    },
+    Call {
+        token: Token,
+        function: Box<Expression>,
+        arguments: Vec<Expression>,
+    },
+}
+
 impl ToString for Statement {
     fn to_string(&self) -> String {
         match self {
-            Statement::LetStmt {
+            Statement::Let {
                 token,
                 identifier,
                 value,
             } => format!("{} {} = {}", token.literal, identifier, value.to_string()),
-            Statement::ReturnStmt { token, value } => {
+            Statement::Return { token, value } => {
                 format!("{} {}", token.literal, value.to_string())
             }
-            Statement::ExpressionStmt {
+            Statement::Expression {
                 token: _,
                 expression,
             } => format!("{}", expression.to_string()),
@@ -58,81 +118,21 @@ impl ToString for BlockStatement {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Expression {
-    IdentifierExpr {
-        token: Token,
-        value: String,
-    },
-    LiteralIntExpr {
-        token: Token,
-        value: isize,
-    },
-    LiteralBoolExpr {
-        token: Token,
-        value: bool,
-    },
-    LiteralStringExpr {
-        token: Token,
-        value: String,
-    },
-    LiteralArrayExpr {
-        token: Token,
-        elements: Vec<Expression>,
-    },
-    LiteralHashExpr {
-        token: Token,
-        entries: HashMap<Expression, Expression>,
-    },
-    LiteralFnExpr {
-        token: Token,
-        parameters: Vec<Expression>,
-        body: BlockStatement,
-    },
-    PrefixExpr {
-        token: Token,
-        operator: String,
-        right_expression: Box<Expression>,
-    },
-    InfixExpr {
-        token: Token,
-        left_expression: Box<Expression>,
-        operator: String,
-        right_expression: Box<Expression>,
-    },
-    IndexExpr {
-        token: Token,
-        left: Box<Expression>,
-        index: Box<Expression>,
-    },
-    IfExpr {
-        token: Token,
-        condition: Box<Expression>,
-        consequence: BlockStatement,
-        alternative: Option<BlockStatement>,
-    },
-    CallExpr {
-        token: Token,
-        function: Box<Expression>,
-        arguments: Vec<Expression>,
-    },
-}
-
 impl ToString for Expression {
     fn to_string(&self) -> String {
         match self {
-            Expression::IdentifierExpr { token: _, value } => String::from(value),
-            Expression::LiteralIntExpr { token: _, value } => format!("{}", value),
-            Expression::LiteralBoolExpr { token: _, value } => format!("{}", value),
-            Expression::LiteralStringExpr { token: _, value } => value.clone(),
-            Expression::LiteralArrayExpr {
+            Expression::Identifier { token: _, value } => String::from(value),
+            Expression::IntLiteral { token: _, value } => format!("{}", value),
+            Expression::BoolLiteral { token: _, value } => format!("{}", value),
+            Expression::StringLiteral { token: _, value } => value.clone(),
+            Expression::ArrayLiteral {
                 token: _,
                 elements: value,
             } => {
                 let expr_strings: Vec<String> = value.iter().map(|val| val.to_string()).collect();
                 format!("[{}]", expr_strings.join(", "))
             }
-            Expression::LiteralHashExpr { token: _, entries } => {
+            Expression::HashLiteral { token: _, entries } => {
                 let entry_strings: Vec<String> = entries
                     .iter()
                     .map(|(key, val)| format!("{}: {}", key.to_string(), val.to_string()))
@@ -140,12 +140,12 @@ impl ToString for Expression {
 
                 format!("{{{}}}", entry_strings.join(", "))
             }
-            Expression::PrefixExpr {
+            Expression::Prefix {
                 token: _,
                 operator,
                 right_expression,
             } => format!("({}{})", operator, right_expression.to_string()),
-            Expression::InfixExpr {
+            Expression::Infix {
                 token: _,
                 left_expression,
                 operator,
@@ -156,14 +156,14 @@ impl ToString for Expression {
                 operator,
                 right_expression.to_string()
             ),
-            Expression::IndexExpr {
+            Expression::Index {
                 token: _,
                 left,
                 index,
             } => {
                 format!("({}[{}])", left.to_string(), index.to_string())
             }
-            Expression::IfExpr {
+            Expression::If {
                 token: _,
                 condition,
                 consequence,
@@ -179,7 +179,7 @@ impl ToString for Expression {
                 }
                 blockstring
             }
-            Expression::LiteralFnExpr {
+            Expression::FnLiteral {
                 token: _,
                 parameters,
                 body,
@@ -191,7 +191,7 @@ impl ToString for Expression {
 
                 format!("fn({}) {}", param_strings.join(", "), body.to_string())
             }
-            Expression::CallExpr {
+            Expression::Call {
                 token: _,
                 function,
                 arguments,
