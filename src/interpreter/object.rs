@@ -1,8 +1,6 @@
-use std::{cell::RefCell, collections::HashMap, hash::Hash, rc::Rc};
-
-use crate::parser::ast::{BlockStatement, Expression};
-
 use super::{builtins::BuiltinFunction, environment::Environment};
+use crate::parser::ast::{BlockStatement, Expression};
+use std::{cell::RefCell, collections::HashMap, hash::Hash, rc::Rc};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Object {

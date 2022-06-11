@@ -3,15 +3,19 @@ pub mod environment;
 pub mod object;
 mod test;
 
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
-
 use self::{
     builtins::get_builtin,
     environment::Environment,
     object::{Inspectable, Object},
 };
 use crate::parser::ast::{BlockStatement, Expression, Program, Statement};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
+/*
+    ==================================================
+    PUBLIC INTERFACE
+    ==================================================
+*/
 pub fn eval_program(statements: Program, env: Rc<RefCell<Environment>>) -> Result<Object, String> {
     let mut result = Object::Null;
     for statement in statements {
@@ -24,17 +28,24 @@ pub fn eval_program(statements: Program, env: Rc<RefCell<Environment>>) -> Resul
     Ok(result)
 }
 
+/*
+    ==================================================
+    STATEMENT EVALUATION FUNCTIONS
+    ==================================================
+*/
 fn eval_block_statement(
     block: BlockStatement,
     env: Rc<RefCell<Environment>>,
 ) -> Result<Object, String> {
-    let mut result = Object::Null;
+    let mut result = Object::default();
+
     for statement in block.statements {
         result = eval_statement(statement, env.clone())?;
         if let Object::ReturnValue(_) = result {
             return Ok(result);
         }
     }
+
     Ok(result)
 }
 
@@ -60,6 +71,11 @@ fn eval_statement(statement: Statement, env: Rc<RefCell<Environment>>) -> Result
     }
 }
 
+/*
+    ==================================================
+    EXPRESSION EVALUATION FUNCTIONS
+    ==================================================
+*/
 fn eval_expression(
     expression: Expression,
     env: Rc<RefCell<Environment>>,
@@ -122,6 +138,43 @@ fn eval_expression(
     }
 }
 
+fn eval_identifier(name: &str, env: Rc<RefCell<Environment>>) -> Result<Object, String> {
+    let environment = env.borrow();
+    let value = environment.get(name);
+    if value.is_some() {
+        return Ok(value.unwrap().clone());
+    }
+
+    let builtin = get_builtin(name);
+
+    match builtin {
+        Some(function) => Ok(Object::BuiltIn {
+            name: name.to_string(),
+            function,
+        }),
+        None => Err(format!("unknown identifier: {}", name)),
+    }
+}
+
+fn eval_if_else_expression(
+    condition: Object,
+    consequence: BlockStatement,
+    alternative: Option<BlockStatement>,
+    env: Rc<RefCell<Environment>>,
+) -> Result<Object, String> {
+    if is_truthy(condition) {
+        eval_block_statement(consequence, env)
+    } else if alternative.is_some() {
+        eval_block_statement(alternative.unwrap(), env)
+    } else {
+        Ok(Object::Null)
+    }
+}
+/*
+    ==================================================
+    PREFIX EVALUATION FUNCTIONS
+    ==================================================
+*/
 fn eval_prefix_expression(operator: &str, right: Object) -> Result<Object, String> {
     match operator {
         "!" => eval_bang_operator_expression(right),
@@ -134,6 +187,22 @@ fn eval_prefix_expression(operator: &str, right: Object) -> Result<Object, Strin
     }
 }
 
+fn eval_bang_operator_expression(right: Object) -> Result<Object, String> {
+    Ok(Object::Boolean(!is_truthy(right)))
+}
+
+fn eval_minus_operator_expression(right: Object) -> Result<Object, String> {
+    match right {
+        Object::Integer(value) => Ok(Object::Integer(-value)),
+        _ => Err(format!("unknown operator: -{}", right.type_str())),
+    }
+}
+
+/*
+    ==================================================
+    INFIX EVALUATION FUNCTIONS
+    ==================================================
+*/
 fn eval_infix_expression(left: Object, operator: &str, right: Object) -> Result<Object, String> {
     if left.type_str() != right.type_str() {
         return Err(format!(
@@ -199,32 +268,11 @@ fn eval_string_infix(left: &str, operator: &str, right: &str) -> Result<Object, 
     }
 }
 
-fn eval_bang_operator_expression(right: Object) -> Result<Object, String> {
-    Ok(Object::Boolean(!is_truthy(right)))
-}
-
-fn eval_minus_operator_expression(right: Object) -> Result<Object, String> {
-    match right {
-        Object::Integer(value) => Ok(Object::Integer(-value)),
-        _ => Err(format!("unknown operator: -{}", right.type_str())),
-    }
-}
-
-fn eval_if_else_expression(
-    condition: Object,
-    consequence: BlockStatement,
-    alternative: Option<BlockStatement>,
-    env: Rc<RefCell<Environment>>,
-) -> Result<Object, String> {
-    if is_truthy(condition) {
-        eval_block_statement(consequence, env)
-    } else if alternative.is_some() {
-        eval_block_statement(alternative.unwrap(), env)
-    } else {
-        Ok(Object::Null)
-    }
-}
-
+/*
+    ==================================================
+    FUNCTION EVALUATION FUNCTIONS
+    ==================================================
+*/
 fn eval_call_expression(
     func: Box<Expression>,
     arguments: Vec<Expression>,
@@ -240,24 +288,26 @@ fn eval_call_expression(
     apply_function(function, args)
 }
 
-fn eval_identifier(name: &str, env: Rc<RefCell<Environment>>) -> Result<Object, String> {
-    let environment = env.borrow();
-    let value = environment.get(name);
-    if value.is_some() {
-        return Ok(value.unwrap().clone());
-    }
-
-    let builtin = get_builtin(name);
-
-    match builtin {
-        Some(function) => Ok(Object::BuiltIn {
-            name: name.to_string(),
-            function,
-        }),
-        None => Err(format!("unknown identifier: {}", name)),
+fn apply_function(function: Object, arguments: Vec<Object>) -> Result<Object, String> {
+    match function {
+        Object::Function {
+            parameters,
+            body,
+            environment,
+        } => {
+            let extended_env = extend_function_env(&parameters, &arguments, environment)?;
+            eval_block_statement(body, extended_env)
+        }
+        Object::BuiltIn { name: _, function } => function(arguments),
+        other => Err(format!("not a function: {}", other.type_str())),
     }
 }
 
+/*
+    ==================================================
+    ARRAY/HASH EVALUATION FUNCTIONS
+    ==================================================
+*/
 fn eval_array(
     element_expressions: Vec<Expression>,
     env: Rc<RefCell<Environment>>,
@@ -329,18 +379,18 @@ fn eval_hash_index_expression(
     }
 }
 
-fn apply_function(function: Object, arguments: Vec<Object>) -> Result<Object, String> {
-    match function {
-        Object::Function {
-            parameters,
-            body,
-            environment,
-        } => {
-            let extended_env = extend_function_env(&parameters, &arguments, environment)?;
-            eval_block_statement(body, extended_env)
-        }
-        Object::BuiltIn { name: _, function } => function(arguments),
-        other => Err(format!("not a function: {}", other.type_str())),
+/*
+    ==================================================
+    HELPER FUNCTIONS
+    ==================================================
+*/
+fn is_truthy(object: Object) -> bool {
+    match object {
+        Object::Integer(value) => value != 0,
+        Object::Boolean(value) => value,
+        Object::Null => false,
+        Object::ReturnValue(value) => is_truthy(*value),
+        _ => true,
     }
 }
 
@@ -374,14 +424,4 @@ fn extend_function_env(
     }
 
     Ok(Rc::new(RefCell::new(extended_env)))
-}
-
-fn is_truthy(object: Object) -> bool {
-    match object {
-        Object::Integer(value) => value != 0,
-        Object::Boolean(value) => value,
-        Object::Null => false,
-        Object::ReturnValue(value) => is_truthy(*value),
-        _ => true,
-    }
 }

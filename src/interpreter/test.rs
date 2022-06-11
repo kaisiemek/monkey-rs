@@ -1,13 +1,5 @@
 #[cfg(test)]
 mod test {
-    use core::panic;
-    use std::{
-        cell::RefCell,
-        collections::{hash_map::DefaultHasher, HashMap},
-        hash::{Hash, Hasher},
-        rc::Rc,
-    };
-
     use crate::{
         interpreter::{
             environment::Environment,
@@ -16,6 +8,13 @@ mod test {
         },
         lexer::Lexer,
         parser::Parser,
+    };
+    use core::panic;
+    use std::{
+        cell::RefCell,
+        collections::{hash_map::DefaultHasher, HashMap},
+        hash::{Hash, Hasher},
+        rc::Rc,
     };
 
     #[test]
