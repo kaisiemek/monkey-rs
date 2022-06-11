@@ -4,17 +4,10 @@ mod test {
         interpreter::{
             environment::Environment,
             eval_program,
-            modify::{modify_expression, modify_statement},
             object::{Inspectable, Object},
         },
-        lexer::{
-            token::{Token, TokenType},
-            Lexer,
-        },
-        parser::{
-            ast::{BlockStatement, Expression, Statement},
-            Parser,
-        },
+        lexer::Lexer,
+        parser::Parser,
     };
     use core::panic;
     use std::{
@@ -411,6 +404,39 @@ mod test {
         }
     }
 
+    fn test_eval(input: &str) -> Object {
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let environment = Rc::new(RefCell::new(Environment::new()));
+
+        match parser.parse_program() {
+            Ok(program) => {
+                let object = eval_program(program, environment);
+                match object {
+                    Ok(obj) => obj,
+                    Err(msg) => {
+                        assert!(
+                            false,
+                            "An error occured while evaluating the program: {}",
+                            msg
+                        );
+                        panic!();
+                    }
+                }
+            }
+            Err(errors) => {
+                let error_str = errors.join("\n");
+                assert!(
+                    false,
+                    "The parser encountered {} errors:\n{}",
+                    errors.len(),
+                    error_str
+                );
+                panic!();
+            }
+        }
+    }
+
     #[test]
     fn test_function_object() {
         let input = "fn(x) { x + 1; };";
@@ -749,328 +775,6 @@ mod test {
         }
     }
 
-    #[test]
-    fn test_quote() {
-        struct TestCase<'a> {
-            input: &'a str,
-            expected: &'a str,
-        }
-
-        let test_cases = vec![
-            TestCase {
-                input: "quote(5)",
-                expected: "5",
-            },
-            TestCase {
-                input: "quote(5 + 8)",
-                expected: "(5 + 8)",
-            },
-            TestCase {
-                input: "quote(foobar)",
-                expected: "foobar",
-            },
-            TestCase {
-                input: "quote(foobar + barfoo)",
-                expected: "(foobar + barfoo)",
-            },
-        ];
-
-        for test_case in test_cases {
-            let object = test_eval(test_case.input);
-            if let Object::Quote(statement) = object {
-                assert_eq!(statement.to_string(), test_case.expected);
-            } else {
-                panic!("Expected quote object, got {}", object.type_str());
-            }
-        }
-    }
-
-    #[test]
-    fn test_quote_unquote() {
-        struct TestCase<'a> {
-            input: &'a str,
-            expected: &'a str,
-        }
-
-        let test_cases = vec![
-            TestCase {
-                input: "quote(unquote(4))",
-                expected: "4",
-            },
-            TestCase {
-                input: "quote(unquote(4 + 4))",
-                expected: "8",
-            },
-            TestCase {
-                input: "quote(8 + unquote(4 + 4))",
-                expected: "(8 + 8)",
-            },
-            TestCase {
-                input: "quote(unquote(8 + 8) + 4)",
-                expected: "(16 + 4)",
-            },
-        ];
-
-        for test_case in test_cases {
-            let object = test_eval(test_case.input);
-            if let Object::Quote(statement) = object {
-                assert_eq!(statement.to_string(), test_case.expected);
-            } else {
-                panic!("Expected quote object, got {}", object.type_str());
-            }
-        }
-    }
-
-    #[test]
-    fn test_modify_expression() {
-        let tok = Token::new(TokenType::EOF, "");
-
-        let one = Expression::IntLiteral {
-            token: tok.clone(),
-            value: 1,
-        };
-        let two = Expression::IntLiteral {
-            token: tok.clone(),
-            value: 2,
-        };
-
-        struct TestCase {
-            input: Expression,
-            expected: Expression,
-        }
-
-        let test_cases = vec![
-            TestCase {
-                input: one.clone(),
-                expected: two.clone(),
-            },
-            TestCase {
-                input: Expression::Infix {
-                    token: tok.clone(),
-                    left: Box::from(one.clone()),
-                    operator: "+".to_string(),
-                    right: Box::from(one.clone()),
-                },
-                expected: Expression::Infix {
-                    token: tok.clone(),
-                    left: Box::from(two.clone()),
-                    operator: "+".to_string(),
-                    right: Box::from(two.clone()),
-                },
-            },
-            TestCase {
-                input: Expression::Infix {
-                    token: tok.clone(),
-                    left: Box::from(one.clone()),
-                    operator: "+".to_string(),
-                    right: Box::from(two.clone()),
-                },
-                expected: Expression::Infix {
-                    token: tok.clone(),
-                    left: Box::from(two.clone()),
-                    operator: "+".to_string(),
-                    right: Box::from(two.clone()),
-                },
-            },
-            TestCase {
-                input: Expression::Prefix {
-                    token: tok.clone(),
-                    operator: "-".to_string(),
-                    right: Box::from(one.clone()),
-                },
-                expected: Expression::Prefix {
-                    token: tok.clone(),
-                    operator: "-".to_string(),
-                    right: Box::from(two.clone()),
-                },
-            },
-            TestCase {
-                input: Expression::Index {
-                    token: tok.clone(),
-                    left: Box::from(one.clone()),
-                    index: Box::from(one.clone()),
-                },
-                expected: Expression::Index {
-                    token: tok.clone(),
-                    left: Box::from(two.clone()),
-                    index: Box::from(two.clone()),
-                },
-            },
-            TestCase {
-                input: Expression::If {
-                    token: tok.clone(),
-                    condition: Box::from(one.clone()),
-                    consequence: BlockStatement {
-                        token: tok.clone(),
-                        statements: vec![Statement::Expression {
-                            token: tok.clone(),
-                            expression: one.clone(),
-                        }],
-                    },
-                    alternative: Some(BlockStatement {
-                        token: tok.clone(),
-                        statements: vec![Statement::Expression {
-                            token: tok.clone(),
-                            expression: one.clone(),
-                        }],
-                    }),
-                },
-                expected: Expression::If {
-                    token: tok.clone(),
-                    condition: Box::from(two.clone()),
-                    consequence: BlockStatement {
-                        token: tok.clone(),
-                        statements: vec![Statement::Expression {
-                            token: tok.clone(),
-                            expression: two.clone(),
-                        }],
-                    },
-                    alternative: Some(BlockStatement {
-                        token: tok.clone(),
-                        statements: vec![Statement::Expression {
-                            token: tok.clone(),
-                            expression: two.clone(),
-                        }],
-                    }),
-                },
-            },
-            TestCase {
-                input: Expression::FnLiteral {
-                    token: tok.clone(),
-                    parameters: vec![one.clone(), two.clone()],
-                    body: BlockStatement {
-                        token: tok.clone(),
-                        statements: vec![Statement::Expression {
-                            token: tok.clone(),
-                            expression: one.clone(),
-                        }],
-                    },
-                },
-                expected: Expression::FnLiteral {
-                    token: tok.clone(),
-                    parameters: vec![two.clone(), two.clone()],
-                    body: BlockStatement {
-                        token: tok.clone(),
-                        statements: vec![Statement::Expression {
-                            token: tok.clone(),
-                            expression: two.clone(),
-                        }],
-                    },
-                },
-            },
-            TestCase {
-                input: Expression::ArrayLiteral {
-                    token: tok.clone(),
-                    elements: vec![one.clone(), two.clone()],
-                },
-                expected: Expression::ArrayLiteral {
-                    token: tok.clone(),
-                    elements: vec![two.clone(), two.clone()],
-                },
-            },
-            TestCase {
-                input: Expression::HashLiteral {
-                    token: tok.clone(),
-                    entries: HashMap::from([
-                        (one.clone(), one.clone()),
-                        (two.clone(), one.clone()),
-                    ]),
-                },
-                expected: Expression::HashLiteral {
-                    token: tok.clone(),
-                    entries: HashMap::from([(two.clone(), two.clone())]),
-                },
-            },
-        ];
-
-        for test_case in test_cases {
-            let modified = modify_expression(test_case.input, test_mutate_function);
-            assert_eq!(modified, test_case.expected)
-        }
-    }
-
-    #[test]
-    fn test_modify_statement() {
-        let tok = Token::new(TokenType::EOF, "");
-
-        let one = Expression::IntLiteral {
-            token: tok.clone(),
-            value: 1,
-        };
-        let two = Expression::IntLiteral {
-            token: tok.clone(),
-            value: 2,
-        };
-
-        struct TestCase {
-            input: Statement,
-            expected: Statement,
-        }
-
-        let test_cases = vec![
-            TestCase {
-                input: Statement::Return {
-                    token: tok.clone(),
-                    value: one.clone(),
-                },
-                expected: Statement::Return {
-                    token: tok.clone(),
-                    value: two.clone(),
-                },
-            },
-            TestCase {
-                input: Statement::Let {
-                    token: tok.clone(),
-                    identifier: "test".to_string(),
-                    value: one.clone(),
-                },
-                expected: Statement::Let {
-                    token: tok.clone(),
-                    identifier: "test".to_string(),
-                    value: two.clone(),
-                },
-            },
-        ];
-
-        for test_case in test_cases {
-            let modified = modify_statement(test_case.input, test_mutate_function);
-            assert_eq!(modified, test_case.expected)
-        }
-    }
-
-    fn test_eval(input: &str) -> Object {
-        let lexer = Lexer::new(input);
-        let mut parser = Parser::new(lexer);
-        let environment = Rc::new(RefCell::new(Environment::new()));
-
-        match parser.parse_program() {
-            Ok(program) => {
-                let object = eval_program(program, environment);
-                match object {
-                    Ok(obj) => obj,
-                    Err(msg) => {
-                        assert!(
-                            false,
-                            "An error occured while evaluating the program: {}",
-                            msg
-                        );
-                        panic!();
-                    }
-                }
-            }
-            Err(errors) => {
-                let error_str = errors.join("\n");
-                assert!(
-                    false,
-                    "The parser encountered {} errors:\n{}",
-                    errors.len(),
-                    error_str
-                );
-                panic!();
-            }
-        }
-    }
-
     fn test_eval_error(input: &str) -> String {
         let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
@@ -1138,18 +842,5 @@ mod test {
         } else {
             assert!(false, "Expected String object, got {:?}", object);
         }
-    }
-
-    fn test_mutate_function(expression: &Expression) -> Expression {
-        if let Expression::IntLiteral { token, value } = expression {
-            if value.to_owned() == 1 {
-                return Expression::IntLiteral {
-                    token: token.clone(),
-                    value: 2,
-                };
-            }
-        }
-
-        expression.clone()
     }
 }
