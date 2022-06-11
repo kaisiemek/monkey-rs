@@ -725,6 +725,57 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_hash_index() {
+        enum Result {
+            Int(isize),
+            Null,
+        }
+        struct TestCase<'a> {
+            input: &'a str,
+            expected: Result,
+        }
+
+        let test_cases = vec![
+            TestCase {
+                input: "{\"foo\": 5}[\"foo\"]",
+                expected: Result::Int(5),
+            },
+            TestCase {
+                input: "{\"foo\": 5}[\"bar\"]",
+                expected: Result::Null,
+            },
+            TestCase {
+                input: "let key = \"foo\"; {\"foo\": 5}[key]",
+                expected: Result::Int(5),
+            },
+            TestCase {
+                input: "{}[\"foo\"]",
+                expected: Result::Null,
+            },
+            TestCase {
+                input: "{5: 5}[5]",
+                expected: Result::Int(5),
+            },
+            TestCase {
+                input: "{true: 5}[true]",
+                expected: Result::Int(5),
+            },
+            TestCase {
+                input: "{false: 5, true: 4}[false]",
+                expected: Result::Int(5),
+            },
+        ];
+
+        for test_case in test_cases {
+            let object = test_eval(test_case.input);
+            match test_case.expected {
+                Result::Int(val) => test_integer_object(object, val),
+                Result::Null => assert_eq!(object.type_str(), "NULL"),
+            }
+        }
+    }
+
     fn test_eval_error(input: &str) -> String {
         let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);

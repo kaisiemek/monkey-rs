@@ -89,3 +89,15 @@ impl Hash for Object {
         }
     }
 }
+
+impl Default for Object {
+    fn default() -> Self {
+        Object::Null
+    }
+}
+
+impl Default for &Object {
+    fn default() -> Self {
+        &Object::Null
+    }
+}

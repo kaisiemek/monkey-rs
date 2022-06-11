@@ -1,5 +1,3 @@
-use std::hash::Hash;
-
 mod interpreter;
 mod lexer;
 mod parser;

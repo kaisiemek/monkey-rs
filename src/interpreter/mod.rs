@@ -291,14 +291,24 @@ fn eval_hash(
 }
 
 fn eval_index_expression(left: Object, index: Object) -> Result<Object, String> {
+    match left {
+        Object::Array(elements) => eval_array_index_expression(&elements, index),
+        Object::Hash(entries) => eval_hash_index_expression(&entries, index),
+        other => Err(format!(
+            "index operator not supported: {}",
+            other.type_str()
+        )),
+    }
+}
+
+fn eval_array_index_expression(elements: &Vec<Object>, index: Object) -> Result<Object, String> {
     if let Object::Integer(i) = index {
-        match left {
-            Object::Array(elements) => Ok(eval_array_index_expression(&elements, i)),
-            other => Err(format!(
-                "index operator not supported: {}",
-                other.type_str()
-            )),
-        }
+        if i < 0 {
+            return Ok(Object::Null);
+        };
+        let result = elements.get(i as usize);
+
+        Ok(result.unwrap_or_default().clone())
     } else {
         Err(format!(
             "index must be an integer, got: {}",
@@ -307,12 +317,16 @@ fn eval_index_expression(left: Object, index: Object) -> Result<Object, String> 
     }
 }
 
-fn eval_array_index_expression(elements: &Vec<Object>, index: isize) -> Object {
-    if index < 0 {
-        return Object::Null;
-    };
-    let result = elements.get(index as usize);
-    result.unwrap_or(&Object::Null).clone()
+fn eval_hash_index_expression(
+    entries: &HashMap<Object, Object>,
+    index: Object,
+) -> Result<Object, String> {
+    match index {
+        Object::Integer(_) | Object::Boolean(_) | Object::String(_) => {
+            Ok(entries.get(&index).unwrap_or_default().clone())
+        }
+        other => Err(format!("unusable as hash key: {}", other.type_str())),
+    }
 }
 
 fn apply_function(function: Object, arguments: Vec<Object>) -> Result<Object, String> {
