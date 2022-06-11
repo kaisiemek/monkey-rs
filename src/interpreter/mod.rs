@@ -3,7 +3,7 @@ pub mod environment;
 pub mod object;
 mod test;
 
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use self::{
     builtins::get_builtin,
@@ -70,7 +70,7 @@ fn eval_expression(
         Expression::LiteralBoolExpr { token: _, value } => Ok(Object::Boolean(value)),
         Expression::LiteralStringExpr { token: _, value } => Ok(Object::String(value)),
         Expression::LiteralArrayExpr { token: _, elements } => eval_array(elements, env),
-        Expression::LiteralHashExpr { token, entries } => todo!(),
+        Expression::LiteralHashExpr { token: _, entries } => eval_hash(entries, env),
         Expression::LiteralFnExpr {
             token: _,
             parameters,
@@ -269,6 +269,25 @@ fn eval_array(
     }
 
     Ok(Object::Array(elements))
+}
+
+fn eval_hash(
+    entry_expressions: HashMap<Expression, Expression>,
+    env: Rc<RefCell<Environment>>,
+) -> Result<Object, String> {
+    let mut entries: HashMap<Object, Object> = HashMap::new();
+
+    for (key, val) in entry_expressions {
+        let key_object = eval_expression(key, env.clone())?;
+        match key_object {
+            Object::Integer(_) | Object::Boolean(_) | Object::String(_) => {
+                entries.insert(key_object, eval_expression(val, env.clone())?);
+            }
+            obj => return Err(format!("unusable as hash key: {}", obj.type_str())),
+        }
+    }
+
+    Ok(Object::Hash(entries))
 }
 
 fn eval_index_expression(left: Object, index: Object) -> Result<Object, String> {

@@ -1,6 +1,12 @@
 #[cfg(test)]
 mod test {
-    use std::{cell::RefCell, rc::Rc};
+    use core::panic;
+    use std::{
+        cell::RefCell,
+        collections::{hash_map::DefaultHasher, HashMap},
+        hash::{Hash, Hasher},
+        rc::Rc,
+    };
 
     use crate::{
         interpreter::{
@@ -655,6 +661,67 @@ mod test {
         for test_case in test_cases2 {
             let object = test_eval(test_case);
             assert_eq!(object.type_str(), "NULL");
+        }
+    }
+
+    #[test]
+    fn test_hash_string_key() {
+        let hello1 = Object::String("Hello World".to_string());
+        let hello2 = Object::String("Hello World".to_string());
+        let diff1 = Object::String("TestString".to_string());
+        let diff2 = Object::String("TestString".to_string());
+
+        let mut h1 = DefaultHasher::new();
+        hello1.hash(&mut h1);
+        let hello1hash = h1.finish();
+
+        let mut h2 = DefaultHasher::new();
+        hello2.hash(&mut h2);
+        let hello2hash = h2.finish();
+
+        let mut d1 = DefaultHasher::new();
+        diff1.hash(&mut d1);
+        let diff1hash = d1.finish();
+
+        let mut d2 = DefaultHasher::new();
+        diff2.hash(&mut d2);
+        let diff2hash = d2.finish();
+
+        assert_eq!(hello1hash, hello2hash);
+        assert_eq!(diff1hash, diff2hash);
+        assert_ne!(hello1hash, diff1hash);
+    }
+
+    #[test]
+    fn test_hash_literals() {
+        let input = "
+        let two = \"two\";
+        {
+           \"one\": 10 - 9,
+           two: 1 + 1,
+           \"thr\" + \"ee\": 6 / 2,
+           4: 4,
+           true: 5,
+           false: 6
+        }";
+
+        let expected: HashMap<Object, Object> = HashMap::from([
+            (Object::String("one".to_string()), Object::Integer(1)),
+            (Object::String("two".to_string()), Object::Integer(2)),
+            (Object::String("three".to_string()), Object::Integer(3)),
+            (Object::Integer(4), Object::Integer(4)),
+            (Object::Boolean(true), Object::Integer(5)),
+            (Object::Boolean(false), Object::Integer(6)),
+        ]);
+
+        let object = test_eval(input);
+        if let Object::Hash(entries) = object {
+            assert_eq!(entries.len(), 6);
+            for (key, val) in entries {
+                assert_eq!(val, expected.get(&key).unwrap().to_owned());
+            }
+        } else {
+            panic!("Expected Hash object, got {}", object.type_str());
         }
     }
 

@@ -1,15 +1,16 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, hash::Hash, rc::Rc};
 
 use crate::parser::ast::{BlockStatement, Expression};
 
 use super::{builtins::BuiltinFunction, environment::Environment};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Object {
     Integer(isize),
     Boolean(bool),
     String(String),
     Array(Vec<Object>),
+    Hash(HashMap<Object, Object>),
     ReturnValue(Box<Object>),
     Function {
         parameters: Vec<Expression>,
@@ -38,6 +39,14 @@ impl Inspectable for Object {
                 let expr_strings: Vec<String> = elements.iter().map(|val| val.inspect()).collect();
                 format!("[{}]", expr_strings.join(", "))
             }
+            Object::Hash(entries) => {
+                let entry_strings: Vec<String> = entries
+                    .iter()
+                    .map(|(key, val)| format!("{}: {}", key.inspect(), val.inspect()))
+                    .collect();
+
+                format!("{{{}}}", entry_strings.join(", "))
+            }
             Object::ReturnValue(value) => format!("{}", value.inspect()),
             Object::Function {
                 parameters,
@@ -59,10 +68,24 @@ impl Inspectable for Object {
             Object::Boolean(_) => String::from("BOOLEAN"),
             Object::String(_) => String::from("STRING"),
             Object::Array(_) => String::from("ARRAY"),
+            Object::Hash(_) => String::from("HASH"),
             Object::ReturnValue(value) => format!("RETURN {}", value.type_str()),
             Object::Function { .. } => String::from("FUNCTION"),
             Object::BuiltIn { .. } => String::from("BUILTIN"),
             Object::Null => String::from("NULL"),
+        }
+    }
+}
+
+impl Hash for Object {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        core::mem::discriminant(self).hash(state);
+
+        match self {
+            Object::Integer(value) => value.hash(state),
+            Object::Boolean(value) => value.hash(state),
+            Object::String(value) => value.hash(state),
+            obj => panic!("Can't hash {}", obj.type_str()),
         }
     }
 }
