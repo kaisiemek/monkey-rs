@@ -1,4 +1,6 @@
-pub type Instruction = Vec<u8>;
+use crate::interpreter::object::Object;
+
+pub type Instructions = Vec<u8>;
 
 #[derive(Debug)]
 pub enum OpcodeType {
@@ -11,11 +13,11 @@ pub struct OpcodeDefinition {
     operand_widths: Vec<u8>,
 }
 
-pub fn make(opcode: OpcodeType, operands: Vec<u32>) -> Instruction {
+pub fn make(opcode: OpcodeType, operands: Vec<u32>) -> Instructions {
     let operand_widths = opcode.get_operand_widths();
     let instruction_len: u8 = operand_widths.iter().sum::<u8>() + 1;
 
-    let mut instruction: Instruction = Vec::with_capacity(instruction_len as usize);
+    let mut instruction: Instructions = Vec::with_capacity(instruction_len as usize);
 
     instruction.push(opcode.into());
     for (i, operand) in operands.iter().enumerate() {

@@ -1,13 +1,13 @@
 #[cfg(test)]
 mod test {
-    use crate::virtualmachine::code::{make, Instruction, OpcodeType};
+    use crate::virtualmachine::code::{make, Instructions, OpcodeType};
 
     #[test]
     fn test_make() {
         struct TestCase {
             op: OpcodeType,
             operands: Vec<u32>,
-            expected: Instruction,
+            expected: Instructions,
         }
 
         let test_cases = vec![TestCase {
