@@ -55,14 +55,14 @@ pub type Instruction = Vec<u8>;
 pub fn make(code: Opcode, operands: Vec<u16>) -> Instruction {
     let operand_widths = code.width();
 
-    if operands.len() as u8 != operand_widths / 2 {}
+    if operands.len() as u8 != operand_widths / 2 {
+        return vec![];
+    }
 
     let mut instruction: Instruction = vec![code.into()];
 
     match operand_widths {
-        2 => {
-            instruction.extend(operands[0].to_be_bytes());
-        }
+        2 => instruction.extend(operands[0].to_be_bytes()),
         _ => todo!(),
     }
 

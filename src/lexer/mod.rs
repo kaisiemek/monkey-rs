@@ -1,7 +1,7 @@
-use self::token::{Token, TokenType};
-
-mod test;
 pub mod token;
+mod test;
+
+use self::token::{Token, TokenType};
 
 pub struct Lexer {
     input: String,

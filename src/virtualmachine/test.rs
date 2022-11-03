@@ -17,7 +17,7 @@ mod test {
         let test_cases = vec![TestCase {
             input: Input {
                 op: Opcode::Constant,
-                operands: vec![65534],
+                operands: vec![0xFFFE], //65534
             },
             expected: vec![Opcode::Constant.into(), 0xFF, 0xFE],
         }];
