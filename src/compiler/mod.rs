@@ -1,14 +1,14 @@
 mod test;
 
-use crate::{code::Instruction, interpreter::object::Object, parser::ast::Program};
+use crate::{code::Instructions, interpreter::object::Object, parser::ast::Program};
 
 pub struct Compiler {
-    instructions: Instruction,
+    instructions: Instructions,
     constants: Vec<Object>,
 }
 
 pub struct Bytecode {
-    pub instructions: Instruction,
+    pub instructions: Instructions,
     pub constants: Vec<Object>,
 }
 

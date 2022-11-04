@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod test {
     use crate::{
-        code::{make, Instruction, Opcode},
+        code::{make, Instructions, Opcode},
         compiler::Compiler,
         interpreter::object::{Inspectable, Object},
         lexer::Lexer,
@@ -11,7 +11,7 @@ mod test {
     struct TestCase {
         input: String,
         expected_constants: Vec<Object>,
-        expected_instructions: Vec<Instruction>,
+        expected_instructions: Vec<Instructions>,
     }
 
     #[test]
@@ -69,7 +69,7 @@ mod test {
         return result.unwrap();
     }
 
-    fn test_instructions(expected: Vec<Instruction>, actual: Instruction) {
+    fn test_instructions(expected: Vec<Instructions>, actual: Instructions) {
         let concat = expected.concat();
 
         if actual.len() != concat.len() {
