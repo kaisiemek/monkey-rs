@@ -1,3 +1,5 @@
+mod test;
+
 macro_rules! make_opcodes {
     ([$($op:ident: $width:expr),+]) => {
         #[repr(u8)]

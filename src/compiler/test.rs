@@ -1,11 +1,11 @@
 #[cfg(test)]
 mod test {
     use crate::{
+        code::{make, Instruction, Opcode},
         compiler::Compiler,
         interpreter::object::{Inspectable, Object},
         lexer::Lexer,
         parser::{ast::Program, Parser},
-        virtualmachine::code::{make, Instruction, Opcode},
     };
 
     struct TestCase {

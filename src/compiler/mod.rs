@@ -1,6 +1,6 @@
 mod test;
 
-use crate::{interpreter::object::Object, parser::ast::Program, virtualmachine::code::Instruction};
+use crate::{code::Instruction, interpreter::object::Object, parser::ast::Program};
 
 pub struct Compiler {
     instructions: Instruction,

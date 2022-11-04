@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use crate::virtualmachine::code::{make, Opcode};
+    use crate::code::{make, Opcode};
 
     #[test]
     fn test_make_code() {
