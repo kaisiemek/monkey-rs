@@ -20,8 +20,8 @@ mod test {
             input: "1 + 2".to_string(),
             expected_constants: vec![Object::Integer(1), Object::Integer(2)],
             expected_instructions: vec![
-                make(Opcode::Constant, vec![0]),
-                make(Opcode::Constant, vec![1]),
+                make(Opcode::Constant, vec![0]), // index of constant 1
+                make(Opcode::Constant, vec![1]), // index of constant 2
             ],
         }];
 
@@ -32,20 +32,19 @@ mod test {
 
     fn run_compiler_test(test_case: TestCase) {
         let program = parse(test_case.input);
-        let compiler = Compiler::new();
+        let mut compiler = Compiler::new();
         let result = compiler.compile(program);
 
-        if result.is_err() {
-            assert!(
-                false,
-                "The compiler encountered an error: {}",
-                result.unwrap_err()
-            );
+        match result {
+            Err(err) => {
+                assert!(false, "The compiler encountered an error: {}", err);
+            }
+            Ok(_) => {
+                let bytecode = compiler.bytecode();
+                test_instructions(test_case.expected_instructions, bytecode.instructions);
+                test_constants(test_case.expected_constants, bytecode.constants)
+            }
         }
-
-        let bytecode = compiler.bytecode();
-        test_instructions(test_case.expected_instructions, bytecode.instructions);
-        test_constants(test_case.expected_constants, bytecode.constants)
     }
 
     fn parse(input: String) -> Program {
@@ -54,19 +53,20 @@ mod test {
 
         let result = parser.parse_program();
 
-        if result.is_err() {
-            let errors = result.unwrap_err();
-            let error_str = errors.join("\n");
-            assert!(
-                false,
-                "The parser encountered {} errors:\n{}",
-                errors.len(),
-                error_str
-            );
-            panic!();
+        match result {
+            Ok(result) => result,
+            Err(_) => {
+                let errors = result.unwrap_err();
+                let error_str = errors.join("\n");
+                assert!(
+                    false,
+                    "The parser encountered {} errors:\n{}",
+                    errors.len(),
+                    error_str
+                );
+                panic!("unreachable");
+            }
         }
-
-        return result.unwrap();
     }
 
     fn test_instructions(expected: Vec<Instructions>, actual: Instructions) {
@@ -81,10 +81,11 @@ mod test {
             )
         }
 
-        if !concat.iter().zip(actual).all(|(a, b)| *a == b) {
+        if !concat.iter().zip(actual.clone()).all(|(a, b)| *a == b) {
             assert!(
                 false,
-                "The actual instructions did not match the expected ones."
+                "The actual instructions did not match the expected ones.\nexpected: {:?}\ngot: {:?}",
+                concat, actual
             )
         }
     }

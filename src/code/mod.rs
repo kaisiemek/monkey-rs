@@ -94,7 +94,6 @@ pub fn stringify(instructions: Instructions) -> Result<String, String> {
         let op = Opcode::try_from(instructions[i])?;
         let (operands, read_bytes) = read_operands(op, &instructions[(i + 1)..]);
         outstr += &format!("{:0>4} {}\n", i, format_instruction(op, operands)?);
-
         i += 1 + read_bytes as usize;
     }
 
