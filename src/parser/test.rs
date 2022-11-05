@@ -764,7 +764,6 @@ mod test {
         ];
 
         for test_case in test_cases {
-            println!("{}", test_case.input);
             let expression = parse_expression_statement(test_case.input);
             if let Expression::Call {
                 token: _,

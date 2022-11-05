@@ -77,13 +77,16 @@ pub fn read_operands(op: Opcode, instructions: &[u8]) -> (Vec<u16>, u16) {
 
     let operands_num = op.width() / 2;
     for _ in 1..=operands_num {
-        let operand_bytes: Vec<&u8> = instructions.iter().skip(offset).take(2).collect();
-        let operand: u16 = ((*operand_bytes[0] as u16) << 8) | *operand_bytes[1] as u16;
+        let operand: u16 = read_u16(&instructions[offset..offset + 2]);
         operands.push(operand);
         offset += 2;
     }
 
     (operands, offset as u16)
+}
+
+pub fn read_u16(instructions: &[u8]) -> u16 {
+    ((instructions[0] as u16) << 8) | instructions[1] as u16
 }
 
 pub fn stringify(instructions: Instructions) -> Result<String, String> {

@@ -443,7 +443,6 @@ mod test {
         let object = test_eval(input);
 
         assert_eq!(object.type_str(), "FUNCTION");
-        println!("{}", object.inspect());
         if let Object::Function {
             parameters,
             body,

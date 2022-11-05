@@ -5,6 +5,7 @@ mod test {
         interpreter::object::Object,
         lexer::Lexer,
         parser::{ast::Program, Parser},
+        vm::VM,
     };
 
     struct TestCase {
@@ -69,7 +70,7 @@ mod test {
             );
         }
 
-        let vm = VM::new(compiler.bytecode());
+        let mut vm = VM::new(compiler.bytecode());
         let vm_result = vm.run();
 
         if vm_result.is_err() {

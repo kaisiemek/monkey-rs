@@ -58,7 +58,6 @@ impl Compiler {
         match expression {
             Expression::Identifier { token, value } => todo!(),
             Expression::IntLiteral { token, value } => {
-                println!("INT LITERAL: {}", value);
                 let integer = Object::Integer(value);
                 let constant_idx = self.add_constant(integer);
                 self.emit(Opcode::Constant, vec![constant_idx as u16]);
