@@ -26,7 +26,7 @@ mod test {
             },
             TestCase {
                 input: "1 + 2".to_string(),
-                expected: Object::Integer(2),
+                expected: Object::Integer(3),
             },
         ];
 

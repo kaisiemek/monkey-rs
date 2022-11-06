@@ -50,7 +50,7 @@ macro_rules! make_opcodes {
 
     };
 }
-make_opcodes!([Constant: 2]);
+make_opcodes!([Constant: 2, Add: 0]);
 
 pub type Instructions = Vec<u8>;
 
@@ -64,6 +64,7 @@ pub fn make(op: Opcode, operands: Vec<u16>) -> Instructions {
     let mut instruction: Instructions = vec![op.into()];
 
     match operand_widths {
+        0 => {} // nothing to do
         2 => instruction.extend(operands[0].to_be_bytes()),
         _ => todo!(),
     }
@@ -90,17 +91,17 @@ pub fn read_u16(instructions: &[u8]) -> u16 {
 }
 
 pub fn stringify(instructions: Instructions) -> Result<String, String> {
-    let mut outstr = "".to_string();
+    let mut out_str = "".to_string();
     let mut i = 0;
 
     while i < instructions.len() {
         let op = Opcode::try_from(instructions[i])?;
         let (operands, read_bytes) = read_operands(op, &instructions[(i + 1)..]);
-        outstr += &format!("{:0>4} {}\n", i, format_instruction(op, operands)?);
+        out_str += &format!("{:0>4} {}\n", i, format_instruction(op, operands)?);
         i += 1 + read_bytes as usize;
     }
 
-    Ok(outstr)
+    Ok(out_str)
 }
 
 fn format_instruction(op: Opcode, operands: Vec<u16>) -> Result<String, String> {
@@ -114,6 +115,7 @@ fn format_instruction(op: Opcode, operands: Vec<u16>) -> Result<String, String> 
     }
 
     match operands.len() {
+        0 => Ok(op.to_string()),
         1 => Ok(format!("{} {}", op.to_string(), operands[0])),
         _ => Err(format!("Unexpected amount of operands: {}", operands.len())),
     }

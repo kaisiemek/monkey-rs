@@ -57,7 +57,7 @@ impl Compiler {
     fn compile_expression(&mut self, expression: Expression) -> Result<(), String> {
         match expression {
             Expression::Identifier { token, value } => todo!(),
-            Expression::IntLiteral { token, value } => {
+            Expression::IntLiteral { token: _, value } => {
                 let integer = Object::Integer(value);
                 let constant_idx = self.add_constant(integer);
                 self.emit(Opcode::Constant, vec![constant_idx as u16]);
@@ -83,8 +83,15 @@ impl Compiler {
                 operator,
                 right_expression,
             } => {
-                self.compile_expression(*left_expression);
-                self.compile_expression(*right_expression);
+                self.compile_expression(*left_expression)?;
+                self.compile_expression(*right_expression)?;
+
+                match operator.as_str() {
+                    "+" => {
+                        self.emit(Opcode::Add, vec![]);
+                    }
+                    _ => return Err(format!("Unknown operator: {}", operator)),
+                }
                 Ok(())
             }
             Expression::Index { token, left, index } => todo!(),

@@ -1,5 +1,7 @@
+use std::fmt::format;
+
 use crate::{
-    code::{read_operands, read_u16, Instructions, Opcode},
+    code::{read_u16, Instructions, Opcode},
     compiler::Bytecode,
     interpreter::object::Object,
 };
@@ -35,6 +37,29 @@ impl VM {
                     self.push_constant(const_index as usize)?;
                     ip += 2;
                 }
+                Opcode::Add => {
+                    let right = match self.pop()? {
+                        Object::Integer(i) => i,
+                        other => {
+                            return Err(format!(
+                                "Unexpected right operand for add instruction: {:?}",
+                                other
+                            ))
+                        }
+                    };
+
+                    let left = match self.pop()? {
+                        Object::Integer(i) => i,
+                        other => {
+                            return Err(format!(
+                                "Unexpected left operand for add instruction: {:?}",
+                                other
+                            ))
+                        }
+                    };
+
+                    self.push(Object::Integer(left + right))?;
+                }
             }
         }
 
@@ -64,5 +89,13 @@ impl VM {
 
         self.stack.push(obj);
         Ok(())
+    }
+
+    fn pop(&mut self) -> Result<Object, String> {
+        let obj = self.stack.pop();
+        match obj {
+            Some(obj) => Ok(obj),
+            None => Err("Stack is empty!".to_string()),
+        }
     }
 }

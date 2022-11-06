@@ -14,13 +14,22 @@ mod test {
             expected: Vec<u8>,
         }
 
-        let test_cases = vec![TestCase {
-            input: Input {
-                op: Opcode::Constant,
-                operands: vec![0xFFFE], //65534
+        let test_cases = vec![
+            TestCase {
+                input: Input {
+                    op: Opcode::Constant,
+                    operands: vec![0xFFFE], //65534
+                },
+                expected: vec![Opcode::Constant.into(), 0xFF, 0xFE],
             },
-            expected: vec![Opcode::Constant.into(), 0xFF, 0xFE],
-        }];
+            TestCase {
+                input: Input {
+                    op: Opcode::Add,
+                    operands: vec![],
+                },
+                expected: vec![Opcode::Add.into()],
+            },
+        ];
 
         for test_case in test_cases {
             let result = make(test_case.input.op, test_case.input.operands);
@@ -35,17 +44,13 @@ mod test {
     #[test]
     fn test_instructions_string() {
         let instructions = vec![
-            make(Opcode::Constant, vec![1]),
+            make(Opcode::Add, vec![]),
             make(Opcode::Constant, vec![2]),
             make(Opcode::Constant, vec![65535]),
         ];
 
-        let expected = concat!(
-            "0000 Constant 1\n",
-            "0003 Constant 2\n",
-            "0006 Constant 65535\n",
-        )
-        .to_string();
+        let expected =
+            concat!("0000 Add\n", "0001 Constant 2\n", "0004 Constant 65535\n",).to_string();
 
         let concat: Instructions = instructions.concat();
         assert_eq!(stringify(concat).unwrap(), expected);

@@ -22,6 +22,7 @@ mod test {
             expected_instructions: vec![
                 make(Opcode::Constant, vec![0]), // index of constant 1
                 make(Opcode::Constant, vec![1]), // index of constant 2
+                make(Opcode::Add, vec![]),
             ],
         }];
 
@@ -75,9 +76,8 @@ mod test {
         if actual.len() != concat.len() {
             assert!(
                 false,
-                "Wrong instructions length\nexpected: {}\nactual: {}",
-                concat.len(),
-                actual.len()
+                "Wrong instructions length\nexpected: {:?}\nactual: {:?}",
+                concat, actual
             )
         }
 
