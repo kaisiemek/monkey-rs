@@ -94,6 +94,15 @@ impl Compiler {
                     "+" => {
                         self.emit(Opcode::Add, vec![]);
                     }
+                    "-" => {
+                        self.emit(Opcode::Sub, vec![]);
+                    }
+                    "*" => {
+                        self.emit(Opcode::Mult, vec![]);
+                    }
+                    "/" => {
+                        self.emit(Opcode::Div, vec![]);
+                    }
                     _ => return Err(format!("Unknown operator: {}", operator)),
                 }
                 Ok(())

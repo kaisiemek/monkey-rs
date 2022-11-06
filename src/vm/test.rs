@@ -28,6 +28,42 @@ mod test {
                 input: "1 + 2".to_string(),
                 expected: Object::Integer(3),
             },
+            TestCase {
+                input: "1 - 2".to_string(),
+                expected: Object::Integer(-1),
+            },
+            TestCase {
+                input: "2 * 3".to_string(),
+                expected: Object::Integer(6),
+            },
+            TestCase {
+                input: "4 / 2".to_string(),
+                expected: Object::Integer(2),
+            },
+            TestCase {
+                input: "50 / 2 * 2 + 10 - 5".to_string(),
+                expected: Object::Integer(55),
+            },
+            TestCase {
+                input: "5 + 5 + 5 + 5 - 10".to_string(),
+                expected: Object::Integer(10),
+            },
+            TestCase {
+                input: "2 * 2 * 2 * 2 * 2".to_string(),
+                expected: Object::Integer(32),
+            },
+            TestCase {
+                input: "5 * 2 + 10".to_string(),
+                expected: Object::Integer(20),
+            },
+            TestCase {
+                input: "5 + 2 * 10".to_string(),
+                expected: Object::Integer(25),
+            },
+            TestCase {
+                input: "5 * (2 + 10)".to_string(),
+                expected: Object::Integer(60),
+            },
         ];
 
         for test_case in test_cases {

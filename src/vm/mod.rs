@@ -42,28 +42,8 @@ impl VM {
                     self.push_constant(const_index as usize)?;
                     ip += 2;
                 }
-                Opcode::Add => {
-                    let right = match self.pop()? {
-                        Object::Integer(i) => i,
-                        other => {
-                            return Err(format!(
-                                "Unexpected right operand for add instruction: {:?}",
-                                other
-                            ))
-                        }
-                    };
-
-                    let left = match self.pop()? {
-                        Object::Integer(i) => i,
-                        other => {
-                            return Err(format!(
-                                "Unexpected left operand for add instruction: {:?}",
-                                other
-                            ))
-                        }
-                    };
-
-                    self.push(Object::Integer(left + right))?;
+                Opcode::Add | Opcode::Sub | Opcode::Mult | Opcode::Div => {
+                    self.execute_binary_op(op)?;
                 }
                 Opcode::Pop => {
                     self.pop()?;
@@ -112,5 +92,37 @@ impl VM {
         let obj = self.stack[self.sp - 1].clone();
         self.sp -= 1;
         return Ok(obj);
+    }
+
+    fn execute_binary_op(&mut self, op: Opcode) -> Result<(), String> {
+        let right = match self.pop()? {
+            Object::Integer(i) => i,
+            other => {
+                return Err(format!(
+                    "Unexpected right operand for add instruction: {:?}",
+                    other
+                ))
+            }
+        };
+
+        let left = match self.pop()? {
+            Object::Integer(i) => i,
+            other => {
+                return Err(format!(
+                    "Unexpected left operand for add instruction: {:?}",
+                    other
+                ))
+            }
+        };
+
+        match op {
+            Opcode::Add => self.push(Object::Integer(left + right))?,
+            Opcode::Sub => self.push(Object::Integer(left - right))?,
+            Opcode::Mult => self.push(Object::Integer(left * right))?,
+            Opcode::Div => self.push(Object::Integer(left / right))?,
+            _ => panic!("unreachable"),
+        }
+
+        Ok(())
     }
 }

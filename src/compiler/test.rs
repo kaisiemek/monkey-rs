@@ -28,6 +28,36 @@ mod test {
                 ],
             },
             TestCase {
+                input: "1 - 2".to_string(),
+                expected_constants: vec![Object::Integer(1), Object::Integer(2)],
+                expected_instructions: vec![
+                    make(Opcode::Constant, vec![0]), // index of constant 1
+                    make(Opcode::Constant, vec![1]), // index of constant 2
+                    make(Opcode::Sub, vec![]),
+                    make(Opcode::Pop, vec![]),
+                ],
+            },
+            TestCase {
+                input: "3 * 2".to_string(),
+                expected_constants: vec![Object::Integer(3), Object::Integer(2)],
+                expected_instructions: vec![
+                    make(Opcode::Constant, vec![0]), // index of constant 1
+                    make(Opcode::Constant, vec![1]), // index of constant 2
+                    make(Opcode::Mult, vec![]),
+                    make(Opcode::Pop, vec![]),
+                ],
+            },
+            TestCase {
+                input: "6 / 2".to_string(),
+                expected_constants: vec![Object::Integer(6), Object::Integer(2)],
+                expected_instructions: vec![
+                    make(Opcode::Constant, vec![0]), // index of constant 1
+                    make(Opcode::Constant, vec![1]), // index of constant 2
+                    make(Opcode::Div, vec![]),
+                    make(Opcode::Pop, vec![]),
+                ],
+            },
+            TestCase {
                 input: "1; 2".to_string(),
                 expected_constants: vec![Object::Integer(1), Object::Integer(2)],
                 expected_instructions: vec![
