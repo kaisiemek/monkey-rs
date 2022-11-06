@@ -65,6 +65,7 @@ impl VM {
                 Opcode::Pop => {
                     self.pop()?;
                 }
+                _ => todo!(),
             }
         }
 

@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod test {
     use crate::{
-        code::{make, Instructions, Opcode},
+        code::{make, stringify, Instructions, Opcode},
         compiler::Compiler,
         interpreter::object::{Inspectable, Object},
         lexer::Lexer,
@@ -172,6 +172,26 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_conditionals() {
+        let test_cases = vec![TestCase {
+            input: "if (true) { 10 }; 3333;".to_string(),
+            expected_constants: vec![Object::Integer(10), Object::Integer(3333)],
+            expected_instructions: vec![
+                make(Opcode::True, vec![]),
+                make(Opcode::JumpNotTruthy, vec![7]), // jump to first pop
+                make(Opcode::Constant, vec![0]),
+                make(Opcode::Pop, vec![]), // 0007
+                make(Opcode::Constant, vec![1]),
+                make(Opcode::Pop, vec![]),
+            ],
+        }];
+
+        for test_case in test_cases {
+            run_compiler_test(test_case);
+        }
+    }
+
     fn run_compiler_test(test_case: TestCase) {
         let program = parse(test_case.input);
         let mut compiler = Compiler::new();
@@ -217,16 +237,18 @@ mod test {
         if actual.len() != concat.len() {
             assert!(
                 false,
-                "Wrong instructions length\nexpected: {:?}\nactual: {:?}",
-                concat, actual
+                "Wrong instructions length\nexpected: {}\nactual: {}",
+                stringify(concat).unwrap(),
+                stringify(actual).unwrap()
             )
         }
 
         if !concat.iter().zip(actual.clone()).all(|(a, b)| *a == b) {
             assert!(
                 false,
-                "The actual instructions did not match the expected ones.\nexpected: {:?}\ngot: {:?}",
-                concat, actual
+                "The actual instructions did not match the expected ones.\nexpected: {}\ngot: {}",
+                stringify(concat).unwrap(),
+                stringify(actual).unwrap()
             )
         }
     }
