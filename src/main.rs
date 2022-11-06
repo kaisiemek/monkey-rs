@@ -7,5 +7,6 @@ mod repl;
 mod vm;
 
 fn main() {
-    repl::start();
+    // repl::start_interpreter();
+    repl::start_vm();
 }

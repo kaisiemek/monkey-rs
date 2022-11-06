@@ -3,17 +3,19 @@ use std::io::{self, Write};
 use std::process::exit;
 use std::rc::Rc;
 
+use crate::compiler::Compiler;
 use crate::interpreter::environment::Environment;
 use crate::interpreter::eval_program;
 use crate::interpreter::object::Inspectable;
 use crate::lexer::Lexer;
 use crate::parser::Parser;
+use crate::vm::VM;
 
-pub fn start() -> ! {
+pub fn start_interpreter() -> ! {
     let mut line_str = String::new();
     let in_stream = io::stdin();
     println!(
-        "Welcome {}! This is the monkey-rs programming language.",
+        "Welcome {}! This is the monkey-rs programming language (interpreted).",
         whoami::username()
     );
     io::stdout().flush().expect("Error flushing stdout");
@@ -46,5 +48,67 @@ pub fn start() -> ! {
             }
         }
         line_str.clear();
+    }
+}
+
+pub fn start_vm() -> ! {
+    let mut line_str = String::new();
+    let in_stream = io::stdin();
+    println!(
+        "Welcome {}! This is the monkey-rs programming language (compiled).",
+        whoami::username()
+    );
+    io::stdout().flush().expect("Error flushing stdout");
+
+    loop {
+        line_str.clear();
+        print!("> ");
+        io::stdout().flush().expect("Error flushing stdout");
+
+        in_stream
+            .read_line(&mut line_str)
+            .expect("Error reading from stdin");
+
+        if line_str.trim() == "exit" {
+            exit(0);
+        }
+
+        let lexer = Lexer::new(&line_str);
+        let mut parser = Parser::new(lexer);
+
+        let parse_result = parser.parse_program();
+        if parse_result.is_err() {
+            println!(
+                "The following parsing errors occurred:\n{}",
+                parse_result.unwrap_err().join("\n")
+            );
+            continue;
+        }
+
+        let program = parse_result.unwrap();
+        let mut compiler = Compiler::new();
+        let compile_result = compiler.compile(program);
+
+        if compile_result.is_err() {
+            println!(
+                "The following compiler errors occurred:\n{}",
+                compile_result.unwrap_err()
+            );
+            continue;
+        }
+
+        let mut vm = VM::new(compiler.bytecode());
+        let run_result = vm.run();
+
+        if run_result.is_err() {
+            println!(
+                "The following runtime errors occurred:\n{}",
+                run_result.unwrap_err()
+            );
+            continue;
+        }
+
+        let stacktop = vm.stack_top();
+        println!("{}", stacktop.inspect());
     }
 }
