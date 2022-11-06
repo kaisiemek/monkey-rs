@@ -82,6 +82,74 @@ mod test {
                 input: "false".to_string(),
                 expected: Object::Boolean(false),
             },
+            TestCase {
+                input: "1 < 2".to_string(),
+                expected: Object::Boolean(true),
+            },
+            TestCase {
+                input: "1 > 2".to_string(),
+                expected: Object::Boolean(false),
+            },
+            TestCase {
+                input: "1 < 1".to_string(),
+                expected: Object::Boolean(false),
+            },
+            TestCase {
+                input: "1 > 1".to_string(),
+                expected: Object::Boolean(false),
+            },
+            TestCase {
+                input: "1 == 1".to_string(),
+                expected: Object::Boolean(true),
+            },
+            TestCase {
+                input: "1 != 1".to_string(),
+                expected: Object::Boolean(false),
+            },
+            TestCase {
+                input: "1 == 2".to_string(),
+                expected: Object::Boolean(false),
+            },
+            TestCase {
+                input: "1 != 2".to_string(),
+                expected: Object::Boolean(true),
+            },
+            TestCase {
+                input: "true == true".to_string(),
+                expected: Object::Boolean(true),
+            },
+            TestCase {
+                input: "false == false".to_string(),
+                expected: Object::Boolean(true),
+            },
+            TestCase {
+                input: "true == false".to_string(),
+                expected: Object::Boolean(false),
+            },
+            TestCase {
+                input: "true != false".to_string(),
+                expected: Object::Boolean(true),
+            },
+            TestCase {
+                input: "false != true".to_string(),
+                expected: Object::Boolean(true),
+            },
+            TestCase {
+                input: "(1 < 2) == true".to_string(),
+                expected: Object::Boolean(true),
+            },
+            TestCase {
+                input: "(1 < 2) == false".to_string(),
+                expected: Object::Boolean(false),
+            },
+            TestCase {
+                input: "(1 > 2) == true".to_string(),
+                expected: Object::Boolean(false),
+            },
+            TestCase {
+                input: "(1 > 2) == false".to_string(),
+                expected: Object::Boolean(true),
+            },
         ];
 
         for test_case in test_cases {

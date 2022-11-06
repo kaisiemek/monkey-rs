@@ -92,24 +92,7 @@ impl Compiler {
                 operator,
                 right_expression,
             } => {
-                self.compile_expression(*left_expression)?;
-                self.compile_expression(*right_expression)?;
-
-                match operator.as_str() {
-                    "+" => {
-                        self.emit(Opcode::Add, vec![]);
-                    }
-                    "-" => {
-                        self.emit(Opcode::Sub, vec![]);
-                    }
-                    "*" => {
-                        self.emit(Opcode::Mult, vec![]);
-                    }
-                    "/" => {
-                        self.emit(Opcode::Div, vec![]);
-                    }
-                    _ => return Err(format!("Unknown operator: {}", operator)),
-                }
+                self.compile_infix_expression(*left_expression, operator, *right_expression)?;
             }
             Expression::Index { token, left, index } => todo!(),
             Expression::If {
@@ -125,6 +108,36 @@ impl Compiler {
             } => todo!(),
         }
 
+        Ok(())
+    }
+
+    fn compile_infix_expression(
+        &mut self,
+        left: Expression,
+        op: String,
+        right: Expression,
+    ) -> Result<(), String> {
+        // reorder operators if it's lesser than
+        if op == "<" {
+            self.compile_expression(right)?;
+            self.compile_expression(left)?;
+        } else {
+            self.compile_expression(left)?;
+            self.compile_expression(right)?;
+        }
+
+        let opcode = match op.as_str() {
+            "+" => Opcode::Add,
+            "-" => Opcode::Sub,
+            "*" => Opcode::Mult,
+            "/" => Opcode::Div,
+            "<" | ">" => Opcode::GreaterThan,
+            "==" => Opcode::Equal,
+            "!=" => Opcode::NotEqual,
+            other => return Err(format!("Unknown operator: {}", other)),
+        };
+
+        self.emit(opcode, vec![]);
         Ok(())
     }
 

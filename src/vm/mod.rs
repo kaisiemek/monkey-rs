@@ -1,8 +1,10 @@
 mod test;
+use std::{any::Any, fmt::format};
+
 use crate::{
     code::{read_u16, Instructions, Opcode},
     compiler::Bytecode,
-    interpreter::object::Object,
+    interpreter::object::{Inspectable, Object},
 };
 
 const STACK_SIZE: usize = 2048;
@@ -42,7 +44,13 @@ impl VM {
                     self.push_constant(const_index as usize)?;
                     ip += 2;
                 }
-                Opcode::Add | Opcode::Sub | Opcode::Mult | Opcode::Div => {
+                Opcode::Add
+                | Opcode::Sub
+                | Opcode::Mult
+                | Opcode::Div
+                | Opcode::Equal
+                | Opcode::NotEqual
+                | Opcode::GreaterThan => {
                     self.execute_binary_op(op)?;
                 }
                 Opcode::True => {
@@ -101,34 +109,49 @@ impl VM {
     }
 
     fn execute_binary_op(&mut self, op: Opcode) -> Result<(), String> {
-        let right = match self.pop()? {
-            Object::Integer(i) => i,
-            other => {
-                return Err(format!(
-                    "Unexpected right operand for add instruction: {:?}",
-                    other
-                ))
-            }
-        };
+        let right = self.pop()?;
+        let left = self.pop()?;
 
-        let left = match self.pop()? {
-            Object::Integer(i) => i,
-            other => {
-                return Err(format!(
-                    "Unexpected left operand for add instruction: {:?}",
-                    other
-                ))
+        if let Object::Integer(left_int) = left {
+            if let Object::Integer(right_int) = right {
+                match op {
+                    Opcode::Add => self.push(Object::Integer(left_int + right_int))?,
+                    Opcode::Sub => self.push(Object::Integer(left_int - right_int))?,
+                    Opcode::Mult => self.push(Object::Integer(left_int * right_int))?,
+                    Opcode::Div => self.push(Object::Integer(left_int / right_int))?,
+                    Opcode::Equal => self.push(Object::Boolean(left_int == right_int))?,
+                    Opcode::NotEqual => self.push(Object::Boolean(left_int != right_int))?,
+                    Opcode::GreaterThan => self.push(Object::Boolean(left_int > right_int))?,
+                    _ => {
+                        return Err(format!(
+                            "Unsupported operation {} for type integer",
+                            op.to_string()
+                        ))
+                    }
+                }
+                return Ok(());
             }
-        };
-
-        match op {
-            Opcode::Add => self.push(Object::Integer(left + right))?,
-            Opcode::Sub => self.push(Object::Integer(left - right))?,
-            Opcode::Mult => self.push(Object::Integer(left * right))?,
-            Opcode::Div => self.push(Object::Integer(left / right))?,
-            _ => panic!("unreachable"),
+        } else if let Object::Boolean(left_bool) = left {
+            if let Object::Boolean(right_bool) = right {
+                match op {
+                    Opcode::Equal => self.push(Object::Boolean(left_bool == right_bool))?,
+                    Opcode::NotEqual => self.push(Object::Boolean(left_bool != right_bool))?,
+                    _ => {
+                        return Err(format!(
+                            "Unsupported operation {} for type integer",
+                            op.to_string()
+                        ))
+                    }
+                }
+                return Ok(());
+            }
         }
 
-        Ok(())
+        return Err(format!(
+            "Unsupported types for {:?}: {} and {}",
+            op,
+            left.type_str(),
+            right.type_str()
+        ));
     }
 }
