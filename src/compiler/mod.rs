@@ -65,9 +65,14 @@ impl Compiler {
                 let integer = Object::Integer(value);
                 let constant_idx = self.add_constant(integer);
                 self.emit(Opcode::Constant, vec![constant_idx as u16]);
-                Ok(())
             }
-            Expression::BoolLiteral { token, value } => todo!(),
+            Expression::BoolLiteral { token: _, value } => {
+                if value {
+                    self.emit(Opcode::True, vec![]);
+                } else {
+                    self.emit(Opcode::False, vec![]);
+                }
+            }
             Expression::StringLiteral { token, value } => todo!(),
             Expression::ArrayLiteral { token, elements } => todo!(),
             Expression::HashLiteral { token, entries } => todo!(),
@@ -105,7 +110,6 @@ impl Compiler {
                     }
                     _ => return Err(format!("Unknown operator: {}", operator)),
                 }
-                Ok(())
             }
             Expression::Index { token, left, index } => todo!(),
             Expression::If {
@@ -120,6 +124,8 @@ impl Compiler {
                 arguments,
             } => todo!(),
         }
+
+        Ok(())
     }
 
     fn add_constant(&mut self, object: Object) -> usize {

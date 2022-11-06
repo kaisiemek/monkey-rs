@@ -74,6 +74,26 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_boolean_expressions() {
+        let test_cases = vec![
+            TestCase {
+                input: "true".to_string(),
+                expected_constants: vec![],
+                expected_instructions: vec![make(Opcode::True, vec![]), make(Opcode::Pop, vec![])],
+            },
+            TestCase {
+                input: "false".to_string(),
+                expected_constants: vec![],
+                expected_instructions: vec![make(Opcode::False, vec![]), make(Opcode::Pop, vec![])],
+            },
+        ];
+
+        for test_case in test_cases {
+            run_compiler_test(test_case);
+        }
+    }
+
     fn run_compiler_test(test_case: TestCase) {
         let program = parse(test_case.input);
         let mut compiler = Compiler::new();

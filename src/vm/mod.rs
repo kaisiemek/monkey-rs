@@ -45,6 +45,12 @@ impl VM {
                 Opcode::Add | Opcode::Sub | Opcode::Mult | Opcode::Div => {
                     self.execute_binary_op(op)?;
                 }
+                Opcode::True => {
+                    self.push(Object::Boolean(true))?;
+                }
+                Opcode::False => {
+                    self.push(Object::Boolean(false))?;
+                }
                 Opcode::Pop => {
                     self.pop()?;
                 }

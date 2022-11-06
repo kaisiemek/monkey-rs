@@ -71,6 +71,24 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_boolean_expressions() {
+        let test_cases = vec![
+            TestCase {
+                input: "true".to_string(),
+                expected: Object::Boolean(true),
+            },
+            TestCase {
+                input: "false".to_string(),
+                expected: Object::Boolean(false),
+            },
+        ];
+
+        for test_case in test_cases {
+            run_vm_test(test_case);
+        }
+    }
+
     fn parse(input: String) -> Program {
         let lexer = Lexer::new(&input);
         let mut parser = Parser::new(lexer);
