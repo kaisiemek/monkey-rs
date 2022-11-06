@@ -65,51 +65,27 @@ impl VM {
                 Opcode::Pop => {
                     self.pop()?;
                 }
-                _ => todo!(),
+                Opcode::Jump => {
+                    let position = read_u16(&self.instructions[ip..]);
+                    ip = position as usize;
+                }
+                Opcode::JumpNotTruthy => {
+                    let position = read_u16(&self.instructions[ip..]);
+                    ip += 2;
+
+                    let condition = self.pop()?;
+                    if !(is_truthy(condition)) {
+                        ip = position as usize;
+                    }
+                }
             }
         }
 
         Ok(())
     }
 
-    pub fn stack_top(&self) -> Object {
-        if self.sp < 1 {
-            Object::Null
-        } else {
-            self.stack[self.sp - 1].clone()
-        }
-    }
-
     pub fn last_popped_stack_elem(&self) -> Object {
         self.stack[self.sp].clone()
-    }
-
-    fn push_constant(&mut self, index: usize) -> Result<(), String> {
-        if index >= self.constants.len() {
-            return Err(format!("No constant at index {}", index));
-        }
-
-        self.push(self.constants[index].clone())
-    }
-
-    fn push(&mut self, obj: Object) -> Result<(), String> {
-        if self.sp >= STACK_SIZE {
-            return Err(format!("Stack overflow! Exceeded size of {}", STACK_SIZE));
-        }
-
-        self.stack[self.sp] = obj;
-        self.sp += 1;
-        Ok(())
-    }
-
-    fn pop(&mut self) -> Result<Object, String> {
-        if self.sp < 1 {
-            return Err("Stack is empty!".to_string());
-        }
-
-        let obj = self.stack[self.sp - 1].clone();
-        self.sp -= 1;
-        return Ok(obj);
     }
 
     fn execute_binary_op(&mut self, op: Opcode) -> Result<(), String> {
@@ -163,7 +139,7 @@ impl VM {
         let right = self.pop()?;
 
         match op {
-            Opcode::Bang => self.execute_bang_op(right),
+            Opcode::Bang => self.push(Object::Boolean(!is_truthy(right))),
             Opcode::Minus => {
                 if let Object::Integer(right_int) = right {
                     self.push(Object::Integer(-right_int))
@@ -182,11 +158,39 @@ impl VM {
         }
     }
 
-    fn execute_bang_op(&mut self, right: Object) -> Result<(), String> {
-        if let Object::Boolean(right_bool) = right {
-            self.push(Object::Boolean(!right_bool))
-        } else {
-            self.push(Object::Boolean(false))
+    fn push_constant(&mut self, index: usize) -> Result<(), String> {
+        if index >= self.constants.len() {
+            return Err(format!("No constant at index {}", index));
         }
+
+        self.push(self.constants[index].clone())
+    }
+
+    fn push(&mut self, obj: Object) -> Result<(), String> {
+        if self.sp >= STACK_SIZE {
+            return Err(format!("Stack overflow! Exceeded size of {}", STACK_SIZE));
+        }
+
+        self.stack[self.sp] = obj;
+        self.sp += 1;
+        Ok(())
+    }
+
+    fn pop(&mut self) -> Result<Object, String> {
+        if self.sp < 1 {
+            return Err("Stack is empty!".to_string());
+        }
+
+        let obj = self.stack[self.sp - 1].clone();
+        self.sp -= 1;
+        return Ok(obj);
+    }
+}
+
+fn is_truthy(obj: Object) -> bool {
+    if let Object::Boolean(val) = obj {
+        val
+    } else {
+        true
     }
 }

@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod test {
     use crate::{
+        code::stringify,
         compiler::Compiler,
         interpreter::object::Object,
         lexer::Lexer,
@@ -175,7 +176,7 @@ mod test {
                 expected: Object::Boolean(true),
             },
             TestCase {
-            input: "!5".to_string(),
+                input: "!5".to_string(),
                 expected: Object::Boolean(false),
             },
             TestCase {
@@ -189,6 +190,44 @@ mod test {
             TestCase {
                 input: "!!5".to_string(),
                 expected: Object::Boolean(true),
+            },
+        ];
+
+        for test_case in test_cases {
+            run_vm_test(test_case);
+        }
+    }
+
+    #[test]
+    fn test_conditionals() {
+        let test_cases = vec![
+            TestCase {
+                input: "if (true) { 10 }".to_string(),
+                expected: Object::Integer(10),
+            },
+            TestCase {
+                input: "if (true) { 10 } else { 20 }".to_string(),
+                expected: Object::Integer(10),
+            },
+            TestCase {
+                input: "if (false) { 10 } else { 20 } ".to_string(),
+                expected: Object::Integer(20),
+            },
+            TestCase {
+                input: "if (1) { 10 }".to_string(),
+                expected: Object::Integer(10),
+            },
+            TestCase {
+                input: "if (1 < 2) { 10 }".to_string(),
+                expected: Object::Integer(10),
+            },
+            TestCase {
+                input: "if (1 < 2) { 10 } else { 20 }".to_string(),
+                expected: Object::Integer(10),
+            },
+            TestCase {
+                input: "if (1 > 2) { 10 } else { 20 }".to_string(),
+                expected: Object::Integer(20),
             },
         ];
 
