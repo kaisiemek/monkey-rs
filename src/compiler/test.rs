@@ -41,7 +41,7 @@ mod test {
                 input: "3 * 2".to_string(),
                 expected_constants: vec![Object::Integer(3), Object::Integer(2)],
                 expected_instructions: vec![
-                    make(Opcode::Constant, vec![0]), // index of constant 1
+                    make(Opcode::Constant, vec![0]), // index of constant 3
                     make(Opcode::Constant, vec![1]), // index of constant 2
                     make(Opcode::Mult, vec![]),
                     make(Opcode::Pop, vec![]),
@@ -51,7 +51,7 @@ mod test {
                 input: "6 / 2".to_string(),
                 expected_constants: vec![Object::Integer(6), Object::Integer(2)],
                 expected_instructions: vec![
-                    make(Opcode::Constant, vec![0]), // index of constant 1
+                    make(Opcode::Constant, vec![0]), // index of constant 6
                     make(Opcode::Constant, vec![1]), // index of constant 2
                     make(Opcode::Div, vec![]),
                     make(Opcode::Pop, vec![]),
@@ -64,6 +64,15 @@ mod test {
                     make(Opcode::Constant, vec![0]), // index of constant 1
                     make(Opcode::Pop, vec![]),
                     make(Opcode::Constant, vec![1]), // index of constant 2
+                    make(Opcode::Pop, vec![]),
+                ],
+            },
+            TestCase {
+                input: "-1".to_string(),
+                expected_constants: vec![Object::Integer(1)],
+                expected_instructions: vec![
+                    make(Opcode::Constant, vec![0]), // index of constant 1
+                    make(Opcode::Minus, vec![]),
                     make(Opcode::Pop, vec![]),
                 ],
             },
@@ -144,6 +153,15 @@ mod test {
                     make(Opcode::True, vec![]),
                     make(Opcode::False, vec![]),
                     make(Opcode::NotEqual, vec![]),
+                    make(Opcode::Pop, vec![]),
+                ],
+            },
+            TestCase {
+                input: "!true".to_string(),
+                expected_constants: vec![],
+                expected_instructions: vec![
+                    make(Opcode::True, vec![]),
+                    make(Opcode::Bang, vec![]),
                     make(Opcode::Pop, vec![]),
                 ],
             },

@@ -53,6 +53,9 @@ impl VM {
                 | Opcode::GreaterThan => {
                     self.execute_binary_op(op)?;
                 }
+                Opcode::Bang | Opcode::Minus => {
+                    self.execute_unary_op(op)?;
+                }
                 Opcode::True => {
                     self.push(Object::Boolean(true))?;
                 }
@@ -153,5 +156,36 @@ impl VM {
             left.type_str(),
             right.type_str()
         ));
+    }
+
+    fn execute_unary_op(&mut self, op: Opcode) -> Result<(), String> {
+        let right = self.pop()?;
+
+        match op {
+            Opcode::Bang => self.execute_bang_op(right),
+            Opcode::Minus => {
+                if let Object::Integer(right_int) = right {
+                    self.push(Object::Integer(-right_int))
+                } else {
+                    Err(format!(
+                        "Unsupported type for unary minus operation: {}",
+                        right.type_str()
+                    ))
+                }
+            }
+            _ => Err(format!(
+                "Unsupported operand type for {}: {}",
+                op.to_string(),
+                right.type_str()
+            )),
+        }
+    }
+
+    fn execute_bang_op(&mut self, right: Object) -> Result<(), String> {
+        if let Object::Boolean(right_bool) = right {
+            self.push(Object::Boolean(!right_bool))
+        } else {
+            self.push(Object::Boolean(false))
+        }
     }
 }

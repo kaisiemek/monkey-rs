@@ -62,6 +62,8 @@ make_opcodes!([
     Equal: 0,
     NotEqual: 0,
     GreaterThan: 0,
+    Bang: 0,
+    Minus: 0,
     Pop: 0
 ]);
 

@@ -64,6 +64,22 @@ mod test {
                 input: "5 * (2 + 10)".to_string(),
                 expected: Object::Integer(60),
             },
+            TestCase {
+                input: "-5".to_string(),
+                expected: Object::Integer(-5),
+            },
+            TestCase {
+                input: "-10".to_string(),
+                expected: Object::Integer(-10),
+            },
+            TestCase {
+                input: "-50 + 100 + -50".to_string(),
+                expected: Object::Integer(0),
+            },
+            TestCase {
+                input: "(5 + 10 * 2 + 15 / 3) * 2 + -10".to_string(),
+                expected: Object::Integer(50),
+            },
         ];
 
         for test_case in test_cases {
@@ -148,6 +164,30 @@ mod test {
             },
             TestCase {
                 input: "(1 > 2) == false".to_string(),
+                expected: Object::Boolean(true),
+            },
+            TestCase {
+                input: "!true".to_string(),
+                expected: Object::Boolean(false),
+            },
+            TestCase {
+                input: "!false".to_string(),
+                expected: Object::Boolean(true),
+            },
+            TestCase {
+            input: "!5".to_string(),
+                expected: Object::Boolean(false),
+            },
+            TestCase {
+                input: "!!true".to_string(),
+                expected: Object::Boolean(true),
+            },
+            TestCase {
+                input: "!!false".to_string(),
+                expected: Object::Boolean(false),
+            },
+            TestCase {
+                input: "!!5".to_string(),
                 expected: Object::Boolean(true),
             },
         ];

@@ -1,5 +1,7 @@
 mod test;
 
+use std::fmt::Error;
+
 use crate::{
     code::{make, Instructions, Opcode},
     interpreter::object::Object,
@@ -82,10 +84,12 @@ impl Compiler {
                 body,
             } => todo!(),
             Expression::Prefix {
-                token,
+                token: _,
                 operator,
                 right_expression,
-            } => todo!(),
+            } => {
+                self.compile_prefix_expression(operator, *right_expression)?;
+            }
             Expression::Infix {
                 token: _,
                 left_expression,
@@ -135,6 +139,21 @@ impl Compiler {
             "==" => Opcode::Equal,
             "!=" => Opcode::NotEqual,
             other => return Err(format!("Unknown operator: {}", other)),
+        };
+
+        self.emit(opcode, vec![]);
+        Ok(())
+    }
+
+    fn compile_prefix_expression(&mut self, op: String, right: Expression) -> Result<(), String> {
+        self.compile_expression(right)?;
+
+        let opcode = match op.as_str() {
+            "!" => Opcode::Bang,
+            "-" => Opcode::Minus,
+            _ => {
+                return Err(format!("Unsupported operator for prefix operation: {}", op));
+            }
         };
 
         self.emit(opcode, vec![]);
