@@ -174,18 +174,38 @@ mod test {
 
     #[test]
     fn test_conditionals() {
-        let test_cases = vec![TestCase {
-            input: "if (true) { 10 }; 3333;".to_string(),
-            expected_constants: vec![Object::Integer(10), Object::Integer(3333)],
-            expected_instructions: vec![
-                make(Opcode::True, vec![]),
-                make(Opcode::JumpNotTruthy, vec![7]), // jump to first pop
-                make(Opcode::Constant, vec![0]),
-                make(Opcode::Pop, vec![]), // 0007
-                make(Opcode::Constant, vec![1]),
-                make(Opcode::Pop, vec![]),
-            ],
-        }];
+        let test_cases = vec![
+            TestCase {
+                input: "if (true) { 10 }; 3333;".to_string(),
+                expected_constants: vec![Object::Integer(10), Object::Integer(3333)],
+                expected_instructions: vec![
+                    make(Opcode::True, vec![]),
+                    make(Opcode::JumpNotTruthy, vec![7]), // jump to first pop
+                    make(Opcode::Constant, vec![0]),
+                    make(Opcode::Pop, vec![]), // 0007
+                    make(Opcode::Constant, vec![1]),
+                    make(Opcode::Pop, vec![]),
+                ],
+            },
+            TestCase {
+                input: "if (true) { 10 } else { 20 }; 3333;".to_string(),
+                expected_constants: vec![
+                    Object::Integer(10),
+                    Object::Integer(20),
+                    Object::Integer(3333),
+                ],
+                expected_instructions: vec![
+                    make(Opcode::True, vec![]),
+                    make(Opcode::JumpNotTruthy, vec![10]), // jump to 10
+                    make(Opcode::Constant, vec![0]),
+                    make(Opcode::Jump, vec![13]), // jump to 13
+                    make(Opcode::Constant, vec![1]), // 10
+                    make(Opcode::Pop, vec![]),  // 13
+                    make(Opcode::Constant, vec![2]),
+                    make(Opcode::Pop, vec![]), 
+                ],
+            },
+        ];
 
         for test_case in test_cases {
             run_compiler_test(test_case);

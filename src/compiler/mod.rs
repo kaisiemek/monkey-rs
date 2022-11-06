@@ -118,14 +118,28 @@ impl Compiler {
             } => {
                 self.compile_expression(*condition)?;
                 // 0xFFFF placeholder value, will be replaced later on
-                let jump_pos = self.emit(Opcode::JumpNotTruthy, vec![0xFFFF]);
+                let jump_cond_pos = self.emit(Opcode::JumpNotTruthy, vec![0xFFFF]);
                 self.compile(consequence.statements)?;
                 if self.last_instruction.opcode == Opcode::Pop {
                     self.remove_last_pop();
                 }
 
-                let after_consequence_pos = self.instructions.len();
-                self.change_operand(jump_pos, after_consequence_pos as u16);
+                if alternative.is_none() {
+                    let after_consequence_pos = self.instructions.len();
+                    self.change_operand(jump_cond_pos, after_consequence_pos as u16);
+                } else {
+                    let jump_pos = self.emit(Opcode::Jump, vec![0xFFFF]);
+                    let after_consequence_pos = self.instructions.len();
+                    self.change_operand(jump_cond_pos, after_consequence_pos as u16);
+                    self.compile(alternative.unwrap().statements)?;
+
+                    if self.last_instruction.opcode == Opcode::Pop {
+                        self.remove_last_pop();
+                    }
+
+                    let after_alternative_pos = self.instructions.len();
+                    self.change_operand(jump_pos, after_alternative_pos as u16);
+                }
             }
             Expression::Call {
                 token,
