@@ -50,7 +50,11 @@ impl Compiler {
             Statement::Expression {
                 token: _,
                 expression,
-            } => self.compile_expression(expression),
+            } => {
+                self.compile_expression(expression)?;
+                self.emit(Opcode::Pop, vec![]);
+                Ok(())
+            }
         }
     }
 

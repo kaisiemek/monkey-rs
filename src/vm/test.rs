@@ -81,7 +81,7 @@ mod test {
             );
         }
 
-        let stack_element = vm.stack_top();
+        let stack_element = vm.last_popped_stack_elem();
         assert_eq!(stack_element, test_case.expected);
     }
 }

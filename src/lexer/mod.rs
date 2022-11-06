@@ -1,5 +1,5 @@
-pub mod token;
 mod test;
+pub mod token;
 
 use self::token::{Token, TokenType};
 

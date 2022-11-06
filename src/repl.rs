@@ -108,7 +108,7 @@ pub fn start_vm() -> ! {
             continue;
         }
 
-        let stacktop = vm.stack_top();
+        let stacktop = vm.last_popped_stack_elem();
         println!("{}", stacktop.inspect());
     }
 }

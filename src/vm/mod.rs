@@ -1,12 +1,9 @@
-use std::fmt::format;
-
+mod test;
 use crate::{
     code::{read_u16, Instructions, Opcode},
     compiler::Bytecode,
     interpreter::object::Object,
 };
-
-mod test;
 
 const STACK_SIZE: usize = 2048;
 
@@ -14,14 +11,22 @@ pub struct VM {
     constants: Vec<Object>,
     instructions: Instructions,
     stack: Vec<Object>,
+    sp: usize,
 }
 
 impl VM {
     pub fn new(bytecode: Bytecode) -> Self {
+        // Can't use an array as Object can't implement Copy
+        let mut stack = Vec::with_capacity(STACK_SIZE);
+        for _ in 1..=STACK_SIZE {
+            stack.push(Object::Null);
+        }
+
         VM {
             constants: bytecode.constants,
             instructions: bytecode.instructions,
-            stack: Vec::with_capacity(STACK_SIZE),
+            stack,
+            sp: 0,
         }
     }
 
@@ -60,6 +65,9 @@ impl VM {
 
                     self.push(Object::Integer(left + right))?;
                 }
+                Opcode::Pop => {
+                    self.pop()?;
+                }
             }
         }
 
@@ -67,11 +75,15 @@ impl VM {
     }
 
     pub fn stack_top(&self) -> Object {
-        if self.stack.is_empty() {
+        if self.sp < 1 {
             Object::Null
         } else {
-            self.stack.last().unwrap().clone()
+            self.stack[self.sp - 1].clone()
         }
+    }
+
+    pub fn last_popped_stack_elem(&self) -> Object {
+        self.stack[self.sp].clone()
     }
 
     fn push_constant(&mut self, index: usize) -> Result<(), String> {
@@ -83,19 +95,22 @@ impl VM {
     }
 
     fn push(&mut self, obj: Object) -> Result<(), String> {
-        if self.stack.len() >= STACK_SIZE {
+        if self.sp >= STACK_SIZE {
             return Err(format!("Stack overflow! Exceeded size of {}", STACK_SIZE));
         }
 
-        self.stack.push(obj);
+        self.stack[self.sp] = obj;
+        self.sp += 1;
         Ok(())
     }
 
     fn pop(&mut self) -> Result<Object, String> {
-        let obj = self.stack.pop();
-        match obj {
-            Some(obj) => Ok(obj),
-            None => Err("Stack is empty!".to_string()),
+        if self.sp < 1 {
+            return Err("Stack is empty!".to_string());
         }
+
+        let obj = self.stack[self.sp - 1].clone();
+        self.sp -= 1;
+        return Ok(obj);
     }
 }

@@ -16,15 +16,28 @@ mod test {
 
     #[test]
     fn test_integer_arithmetic() {
-        let test_cases = vec![TestCase {
-            input: "1 + 2".to_string(),
-            expected_constants: vec![Object::Integer(1), Object::Integer(2)],
-            expected_instructions: vec![
-                make(Opcode::Constant, vec![0]), // index of constant 1
-                make(Opcode::Constant, vec![1]), // index of constant 2
-                make(Opcode::Add, vec![]),
-            ],
-        }];
+        let test_cases = vec![
+            TestCase {
+                input: "1 + 2".to_string(),
+                expected_constants: vec![Object::Integer(1), Object::Integer(2)],
+                expected_instructions: vec![
+                    make(Opcode::Constant, vec![0]), // index of constant 1
+                    make(Opcode::Constant, vec![1]), // index of constant 2
+                    make(Opcode::Add, vec![]),
+                    make(Opcode::Pop, vec![]),
+                ],
+            },
+            TestCase {
+                input: "1; 2".to_string(),
+                expected_constants: vec![Object::Integer(1), Object::Integer(2)],
+                expected_instructions: vec![
+                    make(Opcode::Constant, vec![0]), // index of constant 1
+                    make(Opcode::Pop, vec![]),
+                    make(Opcode::Constant, vec![1]), // index of constant 2
+                    make(Opcode::Pop, vec![]),
+                ],
+            },
+        ];
 
         for test_case in test_cases {
             run_compiler_test(test_case);

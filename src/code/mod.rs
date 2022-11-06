@@ -50,7 +50,7 @@ macro_rules! make_opcodes {
 
     };
 }
-make_opcodes!([Constant: 2, Add: 0]);
+make_opcodes!([Constant: 2, Add: 0, Pop: 0]);
 
 pub type Instructions = Vec<u8>;
 
