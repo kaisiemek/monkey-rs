@@ -119,27 +119,32 @@ impl Compiler {
                 self.compile_expression(*condition)?;
                 // 0xFFFF placeholder value, will be replaced later on
                 let jump_cond_pos = self.emit(Opcode::JumpNotTruthy, vec![0xFFFF]);
+
                 self.compile(consequence.statements)?;
                 if self.last_instruction.opcode == Opcode::Pop {
                     self.remove_last_pop();
                 }
 
-                if alternative.is_none() {
-                    let after_consequence_pos = self.instructions.len();
-                    self.change_operand(jump_cond_pos, after_consequence_pos as u16);
-                } else {
-                    let jump_pos = self.emit(Opcode::Jump, vec![0xFFFF]);
-                    let after_consequence_pos = self.instructions.len();
-                    self.change_operand(jump_cond_pos, after_consequence_pos as u16);
-                    self.compile(alternative.unwrap().statements)?;
+                // insert a jump instruction after the body if the if statement (to jump over alternative)
+                let jump_pos = self.emit(Opcode::Jump, vec![0xFFFF]);
 
+                // Replace conditional jump address with the address of the instruction after the last jump
+                let after_conseq_pos = self.instructions.len();
+                self.change_operand(jump_cond_pos, after_conseq_pos as u16);
+
+                if alternative.is_none() {
+                    // If statement expression without alternative evaluates to null
+                    self.emit(Opcode::Null, vec![]);
+                } else {
+                    self.compile(alternative.unwrap().statements)?;
                     if self.last_instruction.opcode == Opcode::Pop {
                         self.remove_last_pop();
                     }
-
-                    let after_alternative_pos = self.instructions.len();
-                    self.change_operand(jump_pos, after_alternative_pos as u16);
                 }
+
+                // Change the jump address after the body to after the alternative
+                let after_alternative_pos = self.instructions.len();
+                self.change_operand(jump_pos, after_alternative_pos as u16);
             }
             Expression::Call {
                 token,

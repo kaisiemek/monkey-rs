@@ -59,14 +59,15 @@ make_opcodes!([
     Sub: 0,
     Mult: 0,
     Div: 0,
-    True: 0,
-    False: 0,
     Equal: 0,
     NotEqual: 0,
     GreaterThan: 0,
     Bang: 0,
     Minus: 0,
-    Pop: 0
+    Pop: 0,
+    True: 0,
+    False: 0,
+    Null: 0
 ]);
 
 pub type Instructions = Vec<u8>;

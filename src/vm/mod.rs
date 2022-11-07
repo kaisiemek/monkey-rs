@@ -56,12 +56,6 @@ impl VM {
                 Opcode::Bang | Opcode::Minus => {
                     self.execute_unary_op(op)?;
                 }
-                Opcode::True => {
-                    self.push(Object::Boolean(true))?;
-                }
-                Opcode::False => {
-                    self.push(Object::Boolean(false))?;
-                }
                 Opcode::Pop => {
                     self.pop()?;
                 }
@@ -77,6 +71,15 @@ impl VM {
                     if !(is_truthy(condition)) {
                         ip = position as usize;
                     }
+                }
+                Opcode::True => {
+                    self.push(Object::Boolean(true))?;
+                }
+                Opcode::False => {
+                    self.push(Object::Boolean(false))?;
+                }
+                Opcode::Null => {
+                    self.push(Object::Null)?;
                 }
             }
         }
@@ -190,6 +193,8 @@ impl VM {
 fn is_truthy(obj: Object) -> bool {
     if let Object::Boolean(val) = obj {
         val
+    } else if let Object::Null = obj {
+        false
     } else {
         true
     }

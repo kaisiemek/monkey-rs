@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod test {
     use crate::{
-        code::stringify,
         compiler::Compiler,
         interpreter::object::Object,
         lexer::Lexer,
@@ -191,6 +190,10 @@ mod test {
                 input: "!!5".to_string(),
                 expected: Object::Boolean(true),
             },
+            TestCase {
+                input: "!(if (false) { 5; })".to_string(),
+                expected: Object::Boolean(true),
+            },
         ];
 
         for test_case in test_cases {
@@ -227,6 +230,18 @@ mod test {
             },
             TestCase {
                 input: "if (1 > 2) { 10 } else { 20 }".to_string(),
+                expected: Object::Integer(20),
+            },
+            TestCase {
+                input: "if (1 > 2) { 10 }".to_string(),
+                expected: Object::Null,
+            },
+            TestCase {
+                input: "if (false) { 10 }".to_string(),
+                expected: Object::Null,
+            },
+            TestCase {
+                input: "if ((if (false) { 10 })) { 10 } else { 20 }".to_string(),
                 expected: Object::Integer(20),
             },
         ];

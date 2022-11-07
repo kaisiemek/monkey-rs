@@ -180,9 +180,11 @@ mod test {
                 expected_constants: vec![Object::Integer(10), Object::Integer(3333)],
                 expected_instructions: vec![
                     make(Opcode::True, vec![]),
-                    make(Opcode::JumpNotTruthy, vec![7]), // jump to first pop
+                    make(Opcode::JumpNotTruthy, vec![10]),
                     make(Opcode::Constant, vec![0]),
-                    make(Opcode::Pop, vec![]), // 0007
+                    make(Opcode::Jump, vec![11]),
+                    make(Opcode::Null, vec![]), // 0010
+                    make(Opcode::Pop, vec![]), // 0011
                     make(Opcode::Constant, vec![1]),
                     make(Opcode::Pop, vec![]),
                 ],
