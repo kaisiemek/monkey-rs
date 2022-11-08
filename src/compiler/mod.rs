@@ -30,7 +30,7 @@ struct EmittedInstruction {
 
 impl Compiler {
     pub fn new() -> Self {
-        return Compiler {
+        Compiler {
             instructions: vec![],
             constants: vec![],
             last_instruction: EmittedInstruction {
@@ -42,10 +42,15 @@ impl Compiler {
                 position: 0,
             },
             symbol_table: SymbolTable::new(),
-        };
+        }
     }
 
     pub fn compile(&mut self, program: Program) -> Result<(), String> {
+        self.clear();
+        self.compile_program(program)
+    }
+
+    fn compile_program(&mut self, program: Program) -> Result<(), String> {
         for statement in program {
             self.compile_statement(statement)?;
         }
@@ -53,10 +58,10 @@ impl Compiler {
         Ok(())
     }
 
-    pub fn bytecode(self) -> Bytecode {
+    pub fn bytecode(&self) -> Bytecode {
         return Bytecode {
-            instructions: self.instructions,
-            constants: self.constants,
+            instructions: self.instructions.clone(),
+            constants: self.constants.clone(),
         };
     }
 
@@ -132,7 +137,7 @@ impl Compiler {
                 // 0xFFFF placeholder value, will be replaced later on
                 let jump_cond_pos = self.emit(Opcode::JumpNotTruthy, vec![0xFFFF]);
 
-                self.compile(consequence.statements)?;
+                self.compile_program(consequence.statements)?;
                 if self.last_instruction.opcode == Opcode::Pop {
                     self.remove_last_pop();
                 }
@@ -148,7 +153,7 @@ impl Compiler {
                     // If statement expression without alternative evaluates to null
                     self.emit(Opcode::Null, vec![]);
                 } else {
-                    self.compile(alternative.unwrap().statements)?;
+                    self.compile_program(alternative.unwrap().statements)?;
                     if self.last_instruction.opcode == Opcode::Pop {
                         self.remove_last_pop();
                     }
@@ -213,6 +218,33 @@ impl Compiler {
         Ok(())
     }
 
+    fn emit(&mut self, op: Opcode, operands: Vec<u16>) -> usize {
+        let instruction = make(op, operands);
+        let instruction_pos = self.instructions.len();
+        self.instructions.extend(instruction);
+
+        self.previous_instruction = self.last_instruction.clone();
+        self.last_instruction = EmittedInstruction {
+            opcode: op,
+            position: instruction_pos,
+        };
+
+        return instruction_pos;
+    }
+
+    // do not clear the symbol table and constants for multiple passes in the REPL
+    fn clear(&mut self) {
+        self.instructions = vec![];
+        self.last_instruction = EmittedInstruction {
+            opcode: Opcode::Pop,
+            position: 0,
+        };
+        self.previous_instruction = EmittedInstruction {
+            opcode: Opcode::Pop,
+            position: 0,
+        };
+    }
+
     fn add_symbol(&mut self, name: &str) -> u16 {
         let symbol = self.symbol_table.define(name);
         symbol.index as u16
@@ -247,20 +279,6 @@ impl Compiler {
         let end_pos = pos + new_instruction.len();
         self.instructions
             .splice(pos..end_pos, new_instruction.iter().cloned());
-    }
-
-    fn emit(&mut self, op: Opcode, operands: Vec<u16>) -> usize {
-        let instruction = make(op, operands);
-        let instruction_pos = self.instructions.len();
-        self.instructions.extend(instruction);
-
-        self.previous_instruction = self.last_instruction.clone();
-        self.last_instruction = EmittedInstruction {
-            opcode: op,
-            position: instruction_pos,
-        };
-
-        return instruction_pos;
     }
 }
 

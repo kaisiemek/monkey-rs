@@ -1,15 +1,17 @@
-use std::cell::RefCell;
-use std::io::{self, Write};
-use std::process::exit;
-use std::rc::Rc;
+use std::{
+    cell::RefCell,
+    io::{self, Write},
+    process::exit,
+    rc::Rc,
+};
 
-use crate::compiler::Compiler;
-use crate::interpreter::environment::Environment;
-use crate::interpreter::eval_program;
-use crate::interpreter::object::Inspectable;
-use crate::lexer::Lexer;
-use crate::parser::Parser;
-use crate::vm::VM;
+use crate::{
+    compiler::Compiler,
+    interpreter::{environment::Environment, eval_program, object::Inspectable},
+    lexer::Lexer,
+    parser::Parser,
+    vm::VM,
+};
 
 pub fn start_interpreter() -> ! {
     let mut line_str = String::new();
@@ -60,51 +62,41 @@ pub fn start_vm() -> ! {
     );
     io::stdout().flush().expect("Error flushing stdout");
 
+    let mut vm = VM::new();
+    let mut compiler = Compiler::new();
+
     loop {
         line_str.clear();
         print!("> ");
         io::stdout().flush().expect("Error flushing stdout");
-
         in_stream
             .read_line(&mut line_str)
             .expect("Error reading from stdin");
-
         if line_str.trim() == "exit" {
             exit(0);
         }
 
         let lexer = Lexer::new(&line_str);
+
         let mut parser = Parser::new(lexer);
+        let program = match parser.parse_program() {
+            Ok(program) => program,
+            Err(errors) => {
+                println!(
+                    "The following parsing errors occurred:\n{}",
+                    errors.join("\n")
+                );
+                continue;
+            }
+        };
 
-        let parse_result = parser.parse_program();
-        if parse_result.is_err() {
-            println!(
-                "The following parsing errors occurred:\n{}",
-                parse_result.unwrap_err().join("\n")
-            );
+        if let Err(err) = compiler.compile(program) {
+            println!("The following compiler errors occurred:\n{}", err);
             continue;
         }
 
-        let program = parse_result.unwrap();
-        let mut compiler = Compiler::new();
-        let compile_result = compiler.compile(program);
-
-        if compile_result.is_err() {
-            println!(
-                "The following compiler errors occurred:\n{}",
-                compile_result.unwrap_err()
-            );
-            continue;
-        }
-
-        let mut vm = VM::new(compiler.bytecode());
-        let run_result = vm.run();
-
-        if run_result.is_err() {
-            println!(
-                "The following runtime errors occurred:\n{}",
-                run_result.unwrap_err()
-            );
+        if let Err(err) = vm.run(compiler.bytecode()) {
+            println!("A runtime error occurred:\n{}", err);
             continue;
         }
 

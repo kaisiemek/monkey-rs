@@ -319,7 +319,7 @@ mod test {
     fn run_compiler_test(test_case: TestCase) {
         let program = parse(test_case.input);
         let mut compiler = Compiler::new();
-        let result = compiler.compile(program);
+        let result = compiler.compile_program(program);
 
         match result {
             Err(err) => {

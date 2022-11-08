@@ -251,6 +251,28 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_global_let_statements() {
+        let test_cases = vec![
+            TestCase {
+                input: "let one = 1; one".to_string(),
+                expected: Object::Integer(1),
+            },
+            TestCase {
+                input: "let one = 1; let two = 2; one + two".to_string(),
+                expected: Object::Integer(3),
+            },
+            TestCase {
+                input: "let one = 1; let two = one + one; one + two".to_string(),
+                expected: Object::Integer(3),
+            },
+        ];
+
+        for test_case in test_cases {
+            run_vm_test(test_case);
+        }
+    }
+
     fn parse(input: String) -> Program {
         let lexer = Lexer::new(&input);
         let mut parser = Parser::new(lexer);
@@ -286,8 +308,8 @@ mod test {
             );
         }
 
-        let mut vm = VM::new(compiler.bytecode());
-        let vm_result = vm.run();
+        let mut vm = VM::new();
+        let vm_result = vm.run(compiler.bytecode());
 
         if vm_result.is_err() {
             assert!(

@@ -1,5 +1,4 @@
 mod test;
-use std::{any::Any, fmt::format};
 
 use crate::{
     code::{read_u16, Instructions, Opcode},
@@ -8,32 +7,46 @@ use crate::{
 };
 
 const STACK_SIZE: usize = 2048;
+const GLOBALS_SIZE: usize = 65536;
 
 pub struct VM {
-    constants: Vec<Object>,
     instructions: Instructions,
+    constants: Vec<Object>,
     stack: Vec<Object>,
+    globals: Vec<Object>,
     sp: usize,
 }
 
 impl VM {
-    pub fn new(bytecode: Bytecode) -> Self {
-        // Can't use an array as Object can't implement Copy
+    pub fn new() -> Self {
+        // Use vecs and initialise, can not use arrays as
+        // 'Object' can't implement the Copy trait (yes, I'm serious)
         let mut stack = Vec::with_capacity(STACK_SIZE);
-        for _ in 1..=STACK_SIZE {
+        let mut globals = Vec::with_capacity(GLOBALS_SIZE);
+
+        for _ in 0..STACK_SIZE {
             stack.push(Object::Null);
+        }
+        for _ in 0..GLOBALS_SIZE {
+            globals.push(Object::Null);
         }
 
         VM {
-            constants: bytecode.constants,
-            instructions: bytecode.instructions,
+            instructions: vec![],
+            constants: vec![],
             stack,
+            globals,
             sp: 0,
         }
     }
 
-    pub fn run(&mut self) -> Result<(), String> {
+    pub fn run(&mut self, bytecode: Bytecode) -> Result<(), String> {
+        // Do not reset the globals (for REPL)
+        self.instructions = bytecode.instructions;
+        self.constants = bytecode.constants;
+        self.sp = 0;
         let mut ip: usize = 0;
+
         while ip < self.instructions.len() {
             let op = Opcode::try_from(self.instructions[ip])?;
             ip += 1;
@@ -68,7 +81,7 @@ impl VM {
                     ip += 2;
 
                     let condition = self.pop()?;
-                    if !(is_truthy(condition)) {
+                    if !(is_truthy(&condition)) {
                         ip = position as usize;
                     }
                 }
@@ -81,8 +94,16 @@ impl VM {
                 Opcode::Null => {
                     self.push(Object::Null)?;
                 }
-                Opcode::GetGlobal => todo!(),
-                Opcode::SetGlobal => todo!(),
+                Opcode::GetGlobal => {
+                    let index = read_u16(&self.instructions[ip..]);
+                    ip += 2;
+                    self.push(self.globals[index as usize].clone())?;
+                }
+                Opcode::SetGlobal => {
+                    let index = read_u16(&self.instructions[ip..]);
+                    ip += 2;
+                    self.globals[index as usize] = self.pop()?;
+                }
             }
         }
 
@@ -144,7 +165,7 @@ impl VM {
         let right = self.pop()?;
 
         match op {
-            Opcode::Bang => self.push(Object::Boolean(!is_truthy(right))),
+            Opcode::Bang => self.push(Object::Boolean(!is_truthy(&right))),
             Opcode::Minus => {
                 if let Object::Integer(right_int) = right {
                     self.push(Object::Integer(-right_int))
@@ -192,12 +213,10 @@ impl VM {
     }
 }
 
-fn is_truthy(obj: Object) -> bool {
-    if let Object::Boolean(val) = obj {
-        val
-    } else if let Object::Null = obj {
-        false
-    } else {
-        true
+fn is_truthy(obj: &Object) -> bool {
+    match obj {
+        Object::Boolean(val) => *val,
+        Object::Null => false,
+        _ => true,
     }
 }
