@@ -53,6 +53,8 @@ macro_rules! make_opcodes {
 
 make_opcodes!([
     Constant: 2,
+    GetGlobal: 2,
+    SetGlobal: 2,
     Jump: 2,
     JumpNotTruthy: 2,
     Add: 0,

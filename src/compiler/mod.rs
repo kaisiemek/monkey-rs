@@ -1,3 +1,4 @@
+mod symbol_table;
 mod test;
 
 use crate::{
@@ -6,11 +7,14 @@ use crate::{
     parser::ast::{Expression, Program, Statement},
 };
 
+use self::symbol_table::SymbolTable;
+
 pub struct Compiler {
     instructions: Instructions,
     constants: Vec<Object>,
     last_instruction: EmittedInstruction,
     previous_instruction: EmittedInstruction,
+    symbol_table: SymbolTable,
 }
 
 pub struct Bytecode {
@@ -37,6 +41,7 @@ impl Compiler {
                 opcode: Opcode::Pop,
                 position: 0,
             },
+            symbol_table: SymbolTable::new(),
         };
     }
 
@@ -58,10 +63,14 @@ impl Compiler {
     fn compile_statement(&mut self, statement: Statement) -> Result<(), String> {
         match statement {
             Statement::Let {
-                token,
+                token: _,
                 identifier,
                 value,
-            } => todo!(),
+            } => {
+                self.compile_expression(value)?;
+                let index = self.add_symbol(&identifier);
+                self.emit(Opcode::SetGlobal, vec![index as u16]);
+            }
             Statement::Return { token, value } => todo!(),
             Statement::Expression {
                 token: _,
@@ -69,14 +78,17 @@ impl Compiler {
             } => {
                 self.compile_expression(expression)?;
                 self.emit(Opcode::Pop, vec![]);
-                Ok(())
             }
         }
+        Ok(())
     }
 
     fn compile_expression(&mut self, expression: Expression) -> Result<(), String> {
         match expression {
-            Expression::Identifier { token, value } => todo!(),
+            Expression::Identifier { token: _, value } => {
+                let index = self.resolve_symbol(&value)?;
+                self.emit(Opcode::GetGlobal, vec![index]);
+            }
             Expression::IntLiteral { token: _, value } => {
                 let integer = Object::Integer(value);
                 let constant_idx = self.add_constant(integer);
@@ -199,6 +211,19 @@ impl Compiler {
 
         self.emit(opcode, vec![]);
         Ok(())
+    }
+
+    fn add_symbol(&mut self, name: &str) -> u16 {
+        let symbol = self.symbol_table.define(name);
+        symbol.index as u16
+    }
+
+    fn resolve_symbol(&mut self, name: &str) -> Result<u16, String> {
+        let symbol = self.symbol_table.resolve(name);
+        match symbol {
+            Some(symbol) => Ok(symbol.index as u16),
+            None => Err(format!("Undefined symbol {}!", name)),
+        }
     }
 
     fn add_constant(&mut self, object: Object) -> usize {

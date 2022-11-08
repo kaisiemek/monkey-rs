@@ -81,6 +81,8 @@ impl VM {
                 Opcode::Null => {
                     self.push(Object::Null)?;
                 }
+                Opcode::GetGlobal => todo!(),
+                Opcode::SetGlobal => todo!(),
             }
         }
 
