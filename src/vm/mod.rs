@@ -151,6 +151,19 @@ impl VM {
                 }
                 return Ok(());
             }
+        } else if let Object::String(left_str) = left.clone() {
+            if let Object::String(right_str) = right {
+                match op {
+                    Opcode::Add => self.push(Object::String(left_str + &right_str))?,
+                    _ => {
+                        return Err(format!(
+                            "Unsupported operation {} for type string",
+                            op.to_string()
+                        ))
+                    }
+                }
+                return Ok(());
+            }
         }
 
         return Err(format!(

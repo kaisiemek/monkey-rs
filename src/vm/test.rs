@@ -273,6 +273,24 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_string_expressions() {
+        let test_cases = vec![TestCase {
+            input: r#""monkey""#.to_string(),
+            expected: Object::String("monkey".to_string()),
+        }, TestCase {
+            input: r#""mon" + "key""#.to_string(),
+            expected: Object::String("monkey".to_string()),
+        }, TestCase {
+            input: r#""mon" + "key" + "banana""#.to_string(),
+            expected: Object::String("monkeybanana".to_string()),
+        }];
+
+        for test_case in test_cases {
+            run_vm_test(test_case);
+        }
+    }
+
     fn parse(input: String) -> Program {
         let lexer = Lexer::new(&input);
         let mut parser = Parser::new(lexer);

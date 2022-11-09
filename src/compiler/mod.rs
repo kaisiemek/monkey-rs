@@ -103,7 +103,11 @@ impl Compiler {
                 let opcode = if value { Opcode::True } else { Opcode::False };
                 self.emit(opcode, vec![]);
             }
-            Expression::StringLiteral { token, value } => todo!(),
+            Expression::StringLiteral { token: _, value } => {
+                let string = Object::String(value);
+                let constant_idx = self.add_constant(string);
+                self.emit(Opcode::Constant, vec![constant_idx as u16]);
+            }
             Expression::ArrayLiteral { token, elements } => todo!(),
             Expression::HashLiteral { token, entries } => todo!(),
             Expression::FnLiteral {

@@ -316,6 +316,37 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_string_expressions() {
+        let test_cases = vec![
+            TestCase {
+                input: r#""monkey""#.to_string(),
+                expected_constants: vec![Object::String("monkey".to_string())],
+                expected_instructions: vec![
+                    make(Opcode::Constant, vec![0]),
+                    make(Opcode::Pop, vec![]),
+                ],
+            },
+            TestCase {
+                input: r#""mon" + "key""#.to_string(),
+                expected_constants: vec![
+                    Object::String("mon".to_string()),
+                    Object::String("key".to_string()),
+                ],
+                expected_instructions: vec![
+                    make(Opcode::Constant, vec![0]),
+                    make(Opcode::Constant, vec![1]),
+                    make(Opcode::Add, vec![]),
+                    make(Opcode::Pop, vec![]),
+                ],
+            },
+        ];
+
+        for test_case in test_cases {
+            run_compiler_test(test_case);
+        }
+    }
+
     fn run_compiler_test(test_case: TestCase) {
         let program = parse(test_case.input);
         let mut compiler = Compiler::new();
