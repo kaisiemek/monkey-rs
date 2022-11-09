@@ -275,16 +275,50 @@ mod test {
 
     #[test]
     fn test_string_expressions() {
-        let test_cases = vec![TestCase {
-            input: r#""monkey""#.to_string(),
-            expected: Object::String("monkey".to_string()),
-        }, TestCase {
-            input: r#""mon" + "key""#.to_string(),
-            expected: Object::String("monkey".to_string()),
-        }, TestCase {
-            input: r#""mon" + "key" + "banana""#.to_string(),
-            expected: Object::String("monkeybanana".to_string()),
-        }];
+        let test_cases = vec![
+            TestCase {
+                input: r#""monkey""#.to_string(),
+                expected: Object::String("monkey".to_string()),
+            },
+            TestCase {
+                input: r#""mon" + "key""#.to_string(),
+                expected: Object::String("monkey".to_string()),
+            },
+            TestCase {
+                input: r#""mon" + "key" + "banana""#.to_string(),
+                expected: Object::String("monkeybanana".to_string()),
+            },
+        ];
+
+        for test_case in test_cases {
+            run_vm_test(test_case);
+        }
+    }
+
+    #[test]
+    fn test_array_literals() {
+        let test_cases = vec![
+            TestCase {
+                input: "[]".to_string(),
+                expected: Object::Array(vec![]),
+            },
+            TestCase {
+                input: "[1, 2, 3]".to_string(),
+                expected: Object::Array(vec![
+                    Object::Integer(1),
+                    Object::Integer(2),
+                    Object::Integer(3),
+                ]),
+            },
+            TestCase {
+                input: "[1 + 2, 3 * 4, 5 - 6]".to_string(),
+                expected: Object::Array(vec![
+                    Object::Integer(3),
+                    Object::Integer(12),
+                    Object::Integer(-1),
+                ]),
+            },
+        ];
 
         for test_case in test_cases {
             run_vm_test(test_case);

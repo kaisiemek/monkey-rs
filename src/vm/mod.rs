@@ -1,5 +1,7 @@
 mod test;
 
+use std::iter;
+
 use crate::{
     code::{read_u16, Instructions, Opcode},
     compiler::Bytecode,
@@ -19,23 +21,13 @@ pub struct VM {
 
 impl VM {
     pub fn new() -> Self {
-        // Use vecs and initialise, can not use arrays as
-        // 'Object' can't implement the Copy trait (yes, I'm serious)
-        let mut stack = Vec::with_capacity(STACK_SIZE);
-        let mut globals = Vec::with_capacity(GLOBALS_SIZE);
-
-        for _ in 0..STACK_SIZE {
-            stack.push(Object::Null);
-        }
-        for _ in 0..GLOBALS_SIZE {
-            globals.push(Object::Null);
-        }
-
+        // User iterators to init stack/globals as Object can't implement 'Copy' trait
+        // --> no array possible
         VM {
             instructions: vec![],
             constants: vec![],
-            stack,
-            globals,
+            stack: iter::repeat(Object::Null).take(STACK_SIZE).collect(),
+            globals: iter::repeat(Object::Null).take(GLOBALS_SIZE).collect(),
             sp: 0,
         }
     }
@@ -56,6 +48,14 @@ impl VM {
                     let const_index = read_u16(&self.instructions[ip..ip + 2]);
                     self.push_constant(const_index as usize)?;
                     ip += 2;
+                }
+                Opcode::Array => {
+                    let num_elements = read_u16(&self.instructions[ip..]);
+                    ip += 2;
+
+                    let array = self.build_array(self.sp - num_elements as usize, self.sp);
+                    self.sp -= num_elements as usize;
+                    self.push(array)?;
                 }
                 Opcode::Add
                 | Opcode::Sub
@@ -195,6 +195,16 @@ impl VM {
                 right.type_str()
             )),
         }
+    }
+
+    fn build_array(&mut self, start: usize, end: usize) -> Object {
+        let mut elements: Vec<Object> = iter::repeat(Object::Null).take(end - start).collect();
+
+        for i in start..end {
+            elements[i - start] = self.stack[i].clone();
+        }
+
+        Object::Array(elements)
     }
 
     fn push_constant(&mut self, index: usize) -> Result<(), String> {

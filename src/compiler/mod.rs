@@ -108,7 +108,13 @@ impl Compiler {
                 let constant_idx = self.add_constant(string);
                 self.emit(Opcode::Constant, vec![constant_idx as u16]);
             }
-            Expression::ArrayLiteral { token, elements } => todo!(),
+            Expression::ArrayLiteral { token: _, elements } => {
+                let num_elements = elements.len() as u16;
+                for element in elements {
+                    self.compile_expression(element)?;
+                }
+                self.emit(Opcode::Array, vec![num_elements]);
+            }
             Expression::HashLiteral { token, entries } => todo!(),
             Expression::FnLiteral {
                 token,
