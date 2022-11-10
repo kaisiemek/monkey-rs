@@ -355,6 +355,56 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_index_expressions() {
+        let test_cases = vec![
+            TestCase {
+                input: "[1, 2, 3][1]".to_string(),
+                expected: Object::Integer(2),
+            },
+            TestCase {
+                input: "[1, 2, 3][0 + 2]".to_string(),
+                expected: Object::Integer(3),
+            },
+            TestCase {
+                input: "[[1, 1, 1]][0][0]".to_string(),
+                expected: Object::Integer(1),
+            },
+            TestCase {
+                input: "[][0]".to_string(),
+                expected: Object::Null,
+            },
+            TestCase {
+                input: "[1, 2, 3][99]".to_string(),
+                expected: Object::Null,
+            },
+            TestCase {
+                input: "[1][-1]".to_string(),
+                expected: Object::Null,
+            },
+            TestCase {
+                input: "{1: 1, 2: 2}[1]".to_string(),
+                expected: Object::Integer(1),
+            },
+            TestCase {
+                input: "{1: 1, 2: 2}[2]".to_string(),
+                expected: Object::Integer(2),
+            },
+            TestCase {
+                input: "{1: 1}[0]".to_string(),
+                expected: Object::Null,
+            },
+            TestCase {
+                input: "{}[0]".to_string(),
+                expected: Object::Null,
+            },
+        ];
+
+        for test_case in test_cases {
+            run_vm_test(test_case);
+        }
+    }
+
     fn parse(input: String) -> Program {
         let lexer = Lexer::new(&input);
         let mut parser = Parser::new(lexer);

@@ -143,7 +143,15 @@ impl Compiler {
             } => {
                 self.compile_infix_expression(*left_expression, operator, *right_expression)?;
             }
-            Expression::Index { token, left, index } => todo!(),
+            Expression::Index {
+                token: _,
+                left,
+                index,
+            } => {
+                self.compile_expression(*left)?;
+                self.compile_expression(*index)?;
+                self.emit(Opcode::Index, vec![]);
+            }
             Expression::If {
                 token: _,
                 condition,

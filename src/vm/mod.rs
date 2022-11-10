@@ -1,6 +1,5 @@
 mod test;
 
-use core::num;
 use std::{collections::HashMap, iter};
 
 use crate::{
@@ -113,6 +112,11 @@ impl VM {
                     ip += 2;
                     self.globals[index as usize] = self.pop()?;
                 }
+                Opcode::Index => {
+                    let index = self.pop()?;
+                    let left = self.pop()?;
+                    self.execute_index_expression(left, index)?;
+                }
             }
         }
 
@@ -202,6 +206,30 @@ impl VM {
                 "Unsupported operand type for {}: {}",
                 op.to_string(),
                 right.type_str()
+            )),
+        }
+    }
+
+    fn execute_index_expression(&mut self, left: Object, index: Object) -> Result<(), String> {
+        match left {
+            Object::Array(array) => {
+                let Object::Integer(i) = index else {
+                    return Err("The index for an array must be an integer".to_string());
+                };
+
+                if i < 0 || i as usize >= array.len() {
+                    self.push(Object::Null)
+                } else {
+                    self.push(array[i as usize].clone())
+                }
+            }
+            Object::Hash(hash) => match hash.get(&index) {
+                Some(val) => self.push(val.clone()),
+                None => self.push(Object::Null),
+            },
+            other => Err(format!(
+                "Unsupported type {} for index operator",
+                other.type_str()
             )),
         }
     }

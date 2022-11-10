@@ -488,6 +488,56 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_index_expressions() {
+        let test_cases = vec![
+            TestCase {
+                input: "[1, 2, 3][1 + 1]".to_string(),
+                expected_constants: vec![
+                    Object::Integer(1),
+                    Object::Integer(2),
+                    Object::Integer(3),
+                    Object::Integer(1),
+                    Object::Integer(1),
+                ],
+                expected_instructions: vec![
+                    make(Opcode::Constant, vec![0]),
+                    make(Opcode::Constant, vec![1]),
+                    make(Opcode::Constant, vec![2]),
+                    make(Opcode::Array, vec![3]),
+                    make(Opcode::Constant, vec![3]),
+                    make(Opcode::Constant, vec![4]),
+                    make(Opcode::Add, vec![]),
+                    make(Opcode::Index, vec![]),
+                    make(Opcode::Pop, vec![]),
+                ],
+            },
+            TestCase {
+                input: "{1: 2}[2 - 1]".to_string(),
+                expected_constants: vec![
+                    Object::Integer(1),
+                    Object::Integer(2),
+                    Object::Integer(2),
+                    Object::Integer(1),
+                ],
+                expected_instructions: vec![
+                    make(Opcode::Constant, vec![0]),
+                    make(Opcode::Constant, vec![1]),
+                    make(Opcode::Hash, vec![2]),
+                    make(Opcode::Constant, vec![2]),
+                    make(Opcode::Constant, vec![3]),
+                    make(Opcode::Sub, vec![]),
+                    make(Opcode::Index, vec![]),
+                    make(Opcode::Pop, vec![]),
+                ],
+            },
+        ];
+
+        for test_case in test_cases {
+            run_compiler_test(test_case);
+        }
+    }
+
     fn run_compiler_test(test_case: TestCase) {
         let program = parse(test_case.input);
         let mut compiler = Compiler::new();

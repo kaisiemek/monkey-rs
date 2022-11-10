@@ -59,6 +59,7 @@ make_opcodes!([
     SetGlobal: 2,
     Jump: 2,
     JumpNotTruthy: 2,
+    Index: 0,
     Add: 0,
     Sub: 0,
     Mult: 0,
