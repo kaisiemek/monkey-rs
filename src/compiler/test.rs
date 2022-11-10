@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use std::collections::HashMap;
+    use std::collections::{HashMap, HashSet};
 
     use crate::{
         code::{make, stringify, Instructions, Opcode},
@@ -404,21 +404,99 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_hash_literals() {
+        struct HashTestCase {
+            input: String,
+            expected_constants: HashSet<isize>,
+            expected_instructions: HashSet<u8>,
+        }
+
+        let test_cases = vec![
+            HashTestCase {
+                input: "{}".to_string(),
+                expected_constants: HashSet::new(),
+                expected_instructions: vec![make(Opcode::Hash, vec![0]), make(Opcode::Pop, vec![])]
+                    .concat()
+                    .into_iter()
+                    .collect(),
+            },
+            HashTestCase {
+                input: "{1: 2, 3: 4, 5: 6}".to_string(),
+                expected_constants: vec![1, 2, 3, 4, 5, 6].into_iter().collect(),
+                expected_instructions: vec![
+                    make(Opcode::Constant, vec![0]),
+                    make(Opcode::Constant, vec![1]),
+                    make(Opcode::Constant, vec![2]),
+                    make(Opcode::Constant, vec![3]),
+                    make(Opcode::Constant, vec![4]),
+                    make(Opcode::Constant, vec![5]),
+                    make(Opcode::Hash, vec![6]),
+                    make(Opcode::Pop, vec![]),
+                ]
+                .concat()
+                .into_iter()
+                .collect(),
+            },
+            HashTestCase {
+                input: "{1: 2 + 3, 4 * 5: 6}".to_string(),
+                expected_constants: vec![1, 2, 3, 4, 5, 6].into_iter().collect(),
+                expected_instructions: vec![
+                    make(Opcode::Constant, vec![0]),
+                    make(Opcode::Constant, vec![1]),
+                    make(Opcode::Constant, vec![2]),
+                    make(Opcode::Add, vec![]),
+                    make(Opcode::Constant, vec![3]),
+                    make(Opcode::Constant, vec![4]),
+                    make(Opcode::Mult, vec![]),
+                    make(Opcode::Constant, vec![5]),
+                    make(Opcode::Hash, vec![4]),
+                    make(Opcode::Pop, vec![]),
+                ]
+                .concat()
+                .into_iter()
+                .collect(),
+            },
+        ];
+
+        // Little trickery as to not concern ourselves with HashMap order
+        for test_case in test_cases {
+            let program = parse(test_case.input);
+            let mut compiler = Compiler::new();
+            if let Err(err) = compiler.compile_program(program) {
+                panic!("The compiler encountered an error {}", err);
+            }
+            let bytecode = compiler.bytecode();
+            assert_eq!(
+                test_case.expected_instructions,
+                bytecode.instructions.into_iter().collect()
+            );
+
+            let mut constants = vec![];
+            for c in bytecode.constants {
+                if let Object::Integer(int) = c {
+                    constants.push(int);
+                } else {
+                    panic!("Unexpected Object");
+                }
+            }
+
+            assert_eq!(
+                test_case.expected_constants,
+                constants.into_iter().collect()
+            );
+        }
+    }
+
     fn run_compiler_test(test_case: TestCase) {
         let program = parse(test_case.input);
         let mut compiler = Compiler::new();
-        let result = compiler.compile_program(program);
-
-        match result {
-            Err(err) => {
-                assert!(false, "The compiler encountered an error: {}", err);
-            }
-            Ok(_) => {
-                let bytecode = compiler.bytecode();
-                test_instructions(test_case.expected_instructions, bytecode.instructions);
-                test_constants(test_case.expected_constants, bytecode.constants)
-            }
+        if let Err(err) = compiler.compile_program(program) {
+            panic!("The compiler encountered an error {}", err);
         }
+        let bytecode = compiler.bytecode();
+        test_instructions(test_case.expected_instructions, bytecode.instructions);
+        test_constants(test_case.expected_constants, bytecode.constants)
     }
 
     fn parse(input: String) -> Program {

@@ -1,6 +1,7 @@
 mod test;
 
-use std::iter;
+use core::num;
+use std::{collections::HashMap, iter};
 
 use crate::{
     code::{read_u16, Instructions, Opcode},
@@ -56,6 +57,14 @@ impl VM {
                     let array = self.build_array(self.sp - num_elements as usize, self.sp);
                     self.sp -= num_elements as usize;
                     self.push(array)?;
+                }
+                Opcode::Hash => {
+                    let num_elements = read_u16(&self.instructions[ip..]);
+                    ip += 2;
+
+                    let hash = self.build_hash(self.sp - num_elements as usize, self.sp);
+                    self.sp -= num_elements as usize;
+                    self.push(hash)?;
                 }
                 Opcode::Add
                 | Opcode::Sub
@@ -197,16 +206,6 @@ impl VM {
         }
     }
 
-    fn build_array(&mut self, start: usize, end: usize) -> Object {
-        let mut elements: Vec<Object> = iter::repeat(Object::Null).take(end - start).collect();
-
-        for i in start..end {
-            elements[i - start] = self.stack[i].clone();
-        }
-
-        Object::Array(elements)
-    }
-
     fn push_constant(&mut self, index: usize) -> Result<(), String> {
         if index >= self.constants.len() {
             return Err(format!("No constant at index {}", index));
@@ -233,6 +232,28 @@ impl VM {
         let obj = self.stack[self.sp - 1].clone();
         self.sp -= 1;
         return Ok(obj);
+    }
+
+    fn build_array(&mut self, start: usize, end: usize) -> Object {
+        let mut elements: Vec<Object> = iter::repeat(Object::Null).take(end - start).collect();
+
+        for i in start..end {
+            elements[i - start] = self.stack[i].clone();
+        }
+
+        Object::Array(elements)
+    }
+
+    fn build_hash(&mut self, start: usize, end: usize) -> Object {
+        let mut hashmap: HashMap<Object, Object> = HashMap::new();
+
+        for i in (start..end).step_by(2) {
+            let key = self.stack[i].clone();
+            let value = self.stack[i + 1].clone();
+            hashmap.insert(key, value);
+        }
+
+        Object::Hash(hashmap)
     }
 }
 

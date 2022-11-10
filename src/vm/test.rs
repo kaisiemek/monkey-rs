@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod test {
+    use std::collections::HashMap;
+
     use crate::{
         compiler::Compiler,
         interpreter::object::Object,
@@ -317,6 +319,34 @@ mod test {
                     Object::Integer(12),
                     Object::Integer(-1),
                 ]),
+            },
+        ];
+
+        for test_case in test_cases {
+            run_vm_test(test_case);
+        }
+    }
+
+    #[test]
+    fn test_hash_literals() {
+        let test_cases = vec![
+            TestCase {
+                input: "{}".to_string(),
+                expected: Object::Hash(HashMap::new()),
+            },
+            TestCase {
+                input: "{1: 2, 2: 3}".to_string(),
+                expected: Object::Hash(HashMap::from([
+                    (Object::Integer(1), Object::Integer(2)),
+                    (Object::Integer(2), Object::Integer(3)),
+                ])),
+            },
+            TestCase {
+                input: "{1 + 1: 2 * 2, 3 * 3: 4 / 2}".to_string(),
+                expected: Object::Hash(HashMap::from([
+                    (Object::Integer(2), Object::Integer(4)),
+                    (Object::Integer(9), Object::Integer(2)),
+                ])),
             },
         ];
 

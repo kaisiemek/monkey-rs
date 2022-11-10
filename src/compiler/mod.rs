@@ -115,7 +115,14 @@ impl Compiler {
                 }
                 self.emit(Opcode::Array, vec![num_elements]);
             }
-            Expression::HashLiteral { token, entries } => todo!(),
+            Expression::HashLiteral { token: _, entries } => {
+                let entry_num = entries.len() as u16 * 2;
+                for (key, val) in entries {
+                    self.compile_expression(key)?;
+                    self.compile_expression(val)?;
+                }
+                self.emit(Opcode::Hash, vec![entry_num]);
+            }
             Expression::FnLiteral {
                 token,
                 parameters,

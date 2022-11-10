@@ -54,6 +54,7 @@ macro_rules! make_opcodes {
 make_opcodes!([
     Constant: 2,
     Array: 2,
+    Hash: 2,
     GetGlobal: 2,
     SetGlobal: 2,
     Jump: 2,
