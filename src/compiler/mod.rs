@@ -2,7 +2,7 @@ mod symbol_table;
 mod test;
 
 use crate::{
-    code::{make, stringify, Instructions, Opcode},
+    code::{make, Instructions, Opcode},
     interpreter::object::Object,
     parser::ast::{Expression, Program, Statement},
 };
@@ -36,14 +36,8 @@ struct CompilationScope {
 
 impl Compiler {
     pub fn new() -> Self {
-        let main_scope = CompilationScope {
-            instructions: vec![],
-            last_instruction: EmittedInstruction::default(),
-            previous_instruction: EmittedInstruction::default(),
-        };
-
         Compiler {
-            scopes: vec![main_scope],
+            scopes: vec![CompilationScope::default()],
             scope_index: 0,
             constants: vec![],
             symbol_table: SymbolTable::new(),
@@ -55,19 +49,19 @@ impl Compiler {
         self.compile_program(program)
     }
 
+    pub fn bytecode(&self) -> Bytecode {
+        return Bytecode {
+            instructions: self.scopes[self.scope_index].instructions.clone(),
+            constants: self.constants.clone(),
+        };
+    }
+
     fn compile_program(&mut self, program: Program) -> Result<(), String> {
         for statement in program {
             self.compile_statement(statement)?;
         }
 
         Ok(())
-    }
-
-    pub fn bytecode(&self) -> Bytecode {
-        return Bytecode {
-            instructions: self.scopes[self.scope_index].instructions.clone(),
-            constants: self.constants.clone(),
-        };
     }
 
     fn compile_statement(&mut self, statement: Statement) -> Result<(), String> {
@@ -142,6 +136,10 @@ impl Compiler {
                     self.replace_last_pop_with_return();
                 }
 
+                if !self.last_instruction_is(Opcode::ReturnValue) {
+                    self.emit(Opcode::Return, vec![]);
+                }
+
                 let instructions = self.leave_scope().unwrap();
 
                 let compiled_function = Object::CompiledFunction { instructions };
@@ -185,10 +183,6 @@ impl Compiler {
                 self.compile_program(consequence.statements)?;
                 if self.last_instruction_is(Opcode::Pop) {
                     self.remove_last_pop();
-                }
-
-                if !self.last_instruction_is(Opcode::ReturnValue) {
-                    self.emit(Opcode::Return, vec![]);
                 }
 
                 // insert a jump instruction after the body if the if statement (to jump over alternative)
@@ -279,6 +273,7 @@ impl Compiler {
     // do not clear the symbol table and constants for multiple passes in the REPL
     fn clear(&mut self) {
         self.scopes.clear();
+        self.enter_scope();
         self.scope_index = 0;
     }
 

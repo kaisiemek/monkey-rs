@@ -249,6 +249,7 @@ mod test {
         ];
 
         for test_case in test_cases {
+            println!("{}", test_case.input);
             run_vm_test(test_case);
         }
     }
@@ -430,14 +431,9 @@ mod test {
     fn run_vm_test(test_case: TestCase) {
         let program = parse(test_case.input.clone());
         let mut compiler = Compiler::new();
-        let comp_result = compiler.compile(program);
 
-        if comp_result.is_err() {
-            assert!(
-                false,
-                "An error occurred in the compiler: {}",
-                comp_result.unwrap_err()
-            );
+        if let Err(err) = compiler.compile(program) {
+            panic!("an error occured in the compiler: {}", err);
         }
 
         let mut vm = VM::new();
