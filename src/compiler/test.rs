@@ -603,13 +603,59 @@ mod test {
             },
             TestCase {
                 input: "fn() { }".to_string(),
+                expected_constants: vec![Object::CompiledFunction {
+                    instructions: vec![make(Opcode::Return, vec![])].concat(),
+                }],
+                expected_instructions: vec![
+                    make(Opcode::Constant, vec![0]),
+                    make(Opcode::Pop, vec![]),
+                ],
+            },
+        ];
+
+        for test_case in test_cases {
+            run_compiler_test(test_case);
+        }
+    }
+
+    #[test]
+    fn test_function_calls() {
+        let test_cases = vec![
+            TestCase {
+                input: "fn() { 24 }();".to_string(),
                 expected_constants: vec![
+                    Object::Integer(24),
                     Object::CompiledFunction {
-                        instructions: vec![make(Opcode::Return, vec![])].concat(),
+                        instructions: vec![
+                            make(Opcode::Constant, vec![0]),
+                            make(Opcode::ReturnValue, vec![]),
+                        ]
+                        .concat(),
                     },
                 ],
                 expected_instructions: vec![
-                    make(Opcode::Constant, vec![0]),
+                    make(Opcode::Constant, vec![1]),
+                    make(Opcode::Call, vec![]),
+                    make(Opcode::Pop, vec![]),
+                ],
+            },
+            TestCase {
+                input: "let noArg = fn() { 24 }; noArg();".to_string(),
+                expected_constants: vec![
+                    Object::Integer(24),
+                    Object::CompiledFunction {
+                        instructions: vec![
+                            make(Opcode::Constant, vec![0]),
+                            make(Opcode::ReturnValue, vec![]),
+                        ]
+                        .concat(),
+                    },
+                ],
+                expected_instructions: vec![
+                    make(Opcode::Constant, vec![1]),
+                    make(Opcode::SetGlobal, vec![0]),
+                    make(Opcode::GetGlobal, vec![0]),
+                    make(Opcode::Call, vec![]),
                     make(Opcode::Pop, vec![]),
                 ],
             },

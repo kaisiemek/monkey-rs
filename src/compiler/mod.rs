@@ -213,10 +213,13 @@ impl Compiler {
                 self.change_operand(jump_pos, after_alternative_pos as u16)?;
             }
             Expression::Call {
-                token,
+                token: _,
                 function,
                 arguments,
-            } => todo!(),
+            } => {
+                self.compile_expression(*function)?;
+                self.emit(Opcode::Call, vec![]);
+            }
         }
 
         Ok(())
