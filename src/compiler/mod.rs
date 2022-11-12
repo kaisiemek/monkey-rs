@@ -2,7 +2,7 @@ mod symbol_table;
 mod test;
 
 use crate::{
-    code::{make, Instructions, Opcode},
+    code::{make, stringify, Instructions, Opcode},
     interpreter::object::Object,
     parser::ast::{Expression, Program, Statement},
 };
@@ -10,10 +10,9 @@ use crate::{
 use self::symbol_table::SymbolTable;
 
 pub struct Compiler {
-    instructions: Instructions,
+    scopes: Vec<CompilationScope>,
+    scope_index: usize,
     constants: Vec<Object>,
-    last_instruction: EmittedInstruction,
-    previous_instruction: EmittedInstruction,
     symbol_table: SymbolTable,
 }
 
@@ -22,25 +21,31 @@ pub struct Bytecode {
     pub constants: Vec<Object>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 struct EmittedInstruction {
     pub opcode: Opcode,
     pub position: usize,
 }
 
+#[derive(Default)]
+struct CompilationScope {
+    pub instructions: Instructions,
+    pub last_instruction: EmittedInstruction,
+    pub previous_instruction: EmittedInstruction,
+}
+
 impl Compiler {
     pub fn new() -> Self {
-        Compiler {
+        let main_scope = CompilationScope {
             instructions: vec![],
+            last_instruction: EmittedInstruction::default(),
+            previous_instruction: EmittedInstruction::default(),
+        };
+
+        Compiler {
+            scopes: vec![main_scope],
+            scope_index: 0,
             constants: vec![],
-            last_instruction: EmittedInstruction {
-                opcode: Opcode::Pop,
-                position: 0,
-            },
-            previous_instruction: EmittedInstruction {
-                opcode: Opcode::Pop,
-                position: 0,
-            },
             symbol_table: SymbolTable::new(),
         }
     }
@@ -60,7 +65,7 @@ impl Compiler {
 
     pub fn bytecode(&self) -> Bytecode {
         return Bytecode {
-            instructions: self.instructions.clone(),
+            instructions: self.scopes[self.scope_index].instructions.clone(),
             constants: self.constants.clone(),
         };
     }
@@ -76,7 +81,10 @@ impl Compiler {
                 let index = self.add_symbol(&identifier);
                 self.emit(Opcode::SetGlobal, vec![index as u16]);
             }
-            Statement::Return { token, value } => todo!(),
+            Statement::Return { token: _, value } => {
+                self.compile_expression(value)?;
+                self.emit(Opcode::ReturnValue, vec![]);
+            }
             Statement::Expression {
                 token: _,
                 expression,
@@ -124,10 +132,22 @@ impl Compiler {
                 self.emit(Opcode::Hash, vec![entry_num]);
             }
             Expression::FnLiteral {
-                token,
+                token: _,
                 parameters,
                 body,
-            } => todo!(),
+            } => {
+                self.enter_scope();
+                self.compile_program(body.statements)?;
+                if self.last_instruction_is(Opcode::Pop) {
+                    self.replace_last_pop_with_return();
+                }
+
+                let instructions = self.leave_scope().unwrap();
+
+                let compiled_function = Object::CompiledFunction { instructions };
+                let constant_index = self.add_constant(compiled_function) as u16;
+                self.emit(Opcode::Constant, vec![constant_index]);
+            }
             Expression::Prefix {
                 token: _,
                 operator,
@@ -163,30 +183,34 @@ impl Compiler {
                 let jump_cond_pos = self.emit(Opcode::JumpNotTruthy, vec![0xFFFF]);
 
                 self.compile_program(consequence.statements)?;
-                if self.last_instruction.opcode == Opcode::Pop {
+                if self.last_instruction_is(Opcode::Pop) {
                     self.remove_last_pop();
+                }
+
+                if !self.last_instruction_is(Opcode::ReturnValue) {
+                    self.emit(Opcode::Return, vec![]);
                 }
 
                 // insert a jump instruction after the body if the if statement (to jump over alternative)
                 let jump_pos = self.emit(Opcode::Jump, vec![0xFFFF]);
 
                 // Replace conditional jump address with the address of the instruction after the last jump
-                let after_conseq_pos = self.instructions.len();
-                self.change_operand(jump_cond_pos, after_conseq_pos as u16);
+                let after_conseq_pos = self.current_instructions().len();
+                self.change_operand(jump_cond_pos, after_conseq_pos as u16)?;
 
                 if alternative.is_none() {
                     // If statement expression without alternative evaluates to null
                     self.emit(Opcode::Null, vec![]);
                 } else {
                     self.compile_program(alternative.unwrap().statements)?;
-                    if self.last_instruction.opcode == Opcode::Pop {
+                    if self.last_instruction_is(Opcode::Pop) {
                         self.remove_last_pop();
                     }
                 }
 
                 // Change the jump address after the body to after the alternative
-                let after_alternative_pos = self.instructions.len();
-                self.change_operand(jump_pos, after_alternative_pos as u16);
+                let after_alternative_pos = self.current_instructions().len();
+                self.change_operand(jump_pos, after_alternative_pos as u16)?;
             }
             Expression::Call {
                 token,
@@ -243,31 +267,16 @@ impl Compiler {
         Ok(())
     }
 
-    fn emit(&mut self, op: Opcode, operands: Vec<u16>) -> usize {
-        let instruction = make(op, operands);
-        let instruction_pos = self.instructions.len();
-        self.instructions.extend(instruction);
-
-        self.previous_instruction = self.last_instruction.clone();
-        self.last_instruction = EmittedInstruction {
-            opcode: op,
-            position: instruction_pos,
-        };
-
-        return instruction_pos;
+    fn emit(&mut self, opcode: Opcode, operands: Vec<u16>) -> usize {
+        let position = self.add_instruction(&make(opcode, operands));
+        self.set_last_instruction(opcode, position);
+        position
     }
 
     // do not clear the symbol table and constants for multiple passes in the REPL
     fn clear(&mut self) {
-        self.instructions = vec![];
-        self.last_instruction = EmittedInstruction {
-            opcode: Opcode::Pop,
-            position: 0,
-        };
-        self.previous_instruction = EmittedInstruction {
-            opcode: Opcode::Pop,
-            position: 0,
-        };
+        self.scopes.clear();
+        self.scope_index = 0;
     }
 
     fn add_symbol(&mut self, name: &str) -> u16 {
@@ -288,27 +297,96 @@ impl Compiler {
         return self.constants.len() - 1;
     }
 
+    fn current_instructions(&mut self) -> &mut Instructions {
+        &mut self.scopes[self.scope_index].instructions
+    }
+
+    fn add_instruction(&mut self, instruction: &[u8]) -> usize {
+        let pos_new_instruction = self.current_instructions().len();
+        self.current_instructions()
+            .extend(instruction.iter().clone());
+        pos_new_instruction
+    }
+
+    fn set_last_instruction(&mut self, opcode: Opcode, position: usize) {
+        let previous = self.scopes[self.scope_index].last_instruction.clone();
+        let last = EmittedInstruction { opcode, position };
+
+        self.scopes[self.scope_index].previous_instruction = previous;
+        self.scopes[self.scope_index].last_instruction = last;
+    }
+
+    fn last_instruction_is(&self, opcode: Opcode) -> bool {
+        self.scopes[self.scope_index].last_instruction.opcode == opcode
+    }
+
     fn remove_last_pop(&mut self) {
-        let last_instr_pos = self.last_instruction.position;
-        self.instructions.truncate(last_instr_pos);
-        self.last_instruction = self.previous_instruction.clone();
+        let last = self.scopes[self.scope_index].last_instruction.clone();
+        let previous = self.scopes[self.scope_index].previous_instruction.clone();
+
+        self.current_instructions().truncate(last.position);
+        self.scopes[self.scope_index].last_instruction = previous;
     }
 
-    fn change_operand(&mut self, op_pos: usize, operand: u16) {
-        let opcode: Opcode = self.instructions[op_pos].try_into().unwrap();
+    fn replace_instruction(&mut self, position: usize, new_instruction: &[u8]) {
+        let end = position + new_instruction.len();
+        self.current_instructions()
+            .splice(position..end, new_instruction.iter().cloned());
+    }
+
+    fn replace_last_pop_with_return(&mut self) {
+        let last_position = self.scopes[self.scope_index].last_instruction.position;
+        self.replace_instruction(last_position, &make(Opcode::ReturnValue, vec![]));
+        self.scopes[self.scope_index].last_instruction.opcode = Opcode::ReturnValue;
+    }
+
+    fn change_operand(&mut self, op_pos: usize, operand: u16) -> Result<(), String> {
+        let opcode: Opcode = self.current_instructions()[op_pos].try_into()?;
         let new_instruction = make(opcode, vec![operand]);
-        self.replace_instruction(op_pos, new_instruction);
+        self.replace_instruction(op_pos, &new_instruction);
+        Ok(())
     }
 
-    fn replace_instruction(&mut self, pos: usize, new_instruction: Instructions) {
-        let end_pos = pos + new_instruction.len();
-        self.instructions
-            .splice(pos..end_pos, new_instruction.iter().cloned());
+    fn enter_scope(&mut self) {
+        let scope = CompilationScope::default();
+        self.scopes.push(scope);
+        self.scope_index += 1;
+    }
+
+    fn leave_scope(&mut self) -> Option<Instructions> {
+        let scope = self.scopes.pop()?;
+        self.scope_index -= 1;
+        Some(scope.instructions)
     }
 }
 
-impl Default for Compiler {
-    fn default() -> Self {
-        Self::new()
-    }
+#[test]
+fn test_compiler_scopes() {
+    let mut compiler = Compiler::new();
+    assert_eq!(compiler.scope_index, 0);
+    compiler.emit(Opcode::Mult, vec![]);
+    compiler.enter_scope();
+    assert_eq!(compiler.scope_index, 1);
+    compiler.emit(Opcode::Sub, vec![]);
+
+    assert_eq!(compiler.scopes[compiler.scope_index].instructions.len(), 1);
+    let last = compiler.scopes[compiler.scope_index]
+        .last_instruction
+        .clone();
+    assert_eq!(last.opcode, Opcode::Sub);
+    compiler.leave_scope();
+    assert_eq!(compiler.scope_index, 0);
+
+    compiler.emit(Opcode::Add, vec![]);
+    assert_eq!(compiler.scopes[compiler.scope_index].instructions.len(), 2);
+
+    let last = compiler.scopes[compiler.scope_index]
+        .last_instruction
+        .clone();
+    assert_eq!(last.opcode, Opcode::Add);
+
+    let previous = compiler.scopes[compiler.scope_index]
+        .previous_instruction
+        .clone();
+    assert_eq!(previous.opcode, Opcode::Mult);
 }

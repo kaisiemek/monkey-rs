@@ -59,6 +59,9 @@ make_opcodes!([
     SetGlobal: 2,
     Jump: 2,
     JumpNotTruthy: 2,
+    Call: 0,
+    ReturnValue: 0,
+    Return: 0,
     Index: 0,
     Add: 0,
     Sub: 0,
@@ -141,5 +144,11 @@ fn format_instruction(op: Opcode, operands: Vec<u16>) -> Result<String, String> 
         0 => Ok(op.to_string()),
         1 => Ok(format!("{} {}", op.to_string(), operands[0])),
         _ => Err(format!("Unexpected amount of operands: {}", operands.len())),
+    }
+}
+
+impl Default for Opcode {
+    fn default() -> Self {
+        Opcode::Null
     }
 }

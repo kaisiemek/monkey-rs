@@ -117,6 +117,9 @@ impl VM {
                     let left = self.pop()?;
                     self.execute_index_expression(left, index)?;
                 }
+                Opcode::Call => todo!(),
+                Opcode::Return => todo!(),
+                Opcode::ReturnValue => todo!(),
             }
         }
 

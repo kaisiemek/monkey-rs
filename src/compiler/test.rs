@@ -538,6 +538,88 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_functions() {
+        let test_cases = vec![
+            TestCase {
+                input: "fn() { return 5 + 10; }".to_string(),
+                expected_constants: vec![
+                    Object::Integer(5),
+                    Object::Integer(10),
+                    Object::CompiledFunction {
+                        instructions: vec![
+                            make(Opcode::Constant, vec![0]),
+                            make(Opcode::Constant, vec![1]),
+                            make(Opcode::Add, vec![]),
+                            make(Opcode::ReturnValue, vec![]),
+                        ]
+                        .concat(),
+                    },
+                ],
+                expected_instructions: vec![
+                    make(Opcode::Constant, vec![2]),
+                    make(Opcode::Pop, vec![]),
+                ],
+            },
+            TestCase {
+                input: "fn() { 5 + 10 }".to_string(),
+                expected_constants: vec![
+                    Object::Integer(5),
+                    Object::Integer(10),
+                    Object::CompiledFunction {
+                        instructions: vec![
+                            make(Opcode::Constant, vec![0]),
+                            make(Opcode::Constant, vec![1]),
+                            make(Opcode::Add, vec![]),
+                            make(Opcode::ReturnValue, vec![]),
+                        ]
+                        .concat(),
+                    },
+                ],
+                expected_instructions: vec![
+                    make(Opcode::Constant, vec![2]),
+                    make(Opcode::Pop, vec![]),
+                ],
+            },
+            TestCase {
+                input: "fn() { 1; 2 }".to_string(),
+                expected_constants: vec![
+                    Object::Integer(1),
+                    Object::Integer(2),
+                    Object::CompiledFunction {
+                        instructions: vec![
+                            make(Opcode::Constant, vec![0]),
+                            make(Opcode::Pop, vec![]),
+                            make(Opcode::Constant, vec![1]),
+                            make(Opcode::ReturnValue, vec![]),
+                        ]
+                        .concat(),
+                    },
+                ],
+                expected_instructions: vec![
+                    make(Opcode::Constant, vec![2]),
+                    make(Opcode::Pop, vec![]),
+                ],
+            },
+            TestCase {
+                input: "fn() { }".to_string(),
+                expected_constants: vec![
+                    Object::CompiledFunction {
+                        instructions: vec![make(Opcode::Return, vec![])].concat(),
+                    },
+                ],
+                expected_instructions: vec![
+                    make(Opcode::Constant, vec![0]),
+                    make(Opcode::Pop, vec![]),
+                ],
+            },
+        ];
+
+        for test_case in test_cases {
+            run_compiler_test(test_case);
+        }
+    }
+
     fn run_compiler_test(test_case: TestCase) {
         let program = parse(test_case.input);
         let mut compiler = Compiler::new();

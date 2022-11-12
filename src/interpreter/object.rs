@@ -1,5 +1,8 @@
 use super::{builtins::BuiltinFunction, environment::Environment};
-use crate::parser::ast::{BlockStatement, Expression};
+use crate::{
+    code::Instructions,
+    parser::ast::{BlockStatement, Expression},
+};
 use std::{cell::RefCell, collections::HashMap, hash::Hash, rc::Rc};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -20,6 +23,9 @@ pub enum Object {
         function: BuiltinFunction,
     },
     Null,
+    CompiledFunction {
+        instructions: Instructions,
+    },
 }
 
 pub trait Inspectable {
@@ -57,6 +63,9 @@ impl Inspectable for Object {
             }
             Object::Null => String::from("null"),
             Object::BuiltIn { name, .. } => format!("Built-in function {}", name),
+            Object::CompiledFunction { instructions } => {
+                format!("Compiled function: {:?}", instructions)
+            }
         }
     }
 
@@ -71,6 +80,7 @@ impl Inspectable for Object {
             Object::Function { .. } => String::from("FUNCTION"),
             Object::BuiltIn { .. } => String::from("BUILTIN"),
             Object::Null => String::from("NULL"),
+            Object::CompiledFunction { .. } => String::from("COMPILED FUNCTION"),
         }
     }
 }
