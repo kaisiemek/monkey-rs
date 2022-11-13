@@ -430,6 +430,60 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_functions_with_return() {
+        let test_cases = vec![
+            TestCase {
+                input: "let earlyExit = fn() { return 99; 100; }; earlyExit();".to_string(),
+                expected: Object::Integer(99),
+            },
+            TestCase {
+                input: "let earlyExit = fn() { return 99; return 100; }; earlyExit();".to_string(),
+                expected: Object::Integer(99),
+            },
+        ];
+
+        for test_case in test_cases {
+            run_vm_test(test_case);
+        }
+    }
+
+    #[test]
+    fn test_functions_no_return_val() {
+        let test_cases = vec![
+            TestCase { 
+                input: "let noReturn = fn() { }; noReturn();".to_string(), 
+                expected: Object::Null 
+            }, 
+            TestCase { 
+                input: "let noReturn = fn() { }; let noReturnTwo = fn() { noReturn(); }; noReturn(); noReturnTwo();".to_string(), 
+                expected: Object::Null 
+            }
+        ];
+
+        for test_case in test_cases {
+            run_vm_test(test_case);
+        }
+    }
+
+    #[test]
+    fn test_first_class_functions() {
+        let test_cases = vec![
+            TestCase { 
+                input: concat!(
+                    "let returnsOne = fn() { 1; };", 
+                    "let returnsOneReturner = fn() { returnsOne; };", 
+                    "returnsOneReturner()();"
+                ).to_string(),
+                expected: Object::Integer(1) 
+            }
+        ];
+
+        for test_case in test_cases {
+            run_vm_test(test_case);
+        }
+    }
+
     fn parse(input: String) -> Program {
         let lexer = Lexer::new(&input);
         let mut parser = Parser::new(lexer);
@@ -459,11 +513,6 @@ mod test {
         if let Err(err) = compiler.compile(program) {
             panic!("an error occurred in the compiler: {}", err);
         }
-
-        println!(
-            "Compiled:\n{}",
-            stringify(compiler.bytecode().instructions).unwrap()
-        );
 
         let mut vm = VM::new();
         match vm.run(compiler.bytecode()) {

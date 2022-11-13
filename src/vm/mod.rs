@@ -131,7 +131,11 @@ impl VM {
                 }
                 other => return Err(format!("Can not call object of type {}", other.type_str())),
             },
-            Opcode::Return => todo!(),
+            Opcode::Return => {
+                self.pop_frame()?;
+                self.push(Object::Null)?;
+                return Ok(false);
+            }
             Opcode::ReturnValue => {
                 let return_value = self.pop()?;
                 self.pop_frame()?;
