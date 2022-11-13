@@ -546,15 +546,15 @@ mod test {
                 expected_constants: vec![
                     Object::Integer(5),
                     Object::Integer(10),
-                    Object::CompiledFunction {
-                        instructions: vec![
+                    Object::CompiledFunction(
+                        vec![
                             make(Opcode::Constant, vec![0]),
                             make(Opcode::Constant, vec![1]),
                             make(Opcode::Add, vec![]),
                             make(Opcode::ReturnValue, vec![]),
                         ]
                         .concat(),
-                    },
+                    ),
                 ],
                 expected_instructions: vec![
                     make(Opcode::Constant, vec![2]),
@@ -566,15 +566,15 @@ mod test {
                 expected_constants: vec![
                     Object::Integer(5),
                     Object::Integer(10),
-                    Object::CompiledFunction {
-                        instructions: vec![
+                    Object::CompiledFunction(
+                        vec![
                             make(Opcode::Constant, vec![0]),
                             make(Opcode::Constant, vec![1]),
                             make(Opcode::Add, vec![]),
                             make(Opcode::ReturnValue, vec![]),
                         ]
                         .concat(),
-                    },
+                    ),
                 ],
                 expected_instructions: vec![
                     make(Opcode::Constant, vec![2]),
@@ -586,15 +586,15 @@ mod test {
                 expected_constants: vec![
                     Object::Integer(1),
                     Object::Integer(2),
-                    Object::CompiledFunction {
-                        instructions: vec![
+                    Object::CompiledFunction(
+                        vec![
                             make(Opcode::Constant, vec![0]),
                             make(Opcode::Pop, vec![]),
                             make(Opcode::Constant, vec![1]),
                             make(Opcode::ReturnValue, vec![]),
                         ]
                         .concat(),
-                    },
+                    ),
                 ],
                 expected_instructions: vec![
                     make(Opcode::Constant, vec![2]),
@@ -603,9 +603,9 @@ mod test {
             },
             TestCase {
                 input: "fn() { }".to_string(),
-                expected_constants: vec![Object::CompiledFunction {
-                    instructions: vec![make(Opcode::Return, vec![])].concat(),
-                }],
+                expected_constants: vec![Object::CompiledFunction(
+                    vec![make(Opcode::Return, vec![])].concat(),
+                )],
                 expected_instructions: vec![
                     make(Opcode::Constant, vec![0]),
                     make(Opcode::Pop, vec![]),
@@ -625,13 +625,13 @@ mod test {
                 input: "fn() { 24 }();".to_string(),
                 expected_constants: vec![
                     Object::Integer(24),
-                    Object::CompiledFunction {
-                        instructions: vec![
+                    Object::CompiledFunction(
+                        vec![
                             make(Opcode::Constant, vec![0]),
                             make(Opcode::ReturnValue, vec![]),
                         ]
                         .concat(),
-                    },
+                    ),
                 ],
                 expected_instructions: vec![
                     make(Opcode::Constant, vec![1]),
@@ -643,13 +643,13 @@ mod test {
                 input: "let noArg = fn() { 24 }; noArg();".to_string(),
                 expected_constants: vec![
                     Object::Integer(24),
-                    Object::CompiledFunction {
-                        instructions: vec![
+                    Object::CompiledFunction(
+                        vec![
                             make(Opcode::Constant, vec![0]),
                             make(Opcode::ReturnValue, vec![]),
                         ]
                         .concat(),
-                    },
+                    ),
                 ],
                 expected_instructions: vec![
                     make(Opcode::Constant, vec![1]),

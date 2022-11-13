@@ -3,6 +3,7 @@ mod test {
     use std::collections::HashMap;
 
     use crate::{
+        code::stringify,
         compiler::Compiler,
         interpreter::object::Object,
         lexer::Lexer,
@@ -249,7 +250,6 @@ mod test {
         ];
 
         for test_case in test_cases {
-            println!("{}", test_case.input);
             run_vm_test(test_case);
         }
     }
@@ -406,6 +406,30 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_function_call_no_arg() {
+        let test_cases = vec![
+            TestCase {
+                input: "let fivePlusTen = fn () { 5 + 10; }; fivePlusTen();".to_string(),
+                expected: Object::Integer(15),
+            },
+            TestCase {
+                input: "let one = fn () { 1; }; let two = fn() { 2; }; one() + two();".to_string(),
+                expected: Object::Integer(3),
+            },
+            TestCase {
+                input:
+                    "let a = fn() { 1 }; let b = fn() { a() + 1 }; let c = fn() { b() + 1 }; c();"
+                        .to_string(),
+                expected: Object::Integer(3),
+            },
+        ];
+
+        for test_case in test_cases {
+            run_vm_test(test_case);
+        }
+    }
+
     fn parse(input: String) -> Program {
         let lexer = Lexer::new(&input);
         let mut parser = Parser::new(lexer);
@@ -433,21 +457,18 @@ mod test {
         let mut compiler = Compiler::new();
 
         if let Err(err) = compiler.compile(program) {
-            panic!("an error occured in the compiler: {}", err);
+            panic!("an error occurred in the compiler: {}", err);
         }
+
+        println!(
+            "Compiled:\n{}",
+            stringify(compiler.bytecode().instructions).unwrap()
+        );
 
         let mut vm = VM::new();
-        let vm_result = vm.run(compiler.bytecode());
-
-        if vm_result.is_err() {
-            assert!(
-                false,
-                "An error occurred in the VM: {}",
-                vm_result.unwrap_err()
-            );
+        match vm.run(compiler.bytecode()) {
+            Ok(object) => assert_eq!(*object, test_case.expected),
+            Err(err) => panic!("An error occurred in the VM: {}", err),
         }
-
-        let stack_element = vm.last_popped_stack_elem();
-        assert_eq!(stack_element, test_case.expected);
     }
 }

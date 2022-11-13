@@ -95,12 +95,9 @@ pub fn start_vm() -> ! {
             continue;
         }
 
-        if let Err(err) = vm.run(compiler.bytecode()) {
-            println!("A runtime error occurred:\n{}", err);
-            continue;
+        match vm.run(compiler.bytecode()) {
+            Ok(obj) => println!("{}", obj.inspect()),
+            Err(err) => println!("A runtime error occurred:\n{}", err),
         }
-
-        let stacktop = vm.last_popped_stack_elem();
-        println!("{}", stacktop.inspect());
     }
 }
