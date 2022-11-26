@@ -57,6 +57,8 @@ make_opcodes!([
     Hash: 2,
     GetGlobal: 2,
     SetGlobal: 2,
+    GetLocal: 2,
+    SetLocal: 2,
     Jump: 2,
     JumpNotTruthy: 2,
     Call: 0,

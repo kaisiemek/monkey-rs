@@ -142,6 +142,8 @@ impl VM {
                 self.push(return_value)?;
                 return Ok(false);
             }
+            Opcode::GetLocal => todo!(),
+            Opcode::SetLocal => todo!(),
         }
         Ok(true)
     }

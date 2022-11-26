@@ -1,11 +1,15 @@
 #[cfg(test)]
 mod test {
-    use std::collections::{HashMap, HashSet};
+    use std::{
+        collections::{HashMap, HashSet},
+        rc::Rc,
+        vec,
+    };
 
     use crate::{
         code::{make, stringify, Instructions, Opcode},
         compiler::{
-            symbol_table::{Symbol, SymbolScope, SymbolTable},
+            symbol_table::{self, Symbol, SymbolScope, SymbolTable},
             Compiler,
         },
         interpreter::object::{Inspectable, Object},
@@ -258,61 +262,6 @@ mod test {
 
         for test_case in test_cases {
             run_compiler_test(test_case);
-        }
-    }
-
-    #[test]
-    fn test_symbol_table_define() {
-        let expected: HashMap<String, Symbol> = HashMap::from([
-            (
-                "a".to_string(),
-                Symbol {
-                    name: "a".to_string(),
-                    scope: SymbolScope::Global,
-                    index: 0,
-                },
-            ),
-            (
-                "b".to_string(),
-                Symbol {
-                    name: "b".to_string(),
-                    scope: SymbolScope::Global,
-                    index: 1,
-                },
-            ),
-        ]);
-
-        let mut global = SymbolTable::new();
-
-        let a = global.define("a");
-        assert_eq!(a, &expected["a"]);
-
-        let b = global.define("b");
-        assert_eq!(b, &expected["b"]);
-    }
-
-    #[test]
-    fn test_symbol_table_resolve_global() {
-        let expected = [
-            Symbol {
-                name: "a".to_string(),
-                scope: SymbolScope::Global,
-                index: 0,
-            },
-            Symbol {
-                name: "b".to_string(),
-                scope: SymbolScope::Global,
-                index: 1,
-            },
-        ];
-        let mut global = SymbolTable::new();
-        global.define("a");
-        global.define("b");
-
-        for sym in expected {
-            let result = global.resolve(&sym.name);
-            assert!(result.is_some());
-            assert_eq!(result.unwrap(), &sym);
         }
     }
 
@@ -663,6 +612,362 @@ mod test {
 
         for test_case in test_cases {
             run_compiler_test(test_case);
+        }
+    }
+
+    #[test]
+    fn test_let_statements_scopes() {
+        let test_cases = vec![
+            TestCase {
+                input: "let num = 55; fn() { num }".to_string(),
+                expected_constants: vec![
+                    Object::Integer(55),
+                    Object::CompiledFunction(
+                        vec![
+                            make(Opcode::GetGlobal, vec![0]),
+                            make(Opcode::ReturnValue, vec![]),
+                        ]
+                        .concat(),
+                    ),
+                ],
+                expected_instructions: vec![
+                    make(Opcode::Constant, vec![0]),
+                    make(Opcode::SetGlobal, vec![0]),
+                    make(Opcode::Constant, vec![1]),
+                    make(Opcode::Pop, vec![]),
+                ],
+            },
+            TestCase {
+                input: "fn() { let num = 55; num; }".to_string(),
+                expected_constants: vec![
+                    Object::Integer(55),
+                    Object::CompiledFunction(
+                        vec![
+                            make(Opcode::Constant, vec![0]),
+                            make(Opcode::SetLocal, vec![0]),
+                            make(Opcode::GetLocal, vec![0]),
+                            make(Opcode::ReturnValue, vec![]),
+                        ]
+                        .concat(),
+                    ),
+                ],
+                expected_instructions: vec![
+                    make(Opcode::Constant, vec![1]),
+                    make(Opcode::Pop, vec![]),
+                ],
+            },
+            TestCase {
+                input: "fn() { let a = 55; let b = 77; a + b; }".to_string(),
+                expected_constants: vec![
+                    Object::Integer(55),
+                    Object::Integer(77),
+                    Object::CompiledFunction(
+                        vec![
+                            make(Opcode::Constant, vec![0]),
+                            make(Opcode::SetLocal, vec![0]),
+                            make(Opcode::Constant, vec![1]),
+                            make(Opcode::SetLocal, vec![1]),
+                            make(Opcode::GetLocal, vec![0]),
+                            make(Opcode::GetLocal, vec![1]),
+                            make(Opcode::Add, vec![]),
+                            make(Opcode::ReturnValue, vec![]),
+                        ]
+                        .concat(),
+                    ),
+                ],
+                expected_instructions: vec![
+                    make(Opcode::Constant, vec![2]),
+                    make(Opcode::Pop, vec![]),
+                ],
+            },
+        ];
+
+        for test_case in test_cases {
+            run_compiler_test(test_case);
+        }
+    }
+
+    #[test]
+    fn test_compiler_scopes() {
+        let mut compiler = Compiler::new();
+        assert_eq!(compiler.scope_index, 0);
+
+        let symbol_table = compiler.symbol_table.clone();
+        compiler.emit(Opcode::Mult, vec![]);
+
+        compiler.enter_scope();
+        compiler.emit(Opcode::Sub, vec![]);
+        assert_eq!(compiler.scopes[compiler.scope_index].instructions.len(), 1);
+        assert_eq!(
+            compiler.scopes[compiler.scope_index]
+                .last_instruction
+                .opcode,
+            Opcode::Sub
+        );
+
+        assert_eq!(
+            compiler.symbol_table.outer.as_ref().unwrap().as_ref(),
+            &symbol_table
+        );
+
+        compiler.leave_scope();
+        assert_eq!(compiler.scope_index, 0);
+        assert_eq!(&compiler.symbol_table, &symbol_table);
+        assert!(compiler.symbol_table.outer.as_ref().is_none());
+
+        compiler.emit(Opcode::Add, vec![]);
+        assert_eq!(compiler.scopes[compiler.scope_index].instructions.len(), 2);
+        assert_eq!(
+            compiler.scopes[compiler.scope_index]
+                .last_instruction
+                .opcode,
+            Opcode::Add
+        );
+        assert_eq!(
+            compiler.scopes[compiler.scope_index]
+                .previous_instruction
+                .opcode,
+            Opcode::Mult
+        );
+    }
+
+    #[test]
+    fn test_symbol_table_define() {
+        let expected: HashMap<String, Symbol> = HashMap::from([
+            (
+                "a".to_string(),
+                Symbol {
+                    name: "a".to_string(),
+                    scope: SymbolScope::Global,
+                    index: 0,
+                },
+            ),
+            (
+                "b".to_string(),
+                Symbol {
+                    name: "b".to_string(),
+                    scope: SymbolScope::Global,
+                    index: 1,
+                },
+            ),
+            (
+                "c".to_string(),
+                Symbol {
+                    name: "c".to_string(),
+                    scope: SymbolScope::Local,
+                    index: 0,
+                },
+            ),
+            (
+                "d".to_string(),
+                Symbol {
+                    name: "d".to_string(),
+                    scope: SymbolScope::Local,
+                    index: 1,
+                },
+            ),
+            (
+                "e".to_string(),
+                Symbol {
+                    name: "e".to_string(),
+                    scope: SymbolScope::Local,
+                    index: 0,
+                },
+            ),
+            (
+                "f".to_string(),
+                Symbol {
+                    name: "f".to_string(),
+                    scope: SymbolScope::Local,
+                    index: 1,
+                },
+            ),
+        ]);
+
+        let mut global = SymbolTable::new();
+
+        let a = global.define("a");
+        assert_eq!(a, &expected["a"]);
+
+        let b = global.define("b");
+        assert_eq!(b, &expected["b"]);
+
+        let mut first_local = SymbolTable::with_enclosed(Rc::from(global));
+        let c = first_local.define("c");
+        assert_eq!(c, &expected["c"]);
+
+        let d = first_local.define("d");
+        assert_eq!(d, &expected["d"]);
+
+        let mut second_local = SymbolTable::with_enclosed(Rc::from(first_local));
+        let e = second_local.define("e");
+        assert_eq!(e, &expected["e"]);
+
+        let f = second_local.define("f");
+        assert_eq!(f, &expected["f"]);
+    }
+
+    #[test]
+    fn test_symbol_table_resolve_global() {
+        let expected = [
+            Symbol {
+                name: "a".to_string(),
+                scope: SymbolScope::Global,
+                index: 0,
+            },
+            Symbol {
+                name: "b".to_string(),
+                scope: SymbolScope::Global,
+                index: 1,
+            },
+        ];
+        let mut global = SymbolTable::new();
+        global.define("a");
+        global.define("b");
+
+        for sym in expected {
+            let result = global.resolve(&sym.name);
+            assert!(result.is_some());
+            assert_eq!(result.unwrap(), &sym);
+        }
+    }
+
+    #[test]
+    fn test_symbol_table_resolve_local() {
+        let mut global = SymbolTable::new();
+        global.define("a");
+        global.define("b");
+
+        let mut local = SymbolTable::with_enclosed(Rc::from(global));
+        local.define("c");
+        local.define("d");
+
+        let expected = vec![
+            Symbol {
+                name: "a".to_string(),
+                scope: SymbolScope::Global,
+                index: 0,
+            },
+            Symbol {
+                name: "b".to_string(),
+                scope: SymbolScope::Global,
+                index: 1,
+            },
+            Symbol {
+                name: "c".to_string(),
+                scope: SymbolScope::Local,
+                index: 0,
+            },
+            Symbol {
+                name: "d".to_string(),
+                scope: SymbolScope::Local,
+                index: 1,
+            },
+        ];
+
+        for symbol in expected {
+            let Some(resolved_symbol) = local.resolve(&symbol.name) else {
+                panic!("Can not resolve {}", symbol.name);
+            };
+
+            assert_eq!(symbol, *resolved_symbol);
+        }
+    }
+
+    #[test]
+    fn test_symbol_table_resolve_nested_local() {
+        struct TestCase {
+            table: Rc<SymbolTable>,
+            expected_symbols: Vec<Symbol>,
+        }
+
+        let mut global = SymbolTable::new();
+        global.define("a");
+        global.define("b");
+
+        let mut first_local = SymbolTable::with_enclosed(Rc::new(global));
+        first_local.define("c");
+        first_local.define("d");
+
+        let first_local_rc = Rc::new(first_local);
+
+        let mut second_local = SymbolTable::with_enclosed(first_local_rc.clone());
+        second_local.define("e");
+        second_local.define("f");
+
+        let test_cases = vec![
+            TestCase {
+                table: first_local_rc,
+                expected_symbols: vec![
+                    Symbol {
+                        name: "a".to_string(),
+                        scope: SymbolScope::Global,
+                        index: 0,
+                    },
+                    Symbol {
+                        name: "b".to_string(),
+                        scope: SymbolScope::Global,
+                        index: 1,
+                    },
+                    Symbol {
+                        name: "c".to_string(),
+                        scope: SymbolScope::Local,
+                        index: 0,
+                    },
+                    Symbol {
+                        name: "d".to_string(),
+                        scope: SymbolScope::Local,
+                        index: 1,
+                    },
+                ],
+            },
+            TestCase {
+                table: Rc::from(second_local),
+                expected_symbols: vec![
+                    Symbol {
+                        name: "a".to_string(),
+                        scope: SymbolScope::Global,
+                        index: 0,
+                    },
+                    Symbol {
+                        name: "b".to_string(),
+                        scope: SymbolScope::Global,
+                        index: 1,
+                    },
+                    Symbol {
+                        name: "c".to_string(),
+                        scope: SymbolScope::Local,
+                        index: 0,
+                    },
+                    Symbol {
+                        name: "d".to_string(),
+                        scope: SymbolScope::Local,
+                        index: 1,
+                    },
+                    Symbol {
+                        name: "e".to_string(),
+                        scope: SymbolScope::Local,
+                        index: 0,
+                    },
+                    Symbol {
+                        name: "f".to_string(),
+                        scope: SymbolScope::Local,
+                        index: 1,
+                    },
+                ],
+            },
+        ];
+
+        for test_case in test_cases {
+            let table = test_case.table;
+            let expected = test_case.expected_symbols;
+
+            for symbol in expected {
+                let Some(resolved_symbol) = table.resolve(&symbol.name) else {
+                panic!("Can not resolve {}", symbol.name);
+            };
+                assert_eq!(symbol, *resolved_symbol);
+            }
         }
     }
 

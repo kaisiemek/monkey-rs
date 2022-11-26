@@ -1,13 +1,15 @@
 mod symbol_table;
 mod test;
 
+use std::rc::Rc;
+
 use crate::{
     code::{make, Instructions, Opcode},
     interpreter::object::Object,
     parser::ast::{Expression, Program, Statement},
 };
 
-use self::symbol_table::SymbolTable;
+use self::symbol_table::{Symbol, SymbolTable};
 
 pub struct Compiler {
     scopes: Vec<CompilationScope>,
@@ -72,8 +74,13 @@ impl Compiler {
                 value,
             } => {
                 self.compile_expression(value)?;
-                let index = self.add_symbol(&identifier);
-                self.emit(Opcode::SetGlobal, vec![index as u16]);
+                let symbol = self.add_symbol(&identifier);
+                let opcode = match symbol.scope {
+                    symbol_table::SymbolScope::Global => Opcode::SetGlobal,
+                    symbol_table::SymbolScope::Local => Opcode::SetLocal,
+                };
+
+                self.emit(opcode, vec![symbol.index as u16]);
             }
             Statement::Return { token: _, value } => {
                 self.compile_expression(value)?;
@@ -93,8 +100,13 @@ impl Compiler {
     fn compile_expression(&mut self, expression: Expression) -> Result<(), String> {
         match expression {
             Expression::Identifier { token: _, value } => {
-                let index = self.resolve_symbol(&value)?;
-                self.emit(Opcode::GetGlobal, vec![index]);
+                let symbol = self.resolve_symbol(&value)?;
+                let opcode = match symbol.scope {
+                    symbol_table::SymbolScope::Global => Opcode::GetGlobal,
+                    symbol_table::SymbolScope::Local => Opcode::GetLocal,
+                };
+
+                self.emit(opcode, vec![symbol.index as u16]);
             }
             Expression::IntLiteral { token: _, value } => {
                 let integer = Object::Integer(value);
@@ -277,15 +289,14 @@ impl Compiler {
         self.scope_index = 0;
     }
 
-    fn add_symbol(&mut self, name: &str) -> u16 {
-        let symbol = self.symbol_table.define(name);
-        symbol.index as u16
+    fn add_symbol(&mut self, name: &str) -> Symbol {
+        self.symbol_table.define(name).clone()
     }
 
-    fn resolve_symbol(&mut self, name: &str) -> Result<u16, String> {
+    fn resolve_symbol(&mut self, name: &str) -> Result<Symbol, String> {
         let symbol = self.symbol_table.resolve(name);
         match symbol {
-            Some(symbol) => Ok(symbol.index as u16),
+            Some(symbol) => Ok(symbol.clone()),
             None => Err(format!("Undefined symbol {}!", name)),
         }
     }
@@ -349,42 +360,15 @@ impl Compiler {
         let scope = CompilationScope::default();
         self.scopes.push(scope);
         self.scope_index += 1;
+        self.symbol_table = SymbolTable::with_enclosed(Rc::from(self.symbol_table.clone()));
     }
 
     fn leave_scope(&mut self) -> Option<Instructions> {
         let scope = self.scopes.pop()?;
         self.scope_index -= 1;
+        // Please do not look at these lines of code, I'm very ashamed of it
+        let outer = self.symbol_table.outer.take().unwrap();
+        self.symbol_table = Rc::try_unwrap(outer).unwrap();
         Some(scope.instructions)
     }
-}
-
-#[test]
-fn test_compiler_scopes() {
-    let mut compiler = Compiler::new();
-    assert_eq!(compiler.scope_index, 0);
-    compiler.emit(Opcode::Mult, vec![]);
-    compiler.enter_scope();
-    assert_eq!(compiler.scope_index, 1);
-    compiler.emit(Opcode::Sub, vec![]);
-
-    assert_eq!(compiler.scopes[compiler.scope_index].instructions.len(), 1);
-    let last = compiler.scopes[compiler.scope_index]
-        .last_instruction
-        .clone();
-    assert_eq!(last.opcode, Opcode::Sub);
-    compiler.leave_scope();
-    assert_eq!(compiler.scope_index, 0);
-
-    compiler.emit(Opcode::Add, vec![]);
-    assert_eq!(compiler.scopes[compiler.scope_index].instructions.len(), 2);
-
-    let last = compiler.scopes[compiler.scope_index]
-        .last_instruction
-        .clone();
-    assert_eq!(last.opcode, Opcode::Add);
-
-    let previous = compiler.scopes[compiler.scope_index]
-        .previous_instruction
-        .clone();
-    assert_eq!(previous.opcode, Opcode::Mult);
 }
