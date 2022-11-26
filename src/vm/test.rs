@@ -3,12 +3,11 @@ mod test {
     use std::collections::HashMap;
 
     use crate::{
-        code::stringify,
         compiler::Compiler,
         interpreter::object::Object,
         lexer::Lexer,
         parser::{ast::Program, Parser},
-        vm::VM,
+        vm::VM, code,
     };
 
     struct TestCase {

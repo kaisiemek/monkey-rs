@@ -9,7 +9,7 @@ mod test {
     use crate::{
         code::{make, stringify, Instructions, Opcode},
         compiler::{
-            symbol_table::{self, Symbol, SymbolScope, SymbolTable},
+            symbol_table::{Symbol, SymbolScope, SymbolTable},
             Compiler,
         },
         interpreter::object::{Inspectable, Object},

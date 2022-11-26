@@ -51,7 +51,7 @@ impl SymbolTable {
 
         self.store.insert(name.to_string(), symbol);
         self.num_definitions += 1;
-        return self.store.get(name).unwrap();
+        self.store.get(name).unwrap()
     }
 
     pub fn resolve(&self, name: &str) -> Option<&Symbol> {

@@ -285,7 +285,8 @@ impl Compiler {
     // do not clear the symbol table and constants for multiple passes in the REPL
     fn clear(&mut self) {
         self.scopes.clear();
-        self.enter_scope();
+        let scope = CompilationScope::default();
+        self.scopes.push(scope);
         self.scope_index = 0;
     }
 
