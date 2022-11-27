@@ -152,9 +152,13 @@ impl Compiler {
                     self.emit(Opcode::Return, vec![]);
                 }
 
+                let num_locals = self.symbol_table.num_definitions;
                 let instructions = self.leave_scope().unwrap();
 
-                let compiled_function = Object::CompiledFunction(instructions);
+                let compiled_function = Object::CompiledFunction {
+                    instructions,
+                    num_locals,
+                };
                 let constant_index = self.add_constant(compiled_function) as u16;
                 self.emit(Opcode::Constant, vec![constant_index]);
             }

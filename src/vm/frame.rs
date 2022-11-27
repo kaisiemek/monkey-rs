@@ -3,14 +3,16 @@ use crate::code::Instructions;
 #[derive(Clone)]
 pub struct Frame {
     pub instructions: Instructions,
-    pub ip: usize,
+    pub instruction_ptr: usize,
+    pub base_ptr: usize,
 }
 
 impl Frame {
-    pub fn new(instructions: Instructions) -> Self {
+    pub fn new(instructions: Instructions, base_ptr: usize) -> Self {
         Frame {
             instructions,
-            ip: 0,
+            instruction_ptr: 0,
+            base_ptr,
         }
     }
 }

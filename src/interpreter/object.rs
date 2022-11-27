@@ -23,7 +23,10 @@ pub enum Object {
         function: BuiltinFunction,
     },
     Null,
-    CompiledFunction(Instructions),
+    CompiledFunction {
+        instructions: Instructions,
+        num_locals: usize,
+    },
 }
 
 pub trait Inspectable {
@@ -61,8 +64,15 @@ impl Inspectable for Object {
             }
             Object::Null => String::from("null"),
             Object::BuiltIn { name, .. } => format!("Built-in function {}", name),
-            Object::CompiledFunction(instructions) => {
-                format!("Compiled function: {:?}", instructions)
+
+            Object::CompiledFunction {
+                instructions,
+                num_locals,
+            } => {
+                format!(
+                    "Compiled function ({} locals): {:?}",
+                    num_locals, instructions
+                )
             }
         }
     }

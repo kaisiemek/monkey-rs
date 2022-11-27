@@ -37,14 +37,14 @@ impl VM {
     pub fn run(&mut self, bytecode: Bytecode) -> Result<&Object, String> {
         self.clear();
         // Put the main function in the call frame
-        self.push_frame(Frame::new(bytecode.instructions))?;
+        self.push_frame(Frame::new(bytecode.instructions, 0))?;
         self.constants = bytecode.constants;
 
-        while self.current_frame().ip < self.current_frame().instructions.len() {
+        while self.current_frame().instruction_ptr < self.current_frame().instructions.len() {
             let mut frame = self.current_frame().clone();
-            let op = Opcode::try_from(frame.instructions[frame.ip])?;
-            self.current_frame().ip += 1;
-            frame.ip += 1;
+            let op = Opcode::try_from(frame.instructions[frame.instruction_ptr])?;
+            self.current_frame().instruction_ptr += 1;
+            frame.instruction_ptr += 1;
             let update_frame = self.execute_op(op, &mut frame)?;
             if update_frame {
                 *self.current_frame() = frame;
@@ -57,19 +57,20 @@ impl VM {
     fn execute_op(&mut self, op: Opcode, frame: &mut Frame) -> Result<bool, String> {
         match op {
             Opcode::Constant => {
-                let const_index = read_u16(&frame.instructions[frame.ip..frame.ip + 2]);
+                let const_index =
+                    read_u16(&frame.instructions[frame.instruction_ptr..frame.instruction_ptr + 2]);
                 self.push_constant(const_index as usize)?;
-                frame.ip += 2;
+                frame.instruction_ptr += 2;
             }
             Opcode::Array => {
-                let num_elements = read_u16(&frame.instructions[frame.ip..]);
-                frame.ip += 2;
+                let num_elements = read_u16(&frame.instructions[frame.instruction_ptr..]);
+                frame.instruction_ptr += 2;
                 let array = self.build_array(num_elements as usize)?;
                 self.push(array)?;
             }
             Opcode::Hash => {
-                let num_elements = read_u16(&frame.instructions[frame.ip..]) / 2;
-                frame.ip += 2;
+                let num_elements = read_u16(&frame.instructions[frame.instruction_ptr..]) / 2;
+                frame.instruction_ptr += 2;
                 let hash = self.build_hash(num_elements as usize)?;
                 self.push(hash)?;
             }
@@ -89,15 +90,15 @@ impl VM {
                 self.last_popped = self.pop()?;
             }
             Opcode::Jump => {
-                let position = read_u16(&frame.instructions[frame.ip..]);
-                frame.ip = position as usize;
+                let position = read_u16(&frame.instructions[frame.instruction_ptr..]);
+                frame.instruction_ptr = position as usize;
             }
             Opcode::JumpNotTruthy => {
-                let position = read_u16(&frame.instructions[frame.ip..]);
-                frame.ip += 2;
+                let position = read_u16(&frame.instructions[frame.instruction_ptr..]);
+                frame.instruction_ptr += 2;
                 let condition = self.pop()?;
                 if !(is_truthy(&condition)) {
-                    frame.ip = position as usize;
+                    frame.instruction_ptr = position as usize;
                 }
             }
             Opcode::True => {
@@ -110,13 +111,13 @@ impl VM {
                 self.push(Object::Null)?;
             }
             Opcode::GetGlobal => {
-                let index = read_u16(&frame.instructions[frame.ip..]);
-                frame.ip += 2;
+                let index = read_u16(&frame.instructions[frame.instruction_ptr..]);
+                frame.instruction_ptr += 2;
                 self.push(self.globals[index as usize].clone())?;
             }
             Opcode::SetGlobal => {
-                let index = read_u16(&frame.instructions[frame.ip..]);
-                frame.ip += 2;
+                let index = read_u16(&frame.instructions[frame.instruction_ptr..]);
+                frame.instruction_ptr += 2;
                 self.globals[index as usize] = self.pop()?;
             }
             Opcode::Index => {
@@ -125,25 +126,50 @@ impl VM {
                 self.execute_index_expression(left, index)?;
             }
             Opcode::Call => match self.pop()? {
-                Object::CompiledFunction(instructions) => {
-                    self.push_frame(Frame::new(instructions))?;
+                Object::CompiledFunction {
+                    instructions,
+                    num_locals,
+                } => {
+                    self.push_frame(Frame::new(instructions, self.stack.len()))?;
+                    // Reserve space for num_locals local values on the stack
+                    for _ in 1..=num_locals {
+                        self.stack.push(Object::default());
+                    }
                     return Ok(false);
                 }
                 other => return Err(format!("Can not call object of type {}", other.type_str())),
             },
             Opcode::Return => {
-                self.pop_frame()?;
+                let base_ptr = self.pop_frame()?.base_ptr;
+                while self.stack.len() > base_ptr {
+                    self.pop()?;
+                }
                 self.push(Object::Null)?;
                 return Ok(false);
             }
             Opcode::ReturnValue => {
                 let return_value = self.pop()?;
-                self.pop_frame()?;
+                let base_ptr = self.pop_frame()?.base_ptr;
+                while self.stack.len() > base_ptr {
+                    self.pop()?;
+                }
                 self.push(return_value)?;
                 return Ok(false);
             }
-            Opcode::GetLocal => todo!(),
-            Opcode::SetLocal => todo!(),
+            Opcode::GetLocal => {
+                let index = read_u16(&frame.instructions[frame.instruction_ptr..]);
+                frame.instruction_ptr += 2;
+
+                let base_ptr = self.current_frame().base_ptr;
+                self.push(self.stack[base_ptr + index as usize].clone())?;
+            }
+            Opcode::SetLocal => {
+                let index = read_u16(&frame.instructions[frame.instruction_ptr..]);
+                frame.instruction_ptr += 2;
+
+                let base_ptr = self.current_frame().base_ptr;
+                self.stack[base_ptr + index as usize] = self.pop()?;
+            }
         }
         Ok(true)
     }

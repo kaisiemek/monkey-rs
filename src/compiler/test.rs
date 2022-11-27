@@ -495,15 +495,16 @@ mod test {
                 expected_constants: vec![
                     Object::Integer(5),
                     Object::Integer(10),
-                    Object::CompiledFunction(
-                        vec![
+                    Object::CompiledFunction {
+                        instructions: vec![
                             make(Opcode::Constant, vec![0]),
                             make(Opcode::Constant, vec![1]),
                             make(Opcode::Add, vec![]),
                             make(Opcode::ReturnValue, vec![]),
                         ]
                         .concat(),
-                    ),
+                        num_locals: 0,
+                    },
                 ],
                 expected_instructions: vec![
                     make(Opcode::Constant, vec![2]),
@@ -515,15 +516,16 @@ mod test {
                 expected_constants: vec![
                     Object::Integer(5),
                     Object::Integer(10),
-                    Object::CompiledFunction(
-                        vec![
+                    Object::CompiledFunction {
+                        instructions: vec![
                             make(Opcode::Constant, vec![0]),
                             make(Opcode::Constant, vec![1]),
                             make(Opcode::Add, vec![]),
                             make(Opcode::ReturnValue, vec![]),
                         ]
                         .concat(),
-                    ),
+                        num_locals: 0,
+                    },
                 ],
                 expected_instructions: vec![
                     make(Opcode::Constant, vec![2]),
@@ -535,15 +537,16 @@ mod test {
                 expected_constants: vec![
                     Object::Integer(1),
                     Object::Integer(2),
-                    Object::CompiledFunction(
-                        vec![
+                    Object::CompiledFunction {
+                        instructions: vec![
                             make(Opcode::Constant, vec![0]),
                             make(Opcode::Pop, vec![]),
                             make(Opcode::Constant, vec![1]),
                             make(Opcode::ReturnValue, vec![]),
                         ]
                         .concat(),
-                    ),
+                        num_locals: 0,
+                    },
                 ],
                 expected_instructions: vec![
                     make(Opcode::Constant, vec![2]),
@@ -552,9 +555,10 @@ mod test {
             },
             TestCase {
                 input: "fn() { }".to_string(),
-                expected_constants: vec![Object::CompiledFunction(
-                    vec![make(Opcode::Return, vec![])].concat(),
-                )],
+                expected_constants: vec![Object::CompiledFunction {
+                    instructions: vec![make(Opcode::Return, vec![])].concat(),
+                    num_locals: 0,
+                }],
                 expected_instructions: vec![
                     make(Opcode::Constant, vec![0]),
                     make(Opcode::Pop, vec![]),
@@ -574,13 +578,14 @@ mod test {
                 input: "fn() { 24 }();".to_string(),
                 expected_constants: vec![
                     Object::Integer(24),
-                    Object::CompiledFunction(
-                        vec![
+                    Object::CompiledFunction {
+                        instructions: vec![
                             make(Opcode::Constant, vec![0]),
                             make(Opcode::ReturnValue, vec![]),
                         ]
                         .concat(),
-                    ),
+                        num_locals: 0,
+                    },
                 ],
                 expected_instructions: vec![
                     make(Opcode::Constant, vec![1]),
@@ -592,13 +597,14 @@ mod test {
                 input: "let noArg = fn() { 24 }; noArg();".to_string(),
                 expected_constants: vec![
                     Object::Integer(24),
-                    Object::CompiledFunction(
-                        vec![
+                    Object::CompiledFunction {
+                        instructions: vec![
                             make(Opcode::Constant, vec![0]),
                             make(Opcode::ReturnValue, vec![]),
                         ]
                         .concat(),
-                    ),
+                        num_locals: 0,
+                    },
                 ],
                 expected_instructions: vec![
                     make(Opcode::Constant, vec![1]),
@@ -622,13 +628,14 @@ mod test {
                 input: "let num = 55; fn() { num }".to_string(),
                 expected_constants: vec![
                     Object::Integer(55),
-                    Object::CompiledFunction(
-                        vec![
+                    Object::CompiledFunction {
+                        instructions: vec![
                             make(Opcode::GetGlobal, vec![0]),
                             make(Opcode::ReturnValue, vec![]),
                         ]
                         .concat(),
-                    ),
+                        num_locals: 0,
+                    },
                 ],
                 expected_instructions: vec![
                     make(Opcode::Constant, vec![0]),
@@ -641,15 +648,16 @@ mod test {
                 input: "fn() { let num = 55; num; }".to_string(),
                 expected_constants: vec![
                     Object::Integer(55),
-                    Object::CompiledFunction(
-                        vec![
+                    Object::CompiledFunction {
+                        instructions: vec![
                             make(Opcode::Constant, vec![0]),
                             make(Opcode::SetLocal, vec![0]),
                             make(Opcode::GetLocal, vec![0]),
                             make(Opcode::ReturnValue, vec![]),
                         ]
                         .concat(),
-                    ),
+                        num_locals: 1,
+                    },
                 ],
                 expected_instructions: vec![
                     make(Opcode::Constant, vec![1]),
@@ -661,8 +669,8 @@ mod test {
                 expected_constants: vec![
                     Object::Integer(55),
                     Object::Integer(77),
-                    Object::CompiledFunction(
-                        vec![
+                    Object::CompiledFunction {
+                        instructions: vec![
                             make(Opcode::Constant, vec![0]),
                             make(Opcode::SetLocal, vec![0]),
                             make(Opcode::Constant, vec![1]),
@@ -673,7 +681,8 @@ mod test {
                             make(Opcode::ReturnValue, vec![]),
                         ]
                         .concat(),
-                    ),
+                        num_locals: 2,
+                    },
                 ],
                 expected_instructions: vec![
                     make(Opcode::Constant, vec![2]),

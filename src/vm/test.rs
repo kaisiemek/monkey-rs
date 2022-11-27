@@ -483,7 +483,81 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_calling_functions_with_bindings() {
+        let test_cases = vec![
+            TestCase { 
+                input: concat!(
+                    "let one = fn() { let one = 1; one }; ", 
+                    "one();", 
+                ).to_string(),
+                expected: Object::Integer(1) 
+            },
+            TestCase { 
+                input: concat!(
+                    "let oneAndTwo = fn() { ",
+                    "    let one = 1; ", 
+                    "    let two = 2; ",
+                    "    one + two; ",
+                    "};",
+                    "oneAndTwo(); ", 
+                ).to_string(),
+                expected: Object::Integer(3) 
+            },
+            TestCase { 
+                input: concat!(
+                    "let oneAndTwo = fn() { ",
+                    "    let one = 1; ",
+                    "    let two = 2; ",
+                    "    one + two; ",
+                    "}; ",
+                    "let threeAndFour = fn() { ",
+                    "    let three = 3; ",
+                    "    let four = 4; ",
+                    "    three + four; ",
+                    "}; ",
+                    "oneAndTwo() + threeAndFour(); ", 
+                ).to_string(),
+                expected: Object::Integer(10) 
+            },
+            TestCase { 
+                input: concat!(
+                    "let firstFoobar = fn() { ",
+                    "    let foobar = 50; ",
+                    "    foobar; ",
+                    "}; ",
+                    "let secondFoobar = fn() { ",
+                    "    let foobar = 100; ",
+                    "    foobar; ",
+                    "}; ",
+                    "firstFoobar() + secondFoobar(); ",
+                ).to_string(),
+                expected: Object::Integer(150) 
+            },
+            TestCase { 
+                input: concat!(
+                    "let globalSeed = 50; ",
+                    "let minusOne = fn() { ",
+                    "    let num = 1; ",
+                    "    globalSeed - num; ",
+                    "}; ",
+                    "let minusTwo = fn() { ",
+                    "    let num = 2; ",
+                    "    globalSeed - num; ",
+                    "}; ",
+                    "minusOne() + minusTwo(); ",
+                ).to_string(),
+                expected: Object::Integer(97) 
+            }
+        ];
+
+        for test_case in test_cases {
+            run_vm_test(test_case);
+        }
+    }
+
     fn parse(input: String) -> Program {
+        println!("INPUT {}", input);
         let lexer = Lexer::new(&input);
         let mut parser = Parser::new(lexer);
 
