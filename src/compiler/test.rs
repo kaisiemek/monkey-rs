@@ -589,7 +589,7 @@ mod test {
                 ],
                 expected_instructions: vec![
                     make(Opcode::Constant, vec![1]),
-                    make(Opcode::Call, vec![]),
+                    make(Opcode::Call, vec![0]),
                     make(Opcode::Pop, vec![]),
                 ],
             },
@@ -610,7 +610,59 @@ mod test {
                     make(Opcode::Constant, vec![1]),
                     make(Opcode::SetGlobal, vec![0]),
                     make(Opcode::GetGlobal, vec![0]),
-                    make(Opcode::Call, vec![]),
+                    make(Opcode::Call, vec![0]),
+                    make(Opcode::Pop, vec![]),
+                ],
+            },
+            TestCase {
+                input: "let oneArg = fn(a) { a }; oneArg(24);".to_string(),
+                expected_constants: vec![
+                    Object::CompiledFunction {
+                        instructions: vec![
+                            make(Opcode::GetLocal, vec![0]),
+                            make(Opcode::ReturnValue, vec![]),
+                        ].concat(),
+                        num_locals: 1,
+                    },
+                    Object::Integer(24),
+                ],
+                expected_instructions: vec![
+                    make(Opcode::Constant, vec![0]),
+                    make(Opcode::SetGlobal, vec![0]),
+                    make(Opcode::GetGlobal, vec![0]),
+                    make(Opcode::Constant, vec![1]),
+                    make(Opcode::Call, vec![1]),
+                    make(Opcode::Pop, vec![]),
+                ],
+            },
+            TestCase {
+                input: "let manyArg = fn(a, b, c) { a; b; c; }; manyArg(24, 25, 26);".to_string(),
+                expected_constants: vec![
+                    Object::CompiledFunction {
+                        instructions: vec![
+                            make(Opcode::GetLocal, vec![0]),
+                            make(Opcode::Pop, vec![]),
+                            make(Opcode::GetLocal, vec![1]),
+                            make(Opcode::Pop, vec![]),
+                            make(Opcode::GetLocal, vec![2]),
+                            make(Opcode::ReturnValue, vec![])
+                            
+                            
+                        ].concat(),
+                        num_locals: 3,
+                    },
+                    Object::Integer(24),
+                    Object::Integer(25),
+                    Object::Integer(26),
+                ],
+                expected_instructions: vec![
+                    make(Opcode::Constant, vec![0]),
+                    make(Opcode::SetGlobal, vec![0]),
+                    make(Opcode::GetGlobal, vec![0]),
+                    make(Opcode::Constant, vec![1]),
+                    make(Opcode::Constant, vec![2]),
+                    make(Opcode::Constant, vec![3]),
+                    make(Opcode::Call, vec![3]),
                     make(Opcode::Pop, vec![]),
                 ],
             },

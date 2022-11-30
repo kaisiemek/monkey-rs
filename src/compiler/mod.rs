@@ -143,6 +143,11 @@ impl Compiler {
                 body,
             } => {
                 self.enter_scope();
+
+                for param in parameters {
+                    self.symbol_table.define(&param);
+                }
+
                 self.compile_program(body.statements)?;
                 if self.last_instruction_is(Opcode::Pop) {
                     self.replace_last_pop_with_return();
@@ -228,7 +233,11 @@ impl Compiler {
                 arguments,
             } => {
                 self.compile_expression(*function)?;
-                self.emit(Opcode::Call, vec![]);
+                let num_args = arguments.len();
+                for arg in arguments {
+                    self.compile_expression(arg)?;
+                }
+                self.emit(Opcode::Call, vec![num_args as u16]);
             }
         }
 

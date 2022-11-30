@@ -130,6 +130,7 @@ impl VM {
                     instructions,
                     num_locals,
                 } => {
+                    self.current_frame().instruction_ptr += 2;
                     self.push_frame(Frame::new(instructions, self.stack.len()))?;
                     // Reserve space for num_locals local values on the stack
                     for _ in 1..=num_locals {

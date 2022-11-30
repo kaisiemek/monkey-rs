@@ -475,6 +475,16 @@ mod test {
                     "returnsOneReturner()();"
                 ).to_string(),
                 expected: Object::Integer(1) 
+            },
+            TestCase { 
+                input: concat!(
+                    "let returnsOneReturner = fn() {", 
+                    "  let returnsOne = fn() { 1; };", 
+                    "  returnsOne;", 
+                    "};", 
+                    "returnsOneReturner()();"
+                ).to_string(),
+                expected: Object::Integer(1) 
             }
         ];
 

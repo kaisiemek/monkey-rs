@@ -61,7 +61,7 @@ make_opcodes!([
     SetLocal: 2,
     Jump: 2,
     JumpNotTruthy: 2,
-    Call: 0,
+    Call: 2,
     ReturnValue: 0,
     Return: 0,
     Index: 0,
