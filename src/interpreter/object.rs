@@ -14,7 +14,7 @@ pub enum Object {
     Hash(HashMap<Object, Object>),
     ReturnValue(Box<Object>),
     Function {
-        parameters: Vec<Expression>,
+        parameters: Vec<String>,
         body: BlockStatement,
         environment: Rc<RefCell<Environment>>,
     },

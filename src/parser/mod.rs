@@ -288,7 +288,7 @@ impl Parser {
         let token = self.cur_token.clone();
         self.expect_peek(TokenType::LParen)?;
 
-        let parameters = self.parse_expression_list(TokenType::RParen)?;
+        let parameters = self.parse_parameter_list()?;
 
         self.expect_peek(TokenType::LBrace)?;
 
@@ -453,6 +453,33 @@ impl Parser {
 
         self.expect_peek(end)?;
 
+        Ok(result)
+    }
+
+    fn parse_parameter_list(&mut self) -> Result<Vec<String>, String> {
+        let mut result: Vec<String> = Vec::new();
+
+        if self.peek_token_is(TokenType::RParen) {
+            self.next_token();
+            return Ok(result);
+        }
+
+        self.next_token();
+        let Expression::Identifier { token: _, value } = self.parse_expression(Precedence::Lowest)? else {
+            return Err("Function literal parameters need to be identifiers.".to_string());
+        };
+        result.push(value);
+
+        while self.peek_token_is(TokenType::Comma) {
+            self.next_token();
+            self.next_token();
+            let Expression::Identifier { token: _, value } = self.parse_expression(Precedence::Lowest)? else {
+                return Err("Function literal parameters need to be identifiers.".to_string());
+            };
+            result.push(value);
+        }
+
+        self.expect_peek(TokenType::RParen)?;
         Ok(result)
     }
 }

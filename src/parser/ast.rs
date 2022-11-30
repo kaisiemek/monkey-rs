@@ -55,7 +55,7 @@ pub enum Expression {
     },
     FnLiteral {
         token: Token,
-        parameters: Vec<Expression>,
+        parameters: Vec<String>,
         body: BlockStatement,
     },
     Prefix {

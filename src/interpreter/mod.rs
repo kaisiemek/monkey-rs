@@ -395,7 +395,7 @@ fn is_truthy(object: Object) -> bool {
 }
 
 fn extend_function_env(
-    parameters: &[Expression],
+    parameters: &[String],
     arguments: &[Object],
     env: Rc<RefCell<Environment>>,
 ) -> Result<Rc<RefCell<Environment>>, String> {
@@ -409,18 +409,7 @@ fn extend_function_env(
     }
 
     for (param, arg) in parameters.iter().zip(arguments.iter()) {
-        if let Expression::Identifier {
-            token: _,
-            value: name,
-        } = param
-        {
-            extended_env.set(name, arg.clone());
-        } else {
-            return Err(format!(
-                "Expected all parameters to be IdentifierExpr, but got {:?}",
-                param
-            ));
-        }
+        extended_env.set(&param, arg.clone());
     }
 
     Ok(Rc::new(RefCell::new(extended_env)))

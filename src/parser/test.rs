@@ -611,46 +611,31 @@ mod test {
 
         let expression = parse_expression_statement(input);
 
-        let contained_parameters;
-        let contained_body;
-
-        if let Expression::FnLiteral {
+        let Expression::FnLiteral {
             token: _,
             parameters,
             body,
-        } = expression
-        {
-            contained_parameters = parameters;
-            contained_body = body;
-        } else {
+        } = expression else {
             assert!(false, "Expected LiteralFnExpr, got {:?}", expression);
             panic!();
-        }
+        };
 
-        assert_eq!(contained_parameters.len(), 2, "Expected 2 parameters");
-        test_literal_expression(contained_parameters[0].clone(), "x");
-        test_literal_expression(contained_parameters[1].clone(), "y");
-
-        assert_eq!(
-            contained_body.statements.len(),
-            1,
-            "Expected one statement in function body"
-        );
+        assert_eq!(parameters.len(), 2, "Expected 2 parameters");
+        assert_eq!(parameters[0], "x");
+        assert_eq!(parameters[1], "y");
 
         let body_expression;
         if let Statement::Expression {
             token: _,
             expression,
-        } = &contained_body.statements[0]
+        } = &body.statements[0]
         {
             body_expression = expression.clone();
         } else {
-            assert!(
-                false,
+            panic!(
                 "Expected ExpressioStmt in body, got {:?}",
-                contained_body.statements[0]
+                body.statements[0]
             );
-            panic!();
         }
 
         test_infix_expression(body_expression, "x", "+", "y");
@@ -700,7 +685,7 @@ mod test {
                 );
 
                 for (i, param) in parameters.iter().enumerate() {
-                    test_literal_expression(param.clone(), test_case.expected_parameters[i]);
+                    assert_eq!(param, test_case.expected_parameters[i]);
                 }
             } else {
                 assert!(false, "Expected LiteralFnExpr, got {:?}", expression);
