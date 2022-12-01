@@ -7,7 +7,7 @@ mod test {
         interpreter::object::Object,
         lexer::Lexer,
         parser::{ast::Program, Parser},
-        vm::VM, code,
+        vm::VM, code::{self, stringify},
     };
 
     struct TestCase {
@@ -436,10 +436,6 @@ mod test {
                 input: "let earlyExit = fn() { return 99; 100; }; earlyExit();".to_string(),
                 expected: Object::Integer(99),
             },
-            TestCase {
-                input: "let earlyExit = fn() { return 99; return 100; }; earlyExit();".to_string(),
-                expected: Object::Integer(99),
-            },
         ];
 
         for test_case in test_cases {
@@ -566,8 +562,65 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_calling_functions_with_arguments_and_bindings() {
+        let test_cases = vec![
+            TestCase { 
+                input: concat!(
+                    "let identity = fn(a) { a; }; ", 
+                    "identity(4);", 
+                ).to_string(),
+                expected: Object::Integer(4) 
+            },
+            TestCase { 
+                input: concat!(
+                    "let sum = fn(a, b) { a + b; }; ", 
+                    "sum(1, 2);", 
+                ).to_string(),
+                expected: Object::Integer(3) 
+            },
+            TestCase {
+                input: concat!(
+                    "let sum = fn(a, b) {",
+                    "    let c = a + b;",
+                    "    c;",
+                    "};",
+                    "sum(1, 2);"
+                ).to_string(),
+                expected: Object::Integer(3),
+            },
+            TestCase {
+                input: concat!(
+                    "let sum = fn(a, b) {",
+                    "    let c = a + b;",
+                    "    c;",
+                    "};",
+                    "sum(1, 2) + sum(3, 4);"
+                ).to_string(),
+                expected: Object::Integer(10),
+            },
+            TestCase {
+                input: concat!(
+                    "let sum = fn(a, b) {",
+                    "    let c = a + b;",
+                    "    c;",
+                    "};",
+                    "let outer = fn() {",
+                    "    sum(1, 2) + sum(3, 4);",
+                    "};",
+                    "outer();",
+                ).to_string(),
+                expected: Object::Integer(10),
+            },
+        ];
+
+        for test_case in test_cases {
+            run_vm_test(test_case);
+        }
+    }
+
+
     fn parse(input: String) -> Program {
-        println!("INPUT {}", input);
         let lexer = Lexer::new(&input);
         let mut parser = Parser::new(lexer);
 
@@ -596,6 +649,7 @@ mod test {
         if let Err(err) = compiler.compile(program) {
             panic!("an error occurred in the compiler: {}", err);
         }
+        // println!("PROG: {}", stringify(compiler.bytecode().instructions).unwrap());
 
         let mut vm = VM::new();
         match vm.run(compiler.bytecode()) {

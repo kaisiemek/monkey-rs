@@ -3,7 +3,7 @@ mod test;
 
 use self::frame::Frame;
 use crate::{
-    code::{read_u16, Opcode},
+    code::{read_u16, stringify, Opcode},
     compiler::Bytecode,
     interpreter::object::{Inspectable, Object},
 };
@@ -55,6 +55,15 @@ impl VM {
     }
 
     fn execute_op(&mut self, op: Opcode, frame: &mut Frame) -> Result<bool, String> {
+        // println!(
+        //     "EXECUTING {}: {}",
+        //     frame.instruction_ptr - 1,
+        //     op.to_string()
+        // );
+        // println!("CURRENT STACK:");
+        // for (i, obj) in self.stack.iter().enumerate() {
+        //     println!("\t{}: {}", i, obj.inspect());
+        // }
         match op {
             Opcode::Constant => {
                 let const_index =
@@ -125,24 +134,16 @@ impl VM {
                 let left = self.pop()?;
                 self.execute_index_expression(left, index)?;
             }
-            Opcode::Call => match self.pop()? {
-                Object::CompiledFunction {
-                    instructions,
-                    num_locals,
-                } => {
-                    self.current_frame().instruction_ptr += 2;
-                    self.push_frame(Frame::new(instructions, self.stack.len()))?;
-                    // Reserve space for num_locals local values on the stack
-                    for _ in 1..=num_locals {
-                        self.stack.push(Object::default());
-                    }
-                    return Ok(false);
-                }
-                other => return Err(format!("Can not call object of type {}", other.type_str())),
-            },
+            Opcode::Call => {
+                let num_args = read_u16(&frame.instructions[frame.instruction_ptr..]);
+                self.current_frame().instruction_ptr += 2;
+
+                self.call_function(num_args as usize)?;
+                return Ok(false);
+            }
             Opcode::Return => {
                 let base_ptr = self.pop_frame()?.base_ptr;
-                while self.stack.len() > base_ptr {
+                while self.stack.len() >= base_ptr {
                     self.pop()?;
                 }
                 self.push(Object::Null)?;
@@ -151,7 +152,7 @@ impl VM {
             Opcode::ReturnValue => {
                 let return_value = self.pop()?;
                 let base_ptr = self.pop_frame()?.base_ptr;
-                while self.stack.len() > base_ptr {
+                while self.stack.len() >= base_ptr {
                     self.pop()?;
                 }
                 self.push(return_value)?;
@@ -280,6 +281,23 @@ impl VM {
                 other.type_str()
             )),
         }
+    }
+
+    fn call_function(&mut self, num_args: usize) -> Result<(), String> {
+        let func = &self.stack[self.stack.len() - 1 - num_args as usize];
+        let Object::CompiledFunction { instructions, num_locals } = func.clone() else {
+            return Err(format!("Can not call object of type {}", func.type_str()))
+        };
+
+        let base_ptr = self.stack.len() - num_args;
+
+        let frame = Frame::new(instructions, base_ptr);
+        self.push_frame(frame)?;
+        for _ in 1..=base_ptr + num_locals {
+            self.stack.push(Object::default());
+        }
+
+        Ok(())
     }
 
     fn push_constant(&mut self, index: usize) -> Result<(), String> {
