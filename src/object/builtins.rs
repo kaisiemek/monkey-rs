@@ -1,4 +1,4 @@
-use super::object::{Inspectable, Object};
+use super::{Inspectable, Object};
 
 pub type BuiltinFunction = fn(Vec<Object>) -> Result<Object, String>;
 

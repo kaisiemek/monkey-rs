@@ -1,7 +1,8 @@
-use super::{builtins::BuiltinFunction, environment::Environment};
+pub mod builtins;
+
+use self::builtins::BuiltinFunction;
 use crate::{
-    code::Instructions,
-    parser::ast::{BlockStatement, Expression},
+    code::Instructions, interpreter::environment::Environment, parser::ast::BlockStatement,
 };
 use std::{cell::RefCell, collections::HashMap, hash::Hash, rc::Rc};
 
@@ -13,7 +14,7 @@ pub enum Object {
     Array(Vec<Object>),
     Hash(HashMap<Object, Object>),
     ReturnValue(Box<Object>),
-    Function {
+    InterpretedFunction {
         parameters: Vec<String>,
         body: BlockStatement,
         environment: Rc<RefCell<Environment>>,
@@ -26,6 +27,7 @@ pub enum Object {
     CompiledFunction {
         instructions: Instructions,
         num_locals: usize,
+        num_parameters: usize,
     },
 }
 
@@ -53,7 +55,7 @@ impl Inspectable for Object {
                 format!("{{{}}}", entry_strings.join(", "))
             }
             Object::ReturnValue(value) => format!("{}", value.inspect()),
-            Object::Function {
+            Object::InterpretedFunction {
                 parameters,
                 body,
                 environment: _,
@@ -68,10 +70,11 @@ impl Inspectable for Object {
             Object::CompiledFunction {
                 instructions,
                 num_locals,
+                num_parameters,
             } => {
                 format!(
-                    "Compiled function ({} locals): {:?}",
-                    num_locals, instructions
+                    "Compiled function ({} parameters, {} locals): {:?}",
+                    num_parameters, num_locals, instructions
                 )
             }
         }
@@ -85,7 +88,7 @@ impl Inspectable for Object {
             Object::Array(_) => String::from("ARRAY"),
             Object::Hash(_) => String::from("HASH"),
             Object::ReturnValue(value) => format!("RETURN {}", value.type_str()),
-            Object::Function { .. } => String::from("FUNCTION"),
+            Object::InterpretedFunction { .. } => String::from("FUNCTION"),
             Object::BuiltIn { .. } => String::from("BUILTIN"),
             Object::Null => String::from("NULL"),
             Object::CompiledFunction { .. } => String::from("COMPILED FUNCTION"),

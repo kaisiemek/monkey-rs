@@ -2,17 +2,15 @@ pub mod ast;
 mod precedence;
 mod test;
 
-use std::collections::HashMap;
-
-use crate::lexer::{
-    token::{Token, TokenType},
-    Lexer,
-};
-
 use self::{
     ast::{BlockStatement, Expression, Program, Statement},
     precedence::{get_operator_precedence, Precedence},
 };
+use crate::lexer::{
+    token::{Token, TokenType},
+    Lexer,
+};
+use std::collections::HashMap;
 
 pub struct Parser {
     lexer: Lexer,

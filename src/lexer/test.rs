@@ -1,8 +1,7 @@
 #[cfg(test)]
 mod test {
-    use std::collections::VecDeque;
-
     use crate::lexer::{token::TokenType, Lexer};
+    use std::collections::VecDeque;
 
     #[test]
     fn test_peek() {

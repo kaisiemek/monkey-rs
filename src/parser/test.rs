@@ -1,7 +1,5 @@
 #[cfg(test)]
 mod test {
-    use std::collections::{HashMap, VecDeque};
-
     use crate::{
         lexer::{
             token::{Token, TokenType},
@@ -12,6 +10,7 @@ mod test {
             Parser,
         },
     };
+    use std::collections::{HashMap, VecDeque};
 
     #[test]
     fn test_let_statements() {

@@ -1,13 +1,10 @@
 #[cfg(test)]
 mod test {
     use std::collections::HashMap;
-
     use crate::{
         compiler::Compiler,
-        interpreter::object::Object,
         lexer::Lexer,
-        parser::{ast::Program, Parser},
-        vm::VM, code::{self, stringify},
+        parser::{ast::Program, Parser}, object::Object, vm::VM,
     };
 
     struct TestCase {
@@ -612,6 +609,20 @@ mod test {
                 ).to_string(),
                 expected: Object::Integer(10),
             },
+            TestCase {
+                input: concat!(
+                    "let globalNum = 10;",
+                    "let sum = fn(a, b) {",
+                    "    let c = a + b;",
+                    "    c + globalNum;",
+                    "};",
+                    "let outer = fn() {",
+                    "    sum(1, 2) + sum(3, 4) + globalNum;",
+                    "};",
+                    "outer() + globalNum;",
+                ).to_string(),
+                expected: Object::Integer(50),
+            },
         ];
 
         for test_case in test_cases {
@@ -619,6 +630,40 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_calling_functions_with_wrong_arguments() {
+        struct TestCase {
+            input: String,
+            expected_error: String,
+        }
+
+        let test_cases = vec![
+            TestCase {
+                input: "fn() { 1; }(1);".to_string(), 
+                expected_error: "Wrong number of arguments: want=0, got=1".to_string(), 
+            }, 
+            TestCase {
+                input: "fn(a) { a; }();".to_string(), 
+                expected_error: "Wrong number of arguments: want=1, got=0".to_string(), 
+            }, 
+            TestCase {
+                input: "fn(a, b) { a + b; }(1);".to_string(), 
+                expected_error: "Wrong number of arguments: want=2, got=1".to_string(), 
+            }, 
+        ];
+
+        for test_case in test_cases {
+            let program = parse(test_case.input);
+            let mut compiler = Compiler::new();
+            compiler.compile(program).unwrap();
+
+            let mut vm = VM::new();
+            match vm.run(compiler.bytecode()) {
+                Ok(_) => panic!("Expected VM error."),
+                Err(err) => assert_eq!(err, test_case.expected_error),
+            };
+        }
+    }
 
     fn parse(input: String) -> Program {
         let lexer = Lexer::new(&input);

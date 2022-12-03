@@ -1,6 +1,5 @@
-use std::{collections::HashMap, hash::Hash};
-
 use crate::lexer::token::Token;
+use std::{collections::HashMap, hash::Hash};
 
 pub type Program = Vec<Statement>;
 

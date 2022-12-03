@@ -1,14 +1,11 @@
-mod builtins;
 pub mod environment;
-pub mod object;
 mod test;
 
-use self::{
-    builtins::get_builtin,
-    environment::Environment,
-    object::{Inspectable, Object},
+use self::environment::Environment;
+use crate::{
+    object::{builtins::get_builtin, Inspectable, Object},
+    parser::ast::{BlockStatement, Expression, Program, Statement},
 };
-use crate::parser::ast::{BlockStatement, Expression, Program, Statement};
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 /*
@@ -91,7 +88,7 @@ fn eval_expression(
             token: _,
             parameters,
             body,
-        } => Ok(Object::Function {
+        } => Ok(Object::InterpretedFunction {
             parameters,
             body,
             environment: env,
@@ -290,7 +287,7 @@ fn eval_call_expression(
 
 fn apply_function(function: Object, arguments: Vec<Object>) -> Result<Object, String> {
     match function {
-        Object::Function {
+        Object::InterpretedFunction {
             parameters,
             body,
             environment,

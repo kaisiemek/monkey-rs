@@ -1,16 +1,16 @@
+use crate::{
+    compiler::Compiler,
+    interpreter::{environment::Environment, eval_program},
+    lexer::Lexer,
+    object::Inspectable,
+    parser::Parser,
+    vm::VM,
+};
 use std::{
     cell::RefCell,
     io::{self, Write},
     process::exit,
     rc::Rc,
-};
-
-use crate::{
-    compiler::Compiler,
-    interpreter::{environment::Environment, eval_program, object::Inspectable},
-    lexer::Lexer,
-    parser::Parser,
-    vm::VM,
 };
 
 pub fn start_interpreter() -> ! {

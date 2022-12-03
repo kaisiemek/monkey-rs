@@ -5,6 +5,7 @@ mod lexer;
 mod parser;
 mod repl;
 mod vm;
+mod object;
 
 const COMPILED: bool = true;
 

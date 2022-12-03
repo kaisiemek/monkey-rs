@@ -1,20 +1,19 @@
 #[cfg(test)]
 mod test {
-    use std::{
-        collections::{HashMap, HashSet},
-        rc::Rc,
-        vec,
-    };
-
     use crate::{
         code::{make, stringify, Instructions, Opcode},
         compiler::{
             symbol_table::{Symbol, SymbolScope, SymbolTable},
             Compiler,
         },
-        interpreter::object::{Inspectable, Object},
         lexer::Lexer,
+        object::{Inspectable, Object},
         parser::{ast::Program, Parser},
+    };
+    use std::{
+        collections::{HashMap, HashSet},
+        rc::Rc,
+        vec,
     };
 
     struct TestCase {
@@ -504,6 +503,7 @@ mod test {
                         ]
                         .concat(),
                         num_locals: 0,
+                        num_parameters: 0,
                     },
                 ],
                 expected_instructions: vec![
@@ -525,6 +525,7 @@ mod test {
                         ]
                         .concat(),
                         num_locals: 0,
+                        num_parameters: 0,
                     },
                 ],
                 expected_instructions: vec![
@@ -546,6 +547,7 @@ mod test {
                         ]
                         .concat(),
                         num_locals: 0,
+                        num_parameters: 0,
                     },
                 ],
                 expected_instructions: vec![
@@ -558,6 +560,7 @@ mod test {
                 expected_constants: vec![Object::CompiledFunction {
                     instructions: vec![make(Opcode::Return, vec![])].concat(),
                     num_locals: 0,
+                    num_parameters: 0,
                 }],
                 expected_instructions: vec![
                     make(Opcode::Constant, vec![0]),
@@ -585,6 +588,7 @@ mod test {
                         ]
                         .concat(),
                         num_locals: 0,
+                        num_parameters: 0,
                     },
                 ],
                 expected_instructions: vec![
@@ -604,6 +608,7 @@ mod test {
                         ]
                         .concat(),
                         num_locals: 0,
+                        num_parameters: 0,
                     },
                 ],
                 expected_instructions: vec![
@@ -621,8 +626,10 @@ mod test {
                         instructions: vec![
                             make(Opcode::GetLocal, vec![0]),
                             make(Opcode::ReturnValue, vec![]),
-                        ].concat(),
+                        ]
+                        .concat(),
                         num_locals: 1,
+                        num_parameters: 1,
                     },
                     Object::Integer(24),
                 ],
@@ -645,11 +652,11 @@ mod test {
                             make(Opcode::GetLocal, vec![1]),
                             make(Opcode::Pop, vec![]),
                             make(Opcode::GetLocal, vec![2]),
-                            make(Opcode::ReturnValue, vec![])
-                            
-                            
-                        ].concat(),
+                            make(Opcode::ReturnValue, vec![]),
+                        ]
+                        .concat(),
                         num_locals: 3,
+                        num_parameters: 3,
                     },
                     Object::Integer(24),
                     Object::Integer(25),
@@ -687,6 +694,7 @@ mod test {
                         ]
                         .concat(),
                         num_locals: 0,
+                        num_parameters: 0,
                     },
                 ],
                 expected_instructions: vec![
@@ -709,6 +717,7 @@ mod test {
                         ]
                         .concat(),
                         num_locals: 1,
+                        num_parameters: 0,
                     },
                 ],
                 expected_instructions: vec![
@@ -734,6 +743,7 @@ mod test {
                         ]
                         .concat(),
                         num_locals: 2,
+                        num_parameters: 0,
                     },
                 ],
                 expected_instructions: vec![

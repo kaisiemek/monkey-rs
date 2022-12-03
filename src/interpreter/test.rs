@@ -1,12 +1,9 @@
 #[cfg(test)]
 mod test {
     use crate::{
-        interpreter::{
-            environment::Environment,
-            eval_program,
-            object::{Inspectable, Object},
-        },
+        interpreter::{environment::Environment, eval_program},
         lexer::Lexer,
+        object::{Inspectable, Object},
         parser::Parser,
     };
     use core::panic;
@@ -443,7 +440,7 @@ mod test {
         let object = test_eval(input);
 
         assert_eq!(object.type_str(), "FUNCTION");
-        if let Object::Function {
+        if let Object::InterpretedFunction {
             parameters,
             body,
             environment: _,

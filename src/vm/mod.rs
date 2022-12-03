@@ -3,9 +3,9 @@ mod test;
 
 use self::frame::Frame;
 use crate::{
-    code::{read_u16, stringify, Opcode},
+    code::{read_u16, Opcode},
     compiler::Bytecode,
-    interpreter::object::{Inspectable, Object},
+    object::{Inspectable, Object},
 };
 use std::{collections::HashMap, iter};
 
@@ -285,9 +285,16 @@ impl VM {
 
     fn call_function(&mut self, num_args: usize) -> Result<(), String> {
         let func = &self.stack[self.stack.len() - 1 - num_args as usize];
-        let Object::CompiledFunction { instructions, num_locals } = func.clone() else {
+        let Object::CompiledFunction { instructions, num_locals, num_parameters } = func.clone() else {
             return Err(format!("Can not call object of type {}", func.type_str()))
         };
+
+        if num_parameters != num_args {
+            return Err(format!(
+                "Wrong number of arguments: want={}, got={}",
+                num_parameters, num_args
+            ));
+        }
 
         let base_ptr = self.stack.len() - num_args;
 

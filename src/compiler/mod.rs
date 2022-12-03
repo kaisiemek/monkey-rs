@@ -1,15 +1,13 @@
 mod symbol_table;
 mod test;
 
-use std::rc::Rc;
-
+use self::symbol_table::{Symbol, SymbolTable};
 use crate::{
     code::{make, Instructions, Opcode},
-    interpreter::object::Object,
+    object::Object,
     parser::ast::{Expression, Program, Statement},
 };
-
-use self::symbol_table::{Symbol, SymbolTable};
+use std::rc::Rc;
 
 pub struct Compiler {
     scopes: Vec<CompilationScope>,
@@ -144,6 +142,7 @@ impl Compiler {
             } => {
                 self.enter_scope();
 
+                let num_parameters = parameters.len();
                 for param in parameters {
                     self.symbol_table.define(&param);
                 }
@@ -163,6 +162,7 @@ impl Compiler {
                 let compiled_function = Object::CompiledFunction {
                     instructions,
                     num_locals,
+                    num_parameters,
                 };
                 let constant_index = self.add_constant(compiled_function) as u16;
                 self.emit(Opcode::Constant, vec![constant_index]);
