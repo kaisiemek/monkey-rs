@@ -146,8 +146,7 @@ fn eval_identifier(name: &str, env: Rc<RefCell<Environment>>) -> Result<Object, 
 
     match builtin {
         Some(function) => Ok(Object::BuiltIn {
-            name: name.to_string(),
-            function,
+            name: function.name,
         }),
         None => Err(format!("unknown identifier: {}", name)),
     }
@@ -295,7 +294,10 @@ fn apply_function(function: Object, arguments: Vec<Object>) -> Result<Object, St
             let extended_env = extend_function_env(&parameters, &arguments, environment)?;
             eval_block_statement(body, extended_env)
         }
-        Object::BuiltIn { name: _, function } => function(arguments),
+        Object::BuiltIn { name } => match get_builtin(&name) {
+            Some(builtin) => (builtin.func)(arguments),
+            None => Err(format!("No such builtin function '{}'", name)),
+        },
         other => Err(format!("not a function: {}", other.type_str())),
     }
 }

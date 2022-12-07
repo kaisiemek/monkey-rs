@@ -2,12 +2,12 @@ mod code;
 mod compiler;
 mod interpreter;
 mod lexer;
+mod object;
 mod parser;
 mod repl;
 mod vm;
-mod object;
 
-const COMPILED: bool = true;
+const COMPILED: bool = false;
 
 fn main() {
     if COMPILED {

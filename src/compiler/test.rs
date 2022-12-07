@@ -803,6 +803,49 @@ mod test {
     }
 
     #[test]
+    fn test_builtins() {
+        let test_cases = vec![
+            TestCase {
+                input: concat!("len([]);", "push([], 1);",).to_string(),
+                expected_constants: vec![Object::Integer(1)],
+                expected_instructions: vec![
+                    make(Opcode::GetBuiltin, vec![0]),
+                    make(Opcode::Array, vec![0]),
+                    make(Opcode::Call, vec![1]),
+                    make(Opcode::Pop, vec![]),
+                    make(Opcode::GetBuiltin, vec![5]),
+                    make(Opcode::Array, vec![0]),
+                    make(Opcode::Constant, vec![0]),
+                    make(Opcode::Call, vec![2]),
+                    make(Opcode::Pop, vec![]),
+                ],
+            },
+            TestCase {
+                input: concat!("fn() { len([]); }",).to_string(),
+                expected_constants: vec![Object::CompiledFunction {
+                    instructions: vec![
+                        make(Opcode::GetBuiltin, vec![0]),
+                        make(Opcode::Array, vec![0]),
+                        make(Opcode::Call, vec![1]),
+                        make(Opcode::ReturnValue, vec![]),
+                    ]
+                    .concat(),
+                    num_locals: 0,
+                    num_parameters: 0,
+                }],
+                expected_instructions: vec![
+                    make(Opcode::Constant, vec![0]),
+                    make(Opcode::Pop, vec![]),
+                ],
+            },
+        ];
+
+        for test_case in test_cases {
+            run_compiler_test(test_case);
+        }
+    }
+
+    #[test]
     fn test_symbol_table_define() {
         let expected: HashMap<String, Symbol> = HashMap::from([
             (
@@ -1039,6 +1082,55 @@ mod test {
             };
                 assert_eq!(symbol, *resolved_symbol);
             }
+        }
+    }
+
+    #[test]
+    fn test_symbol_table_builtins() {
+        let mut global = SymbolTable::new();
+
+        let expected = vec![
+            Symbol {
+                name: "a".to_string(),
+                scope: SymbolScope::Builtin,
+                index: 0,
+            },
+            Symbol {
+                name: "c".to_string(),
+                scope: SymbolScope::Builtin,
+                index: 1,
+            },
+            Symbol {
+                name: "e".to_string(),
+                scope: SymbolScope::Builtin,
+                index: 2,
+            },
+            Symbol {
+                name: "f".to_string(),
+                scope: SymbolScope::Builtin,
+                index: 3,
+            },
+        ];
+
+        for (i, sym) in expected.iter().enumerate() {
+            global.define_builtin(i, &sym.name);
+        }
+
+        for sym in &expected {
+            let resolved_sym = global.resolve(&sym.name).expect("Expected a symbol");
+            assert_eq!(*resolved_sym, *sym);
+        }
+
+        let first_local = Rc::new(SymbolTable::with_enclosed(Rc::new(global)));
+        for sym in &expected {
+            let resolved_sym = first_local.resolve(&sym.name).expect("Expected a symbol");
+            assert_eq!(*resolved_sym, *sym);
+        }
+
+        let second_local = Rc::new(SymbolTable::with_enclosed(first_local.clone()));
+        for sym in &expected {
+            let resolved_sym = second_local.resolve(&sym.name).expect("Expected a symbol");
+            assert_eq!(*resolved_sym, *sym);
         }
     }
 

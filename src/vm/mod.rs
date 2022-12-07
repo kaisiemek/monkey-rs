@@ -172,6 +172,7 @@ impl VM {
                 let base_ptr = self.current_frame().base_ptr;
                 self.stack[base_ptr + index as usize] = self.pop()?;
             }
+            Opcode::GetBuiltin => todo!(),
         }
         Ok(true)
     }

@@ -1,6 +1,5 @@
 pub mod builtins;
 
-use self::builtins::BuiltinFunction;
 use crate::{
     code::Instructions, interpreter::environment::Environment, parser::ast::BlockStatement,
 };
@@ -21,7 +20,6 @@ pub enum Object {
     },
     BuiltIn {
         name: String,
-        function: BuiltinFunction,
     },
     Null,
     CompiledFunction {

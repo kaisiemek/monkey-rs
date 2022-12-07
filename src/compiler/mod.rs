@@ -4,7 +4,7 @@ mod test;
 use self::symbol_table::{Symbol, SymbolTable};
 use crate::{
     code::{make, Instructions, Opcode},
-    object::Object,
+    object::{builtins, Object},
     parser::ast::{Expression, Program, Statement},
 };
 use std::rc::Rc;
@@ -36,11 +36,16 @@ struct CompilationScope {
 
 impl Compiler {
     pub fn new() -> Self {
+        let mut symbol_table = SymbolTable::new();
+        for (index, name) in builtins::BUILTIN_NAMES.iter().enumerate() {
+            symbol_table.define_builtin(index, name);
+        }
+
         Compiler {
             scopes: vec![CompilationScope::default()],
             scope_index: 0,
             constants: vec![],
-            symbol_table: SymbolTable::new(),
+            symbol_table,
         }
     }
 
@@ -76,6 +81,9 @@ impl Compiler {
                 let opcode = match symbol.scope {
                     symbol_table::SymbolScope::Global => Opcode::SetGlobal,
                     symbol_table::SymbolScope::Local => Opcode::SetLocal,
+                    symbol_table::SymbolScope::Builtin => {
+                        panic!("You can not define builtin symbols!")
+                    }
                 };
 
                 self.emit(opcode, vec![symbol.index as u16]);
@@ -102,6 +110,7 @@ impl Compiler {
                 let opcode = match symbol.scope {
                     symbol_table::SymbolScope::Global => Opcode::GetGlobal,
                     symbol_table::SymbolScope::Local => Opcode::GetLocal,
+                    symbol_table::SymbolScope::Builtin => Opcode::GetBuiltin,
                 };
 
                 self.emit(opcode, vec![symbol.index as u16]);

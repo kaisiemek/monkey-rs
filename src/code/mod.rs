@@ -59,6 +59,7 @@ make_opcodes!([
     SetGlobal: 2,
     GetLocal: 2,
     SetLocal: 2,
+    GetBuiltin: 2,
     Jump: 2,
     JumpNotTruthy: 2,
     Call: 2,

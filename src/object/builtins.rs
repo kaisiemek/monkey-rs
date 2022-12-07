@@ -1,18 +1,51 @@
 use super::{Inspectable, Object};
 
-pub type BuiltinFunction = fn(Vec<Object>) -> Result<Object, String>;
+pub const BUILTIN_NAMES: [&str; 7] = ["len", "print", "first", "last", "tail", "push", "typeof"];
+
+pub struct BuiltinFunction<'a> {
+    pub name: String,
+    pub func: &'a dyn Fn(Vec<Object>) -> Result<Object, String>,
+}
 
 pub fn get_builtin(name: &str) -> Option<BuiltinFunction> {
-    match name {
-        "len" => Some(self::len),
-        "print" => Some(self::print),
-        "typeof" => Some(self::type_of),
-        "first" => Some(self::first),
-        "last" => Some(self::last),
-        "tail" => Some(self::tail),
-        "push" => Some(self::push),
-        _ => None,
+    let builtins: Vec<BuiltinFunction> = vec![
+        BuiltinFunction {
+            name: "len".to_string(),
+            func: &self::len,
+        },
+        BuiltinFunction {
+            name: "print".to_string(),
+            func: &self::print,
+        },
+        BuiltinFunction {
+            name: "first".to_string(),
+            func: &self::first,
+        },
+        BuiltinFunction {
+            name: "last".to_string(),
+            func: &self::last,
+        },
+        BuiltinFunction {
+            name: "tail".to_string(),
+            func: &self::tail,
+        },
+        BuiltinFunction {
+            name: "push".to_string(),
+            func: &self::push,
+        },
+        BuiltinFunction {
+            name: "typeof".to_string(),
+            func: &self::type_of,
+        },
+    ];
+
+    for builtin in builtins {
+        if builtin.name == name {
+            return Some(builtin);
+        }
     }
+
+    None
 }
 
 fn len(args: Vec<Object>) -> Result<Object, String> {
