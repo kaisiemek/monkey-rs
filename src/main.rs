@@ -7,7 +7,7 @@ mod parser;
 mod repl;
 mod vm;
 
-const COMPILED: bool = false;
+const COMPILED: bool = true;
 
 fn main() {
     if COMPILED {

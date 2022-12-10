@@ -665,6 +665,73 @@ mod test {
         }
     }
 
+    #[test]
+    fn test_builtins() {
+        let test_cases = vec![
+            TestCase { 
+                input: "len(\"\")".to_string(), 
+                expected: Object::Integer(0), 
+            },
+            TestCase { 
+                input: "len(\"four\")".to_string(), 
+                expected: Object::Integer(4), 
+            },
+            TestCase { 
+                input: "len(\"hello world\")".to_string(), 
+                expected: Object::Integer(11), 
+            },
+            TestCase { 
+                input: "len([1, 2, 3])".to_string(), 
+                expected: Object::Integer(3), 
+            },
+            TestCase { 
+                input: "len([])".to_string(), 
+                expected: Object::Integer(0), 
+            },
+            TestCase { 
+                input: "print(\"hello\", \"world!\")".to_string(), 
+                expected: Object::Null, 
+            },
+            TestCase { 
+                input: "first([1, 2, 3])".to_string(), 
+                expected: Object::Integer(1), 
+            },
+            TestCase { 
+                input: "first([])".to_string(), 
+                expected: Object::Null, 
+            },
+            TestCase { 
+                input: "last([1, 2, 3])".to_string(), 
+                expected: Object::Integer(3), 
+            },
+            TestCase { 
+                input: "last([])".to_string(), 
+                expected: Object::Null, 
+            },
+            TestCase { 
+                input: "tail([1, 2, 3])".to_string(), 
+                expected: Object::Array(vec![
+                    Object::Integer(2),
+                    Object::Integer(3),
+                ]), 
+            },
+            TestCase { 
+                input: "tail([])".to_string(), 
+                expected: Object::Null, 
+            },
+            TestCase {
+                input: "push([], 1)".to_string(), 
+                expected: Object::Array(vec![
+                    Object::Integer(1),
+                ]),
+            },
+        ];
+
+        for test_case in test_cases {
+            run_vm_test(test_case);
+        }
+    }
+
     fn parse(input: String) -> Program {
         let lexer = Lexer::new(&input);
         let mut parser = Parser::new(lexer);

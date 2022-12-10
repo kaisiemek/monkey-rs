@@ -3,9 +3,12 @@ mod test;
 
 use self::frame::Frame;
 use crate::{
-    code::{read_u16, Opcode},
+    code::{read_u16, Instructions, Opcode},
     compiler::Bytecode,
-    object::{Inspectable, Object},
+    object::{
+        builtins::{get_builtin, BUILTIN_NAMES},
+        Inspectable, Object,
+    },
 };
 use std::{collections::HashMap, iter};
 
@@ -172,7 +175,14 @@ impl VM {
                 let base_ptr = self.current_frame().base_ptr;
                 self.stack[base_ptr + index as usize] = self.pop()?;
             }
-            Opcode::GetBuiltin => todo!(),
+            Opcode::GetBuiltin => {
+                let index = read_u16(&frame.instructions[frame.instruction_ptr..]);
+                frame.instruction_ptr += 2;
+
+                self.push(Object::BuiltIn {
+                    name: BUILTIN_NAMES[index as usize].to_string(),
+                })?;
+            }
         }
         Ok(true)
     }
@@ -285,11 +295,26 @@ impl VM {
     }
 
     fn call_function(&mut self, num_args: usize) -> Result<(), String> {
-        let func = &self.stack[self.stack.len() - 1 - num_args as usize];
-        let Object::CompiledFunction { instructions, num_locals, num_parameters } = func.clone() else {
-            return Err(format!("Can not call object of type {}", func.type_str()))
-        };
+        let func = self.stack[self.stack.len() - 1 - num_args as usize].clone();
 
+        match func {
+            Object::CompiledFunction {
+                instructions,
+                num_locals,
+                num_parameters,
+            } => self.call_compiled_function(num_args, instructions, num_locals, num_parameters),
+            Object::BuiltIn { name } => self.call_builtin_function(num_args, name),
+            _ => Err(format!("Can not call object of type {}", func.type_str())),
+        }
+    }
+
+    fn call_compiled_function(
+        &mut self,
+        num_args: usize,
+        instructions: Instructions,
+        num_locals: usize,
+        num_parameters: usize,
+    ) -> Result<(), String> {
         if num_parameters != num_args {
             return Err(format!(
                 "Wrong number of arguments: want={}, got={}",
@@ -305,6 +330,25 @@ impl VM {
             self.stack.push(Object::default());
         }
 
+        Ok(())
+    }
+
+    fn call_builtin_function(&mut self, num_args: usize, name: String) -> Result<(), String> {
+        let base_ptr = self.stack.len() - num_args;
+        let args: Vec<Object> = self.stack[base_ptr..self.stack.len()].to_vec();
+
+        let builtin_func = match get_builtin(&name) {
+            Some(func) => func,
+            None => return Err(format!("No builtin function named {}", name)),
+        };
+
+        let return_value = (builtin_func.func)(args)?;
+
+        while self.stack.len() >= base_ptr {
+            self.pop()?;
+        }
+
+        self.push(return_value)?;
         Ok(())
     }
 
